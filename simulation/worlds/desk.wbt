@@ -1,0 +1,179 @@
+#VRML_SIM R2020b utf8
+WorldInfo {
+  coordinateSystem "NUE"
+}
+Viewpoint {
+  orientation 1 0 0 4.71238898038469
+  position 0.5799996859678199 1.3479919680422097 -0.032519647818219095
+  follow "robot"
+}
+TexturedBackground {
+}
+TexturedBackgroundLight {
+}
+DEF OBJECTS Group {
+  children [
+    Floor {
+      name "floor(1)"
+    }
+    BeerBottle {
+      translation 3.68702e-18 0.760422 -0.07
+      name "beer bottle(1)"
+    }
+    DEF TABLE Table {
+      size 1.22 0.76 0.76
+      frameThickness 0.1
+    }
+    Spoon {
+      translation -0.14 0.777648 -0.139205
+      rotation -0.01851782694315772 0.9996570309244369 0.018517845680389593 -1.571138342843346
+      name "spoon(1)"
+    }
+    Knife {
+      translation 0.0385655 0.758308 0.189585
+      rotation -0.0029417597513266072 0.9999829154692547 -0.00505121957300935 2.09441
+      name "knife(1)"
+    }
+    Plate {
+      translation -0.29 0.759941 0.18
+      rotation 0.9989264613518823 0.010627846543856588 -0.04508850949905507 6.926359812943209e-16
+      name "plate(1)"
+    }
+    Apple {
+      translation -0.46 0.809765 -0.01
+      name "apple(1)"
+    }
+  ]
+}
+DEF TableUV Robot {
+  translation 0.579997 0.786936 0.0074477
+  rotation 0.0016202905968792038 0.9999973683769037 -0.0016241605983048266 -1.5708653071795862
+  children [
+    RangeFinder {
+      translation 0 0 0.02
+      rotation 0 1 0 3.14159
+      name "tof"
+      fieldOfView 0.471239
+      maxRange 4
+    }
+    GPS {
+      name "global"
+    }
+    Solid {
+      translation 0 -0.017 0.02
+      children [
+        DEF CASTER_WHEEL Shape {
+          appearance PBRAppearance {
+            metalness 0
+          }
+          geometry Sphere {
+            radius 0.01
+          }
+        }
+      ]
+      name "caster_wheel"
+      boundingObject USE CASTER_WHEEL
+      physics Physics {
+      }
+    }
+    Solid {
+      translation 0 -0.017 -0.02
+      children [
+        DEF CASTER_WHEEL Shape {
+          appearance PBRAppearance {
+            metalness 0
+          }
+          geometry Sphere {
+            radius 0.01
+          }
+        }
+      ]
+      name "caster_wheel(1)"
+      boundingObject USE CASTER_WHEEL
+      physics Physics {
+      }
+    }
+    HingeJoint {
+      jointParameters HingeJointParameters {
+        position 7.414501687456142e-08
+        anchor -0.04 -0.01 0
+      }
+      device [
+        PositionSensor {
+          name "left_ps"
+          resolution 1
+        }
+        RotationalMotor {
+          name "left_motor"
+        }
+      ]
+      endPoint Solid {
+        translation -0.04000000040198491 -0.009998878983036004 5.847401393102292e-09
+        rotation 1.546138617612343e-08 -1.518241940524984e-08 0.9999999999999998 1.5699999530302227
+        children [
+          DEF WHEEL Shape {
+            appearance PBRAppearance {
+              metalness 0
+            }
+            geometry DEF ROBOT_WHEEL_R Cylinder {
+              height 0.006
+              radius 0.017
+            }
+          }
+        ]
+        name "solid(1)"
+        boundingObject USE WHEEL
+        physics DEF WHEEL_PHYS Physics {
+        }
+      }
+    }
+    HingeJoint {
+      jointParameters HingeJointParameters {
+        position 3.187095446534079e-08
+        anchor 0.04 -0.01 0
+      }
+      device [
+        PositionSensor {
+          name "right_ps"
+          resolution 1
+        }
+        RotationalMotor {
+          name "right_motor"
+        }
+      ]
+      endPoint Solid {
+        translation 0.040000000533529825 -0.009998885232130555 4.164318302510613e-09
+        rotation 9.142245450039296e-10 -1.1821754757087804e-09 1 1.57000004697403
+        children [
+          DEF WHEEL Shape {
+            appearance PBRAppearance {
+              metalness 0
+            }
+            geometry DEF ROBOT_WHEEL_LEFT Cylinder {
+              height 0.006
+              radius 0.017
+            }
+          }
+        ]
+        boundingObject USE WHEEL
+        physics DEF WHEEL_PHYS Physics {
+        }
+      }
+    }
+    DEF BODY Shape {
+      appearance PBRAppearance {
+        baseColor 1 0 0
+        metalness 0
+      }
+      geometry DEF ROBOT_BASE Cylinder {
+        height 0.035
+        radius 0.03
+      }
+    }
+  ]
+  boundingObject USE BODY
+  physics Physics {
+  }
+  controller "first_controller"
+  supervisor TRUE
+}
