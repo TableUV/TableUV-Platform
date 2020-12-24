@@ -10,53 +10,27 @@ Initialize;
 % SUPERVISOR
 Supervisor;
 
-% MAIN LOOP
-wb_console_print('Starting main loop!', WB_STDOUT);
-
-step = 0;
-samples = 0;
+% GET INPUT
+wb_console_print(sprintf(['Select controller type:\n', ...
+    '1 - Autonomous\n', ...
+    '2 - Manual Control\n', ...
+    '3 - Exit\n'
+    ]), WB_STDOUT);
 
 while wb_robot_step(TIME_STEP) ~= -1
-    step = step + 1;
-    
-    % setting motor speeds
-    left_speed  = 0.5 * MAX_SPEED;
-    right_speed = 0.5 * MAX_SPEED;
-    for i=1:2
-        if i == 1
-            wb_motor_set_velocity(motor(i), left_speed);
-        end
-        if i == 2
-            wb_motor_set_velocity(motor(i), right_speed);
-        end
+    input = wb_keyboard_get_key();
+    switch input 
+        case 49
+            Mode_Autonomous
+        case 50
+            Mode_Manual
+        case 51
+            wb_supervisor_simulation_set_mode(WB_SUPERVISOR_SIMULATION_MODE_PAUSE)
+            wb_console_print('Paused. Press Ctrl+Shift+T to reset.', WB_STDOUT);
+            return
+        case -1
+            % do nothing
+        otherwise
+            wb_console_print('Invalid Input.', WB_STDOUT);
     end
-
-    % getting global robot position with GPS
-    x_y_z_array = wb_gps_get_values(gps);
-    p(step,:) = x_y_z_array;
-    % plotting position of robot on a map
-    plot(p(step,1),-p(step,3),'ro');
-    hold on;
-    axis([-1 1 -0.8 0.8]);
-    rectangle('Position',[-TABLE_WIDTH/2 -TABLE_HEIGHT/2 TABLE_WIDTH TABLE_HEIGHT])
-    hold off;
-    
-    % getting tof sensor readings
-    image = wb_range_finder_get_range_image(tof);
-    
-    % getting encoder values 
-    value = wb_position_sensor_get_value(ps(1));
-    type = wb_position_sensor_get_type(ps(1));
-    
-    %% SUPERVISOR
-    % this is done repeatedly
-    values = wb_supervisor_field_get_sf_vec3f(trans_field);
-    wb_console_print(sprintf('MY_ROBOT is at position: %g %g %g\n', values(1), values(2), values(3)), WB_STDOUT);
-
-    % if your code plots some graphics, it needs to flushed like this:
-    drawnow;
 end
-
-%% CLEAN UP
-% cleanup code goes here: write data to files, etc.
-
