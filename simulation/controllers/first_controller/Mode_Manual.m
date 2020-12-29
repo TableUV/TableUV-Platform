@@ -40,16 +40,6 @@ while wb_robot_step(TIME_STEP) ~= -1
     value = wb_position_sensor_get_value(ps(1));
     type = wb_position_sensor_get_type(ps(1));
     
-    %% GPS 
-    x_y_z_array = wb_gps_get_values(gps);
-    p(step,:) = x_y_z_array;
-    % plotting position of robot on a map
-    plot(p(step,1),-p(step,3),'ro');
-    hold on;
-    axis([-1 1 -0.8 0.8]);
-    rectangle('Position',[-TABLE_WIDTH/2 -TABLE_HEIGHT/2 TABLE_WIDTH TABLE_HEIGHT])
-    hold off;
-    
     %% TOF
     image = wb_range_finder_get_range_image(tof);
     
@@ -59,6 +49,19 @@ while wb_robot_step(TIME_STEP) ~= -1
     
     % IMU, Acce
     x_y_z_array = wb_accelerometer_get_values(imu_acc)
+    
+    %% SUPERVISOR
+    % this is done repeatedly
+    values = wb_supervisor_field_get_sf_vec3f(trans_field);
+    wb_console_print(sprintf('MY_ROBOT is at position: %g %g %g\n', values(1), values(2), values(3)), WB_STDOUT);
+    
+    p(step,:) = values;
+    % plotting position of robot on a map
+    plot(p(step,1),-p(step,3),'ro');
+    hold on;
+    axis([-1 1 -0.8 0.8]);
+    rectangle('Position',[-TABLE_WIDTH/2 -TABLE_HEIGHT/2 TABLE_WIDTH TABLE_HEIGHT])
+    hold off;
 
     % if your code plots some graphics, it needs to flushed like this:
     drawnow;

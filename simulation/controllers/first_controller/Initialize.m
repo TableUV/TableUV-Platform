@@ -21,13 +21,6 @@ for i = 1:2
 end
 wb_console_print('DONE', WB_STDOUT);
 
-%% GLOBAL GPS
-wb_console_print(sprintf('Checking GPS'), WB_STDOUT);
-gps_name = "global";
-gps = wb_robot_get_device(convertStringsToChars(gps_name));
-wb_gps_enable(gps, TIME_STEP)
-wb_console_print('DONE', WB_STDOUT);
-
 %% RANGE FINDER (TOF)
 wb_console_print(sprintf('Checking TOF'), WB_STDOUT);
 tof_name = "tof";
