@@ -18,8 +18,12 @@ while wb_robot_step(TIME_STEP) ~= -1
             wb_motor_set_velocity(motor(i), right_speed);
         end
     end
-
-    % getting global robot position with GPS
+    
+    %% ENCODER 
+    value = wb_position_sensor_get_value(ps(1));
+    type = wb_position_sensor_get_type(ps(1));
+    
+    %% GPS 
     x_y_z_array = wb_gps_get_values(gps);
     p(step,:) = x_y_z_array;
     % plotting position of robot on a map
@@ -29,19 +33,23 @@ while wb_robot_step(TIME_STEP) ~= -1
     rectangle('Position',[-TABLE_WIDTH/2 -TABLE_HEIGHT/2 TABLE_WIDTH TABLE_HEIGHT])
     hold off;
     
-    % getting tof sensor readings
+    %% TOF
     image = wb_range_finder_get_range_image(tof);
     
-    % getting encoder values 
-    value = wb_position_sensor_get_value(ps(1));
-    type = wb_position_sensor_get_type(ps(1));
+    %% IMU
+    % IMU, Gyro
+    roll_pitch_yaw_array = wb_inertial_unit_get_roll_pitch_yaw(imu_gyro);
+    roll_pitch_yaw_array
+    
+    % IMU, Acce
+    
     
     %% SUPERVISOR
     % this is done repeatedly
     values = wb_supervisor_field_get_sf_vec3f(trans_field);
     wb_console_print(sprintf('MY_ROBOT is at position: %g %g %g\n', values(1), values(2), values(3)), WB_STDOUT);
 
-    % if your code plots some graphics, it needs to flushed like this:
+    %% if your code plots some graphics, it needs to flushed like this:
     drawnow;
 end
 
