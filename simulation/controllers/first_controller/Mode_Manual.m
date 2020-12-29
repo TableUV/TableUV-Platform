@@ -55,10 +55,10 @@ while wb_robot_step(TIME_STEP) ~= -1
     
     %% IMU
     % IMU, Gyro
-    roll_pitch_yaw_array = wb_inertial_unit_get_roll_pitch_yaw(imu_gyro);
-    roll_pitch_yaw_array
+    roll_pitch_yaw_array = wb_inertial_unit_get_roll_pitch_yaw(imu_gyro)
     
     % IMU, Acce
+    x_y_z_array = wb_accelerometer_get_values(imu_acc)
 
     % if your code plots some graphics, it needs to flushed like this:
     drawnow;

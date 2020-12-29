@@ -35,15 +35,19 @@ tof = wb_robot_get_device(convertStringsToChars(tof_name));
 wb_range_finder_enable(tof, TIME_STEP);
 wb_console_print('DONE', WB_STDOUT);
 
-% IMU, Gyroscope
+% IMU, GYRO
 wb_console_print(sprintf('Checking IMU (Gyro)'), WB_STDOUT);
 imu_gyro_name = "imu_gyro";
 imu_gyro = wb_robot_get_device(convertStringsToChars(imu_gyro_name));
 wb_inertial_unit_enable(imu_gyro, TIME_STEP);
 wb_console_print('DONE', WB_STDOUT);
 
-% IMU, Accelerometer
-
+% IMU, ACC
+wb_console_print(sprintf('Checking IMU (Acc)'), WB_STDOUT);
+imu_acc_name = "imu_acc";
+imu_acc = wb_robot_get_device(convertStringsToChars(imu_acc_name));
+wb_accelerometer_enable(imu_acc, TIME_STEP);
+wb_console_print('DONE', WB_STDOUT);
 
 % KEYBOARD INPUT
 wb_console_print(sprintf('Checking Keyboard'), WB_STDOUT);
