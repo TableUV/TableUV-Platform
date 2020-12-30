@@ -3,8 +3,8 @@ WorldInfo {
   coordinateSystem "NUE"
 }
 Viewpoint {
-  orientation 0.7194490476403281 -0.6523419535133591 -0.23841779198667037 5.343131840159701
-  position 1.475989507611434 2.064524382416358 1.213311008241961
+  orientation 1 0 0 4.71238898038469
+  position -2.3422871881845414e-16 2.985170663630904 -3.162748119241487e-17
   follow "table"
 }
 TexturedBackground {
@@ -106,16 +106,14 @@ DEF TableUV Robot {
       device [
         DEF ROBOT_ENC_LEFT PositionSensor {
           name "left_ps"
-          noise 10
-          resolution 10
         }
         RotationalMotor {
           name "left_motor"
         }
       ]
       endPoint Solid {
-        translation -0.04000000040198491 -0.009998878983036004 5.847401393102335e-09
-        rotation 1.5461386176123815e-08 -1.518241940524984e-08 0.9999999999999998 1.5699999530302227
+        translation -0.04000000040198491 -0.009998878983036004 5.8474013931023716e-09
+        rotation 1.5461386176124146e-08 -1.518241940524984e-08 0.9999999999999998 1.5699999530302227
         children [
           DEF WHEEL Shape {
             appearance PBRAppearance {
@@ -141,15 +139,13 @@ DEF TableUV Robot {
       device [
         DEF ROBOT_ENC_RIGHT PositionSensor {
           name "right_ps"
-          noise 10
-          resolution 10
         }
         RotationalMotor {
           name "right_motor"
         }
       ]
       endPoint Solid {
-        translation 0.040000000533529825 -0.009998885232130555 4.164318302510656e-09
+        translation 0.04 -0.00999889 4.164320000000024e-09
         rotation 9.142245450039296e-10 -1.1821754757087804e-09 1 1.57000004697403
         children [
           DEF WHEEL Shape {
