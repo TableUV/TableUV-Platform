@@ -16,6 +16,7 @@ end
 
 % Robot True position
 trans_field = wb_supervisor_node_get_field(c(ROBOT_NAME), 'translation');
+orien_field = wb_supervisor_node_get_field(c(ROBOT_NAME), 'rotation');
 
 % Robot left wheel
 left_wheel_rad = wb_supervisor_node_get_field(c('ROBOT_WHEEL_LEFT'), 'radius');
