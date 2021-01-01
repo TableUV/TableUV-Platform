@@ -9,8 +9,8 @@ function [x,z,theta] = enc2pose(left_enc, right_enc, prev_x, prev_z, prev_theta,
         center_dist = 0;
     end
     
-    x = prev_x + center_dist*cos(prev_theta);
-    z = prev_z + center_dist*sin(prev_theta);
+    z = prev_z + center_dist*cos(prev_theta);
+    x = prev_x + center_dist*sin(prev_theta);
     theta = prev_theta + (right_dist-left_dist)/(2*WHEEL_FROM_CENTER);
 end
 
