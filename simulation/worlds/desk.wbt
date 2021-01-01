@@ -81,11 +81,11 @@ DEF TableUV Robot {
         anchor -0.04 -0.01 0
       }
       device [
-        DEF ROBOT_ENC_LEFT PositionSensor {
-          name "left_ps"
+        DEF ROBOT_ENC_RIGHT PositionSensor {
+          name "right_ps"
         }
         RotationalMotor {
-          name "left_motor"
+          name "right_motor"
         }
       ]
       endPoint Solid {
@@ -114,11 +114,11 @@ DEF TableUV Robot {
         anchor 0.04 -0.01 0
       }
       device [
-        DEF ROBOT_ENC_RIGHT PositionSensor {
-          name "right_ps"
+        DEF ROBOT_ENC_LEFT PositionSensor {
+          name "left_ps"
         }
         RotationalMotor {
-          name "right_motor"
+          name "left_motor"
         }
       ]
       endPoint Solid {
