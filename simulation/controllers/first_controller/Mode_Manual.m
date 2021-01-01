@@ -1,6 +1,7 @@
 % MAIN LOOP
 wb_console_print('Starting Manual Mode!', WB_STDOUT);
 
+%% INITIALIZATION
 step = 1;
 samples = 0;
 
@@ -62,8 +63,6 @@ while wb_robot_step(TIME_STEP) ~= -1
         diff_enc_right = 0;
     end
     
-    wb_console_print(sprintf('ENC Values: %g %g\n', new_enc_left, new_enc_right), WB_STDOUT);
-    
     prev_enc_left = new_enc_left;
     prev_enc_right = new_enc_right;
     
@@ -83,11 +82,15 @@ while wb_robot_step(TIME_STEP) ~= -1
     
     %% SUPERVISOR
     % this is done repeatedly
-    values = wb_supervisor_field_get_sf_vec3f(trans_field);
+    position = wb_supervisor_field_get_sf_vec3f(trans_field);
+    orientation = wb_supervisor_field_get_sf_rotation(orien_field);
     
-    p(:, step) = values';
+    p(1, step) = position(1);
+    p(2, step) = position(3);
+    p(3, step) = orientation(4);
+    
     % plotting position of robot on a map
-    plot(p(1, step), -p(3, step), 'ro');
+    plot(p(1, step), -p(2, step), 'ro');
     hold on;
     plot(pose_enc(1, step), -pose_enc(2, step), 'bx');
     hold on;
@@ -95,12 +98,15 @@ while wb_robot_step(TIME_STEP) ~= -1
     rectangle('Position',[-TABLE_WIDTH/2 -TABLE_HEIGHT/2 TABLE_WIDTH TABLE_HEIGHT])
     hold off;
     
-%     wb_console_print(sprintf('TRUE position: %g %g\n', p(1, step), -p(3, step)), WB_STDOUT);
-%     wb_console_print(sprintf('ENC  position: %g %g\n', pose_enc(1, step), pose_enc(2, step)), WB_STDOUT);
+    wb_console_print(sprintf('TRUE position: %g %g\n', p(1, step), -p(3, step)), WB_STDOUT);
+    wb_console_print(sprintf('ENC  position: %g %g\n', pose_enc(1, step), pose_enc(2, step)), WB_STDOUT);
 
     % if your code plots some graphics, it needs to flushed like this:
     drawnow;
 end
 
 %% CLEAN UP
+filename = "manual.mat";
+save(filename)
+
 % cleanup code goes here: write data to files, etc.
