@@ -16,32 +16,9 @@ DEF OBJECTS Group {
     Floor {
       name "floor(1)"
     }
-    BeerBottle {
-      translation 3.68702e-18 0.760422 -0.07
-      name "beer bottle(1)"
-    }
     DEF TABLE Table {
       size 1.22 0.76 0.76
       frameThickness 0.1
-    }
-    Spoon {
-      translation -0.14 0.777648 -0.139205
-      rotation -0.01851782694315772 0.9996570309244369 0.018517845680389593 -1.571138342843346
-      name "spoon(1)"
-    }
-    Knife {
-      translation 0.0385655 0.758308 0.189585
-      rotation -0.0029417597513266072 0.9999829154692547 -0.00505121957300935 2.09441
-      name "knife(1)"
-    }
-    Plate {
-      translation -0.29 0.759941 0.18
-      rotation 0.9989264613518823 0.010627846543856588 -0.04508850949905507 6.926359812943209e-16
-      name "plate(1)"
-    }
-    Apple {
-      translation -0.46 0.809765 -0.01
-      name "apple(1)"
     }
   ]
 }
