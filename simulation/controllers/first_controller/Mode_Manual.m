@@ -80,7 +80,7 @@ while wb_robot_step(TIME_STEP) ~= -1
     % IMU, Acce
     x_y_z_array = wb_accelerometer_get_values(imu_acc);
     
-    %% SUPERVISOR
+    %% PLOTTING
     % this is done repeatedly
     position = wb_supervisor_field_get_sf_vec3f(trans_field);
     orientation = wb_supervisor_field_get_sf_rotation(orien_field);
@@ -101,7 +101,7 @@ while wb_robot_step(TIME_STEP) ~= -1
     wb_console_print(sprintf('TRUE position: %g %g\n', p(1, step), -p(3, step)), WB_STDOUT);
     wb_console_print(sprintf('ENC  position: %g %g\n', pose_enc(1, step), pose_enc(2, step)), WB_STDOUT);
 
-    % if your code plots some graphics, it needs to flushed like this:
+    %% if your code plots some graphics, it needs to flushed like this:
     drawnow;
 end
 
