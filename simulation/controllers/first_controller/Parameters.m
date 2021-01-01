@@ -16,8 +16,8 @@ MAX_SPEED = 3;              %[m/s]
 
 %% SENSOR PARAMETERS
 % ENCODER 
-ENC_RESOLUTION = -1;
-ENC_NOISE = 0;
+ENC_RESOLUTION = 0.1;      %[rad]
+ENC_NOISE = 0.05;           %[rad]
 ENC_UNIT = WHEEL_CIRCUM / 6.28;
 
 % IMU_GYRO
