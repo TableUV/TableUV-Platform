@@ -54,6 +54,16 @@ while wb_robot_step(TIME_STEP) ~= -1
     diff_enc_left = new_enc_left - prev_enc_left;
     diff_enc_right = new_enc_right - prev_enc_right;
     
+    if abs(diff_enc_left) < 0.001
+        diff_enc_left = 0;
+    end
+    
+    if abs(diff_enc_right) < 0.001
+        diff_enc_right = 0;
+    end
+    
+    wb_console_print(sprintf('ENC Values: %g %g\n', new_enc_left, new_enc_right), WB_STDOUT);
+    
     prev_enc_left = new_enc_left;
     prev_enc_right = new_enc_right;
     
@@ -74,7 +84,6 @@ while wb_robot_step(TIME_STEP) ~= -1
     %% SUPERVISOR
     % this is done repeatedly
     values = wb_supervisor_field_get_sf_vec3f(trans_field);
-%     wb_console_print(sprintf('MY_ROBOT is at position: %g %g %g\n', values(1), values(2), values(3)), WB_STDOUT);
     
     p(:, step) = values';
     % plotting position of robot on a map
@@ -82,14 +91,12 @@ while wb_robot_step(TIME_STEP) ~= -1
     hold on;
     plot(pose_enc(1, step), -pose_enc(2, step), 'bx');
     hold on;
-%     plot(pose_enc(1, step), pose_enc(2, step), 'bx');
-%     hold on;
     axis([-0.8 0.8 -0.6 0.6]);
     rectangle('Position',[-TABLE_WIDTH/2 -TABLE_HEIGHT/2 TABLE_WIDTH TABLE_HEIGHT])
     hold off;
     
-    wb_console_print(sprintf('TRUE position: %g %g\n', p(1, step), -p(3, step)), WB_STDOUT);
-    wb_console_print(sprintf('ENC  position: %g %g\n', pose_enc(1, step), pose_enc(2, step)), WB_STDOUT);
+%     wb_console_print(sprintf('TRUE position: %g %g\n', p(1, step), -p(3, step)), WB_STDOUT);
+%     wb_console_print(sprintf('ENC  position: %g %g\n', pose_enc(1, step), pose_enc(2, step)), WB_STDOUT);
 
     % if your code plots some graphics, it needs to flushed like this:
     drawnow;
