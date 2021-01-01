@@ -9,7 +9,8 @@ while wb_robot_step(TIME_STEP) ~= -1
     
     % setting motor speeds
     left_speed  = 0.5 * MAX_SPEED;
-    right_speed = 0.5 * MAX_SPEED;
+    right_speed = 1.5 * MAX_SPEED;
+    
     for i=1:2
         if i == 1
             wb_motor_set_velocity(motor(i), left_speed);

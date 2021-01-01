@@ -78,10 +78,12 @@ while wb_robot_step(TIME_STEP) ~= -1
     
     p(:, step) = values';
     % plotting position of robot on a map
-    plot(p(1, step),-p(3, step),'ro');
+    plot(p(1, step), -p(3, step), 'ro');
     hold on;
-    plot(pose_enc(1, step), -pose_enc(2, step),'bx');
+    plot(0.1, 0.2, 'bx');
     hold on;
+%     plot(pose_enc(1, step), pose_enc(2, step), 'bx');
+%     hold on;
     axis([-0.8 0.8 -0.6 0.6]);
     rectangle('Position',[-TABLE_WIDTH/2 -TABLE_HEIGHT/2 TABLE_WIDTH TABLE_HEIGHT])
     hold off;
