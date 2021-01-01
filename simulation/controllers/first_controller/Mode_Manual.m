@@ -23,16 +23,16 @@ while wb_robot_step(TIME_STEP) ~= -1
     switch input 
         case 314
             % LEFT
-            left_speed = 1.0;
-            right_speed = -1.0;
+            left_speed = -1.0;
+            right_speed = 1.0;
         case 315
             % UP
             left_speed = 1.0;
             right_speed = 1.0;
         case 316
             % RIGHT
-            left_speed = -1.0;
-            right_speed = 1.0;
+            left_speed = 1.0;
+            right_speed = -1.0;
         case 317
             % DOWN
             left_speed = -1.0;
