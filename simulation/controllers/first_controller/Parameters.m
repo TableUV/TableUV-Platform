@@ -1,5 +1,5 @@
 %% SIMULATION PARAMETERS
-TIME_STEP = 64;
+TIME_STEP = 32;             %[ms]
 
 %% ROBOT PARAMETERS
 ROBOT_NAME = 'TableUV';
