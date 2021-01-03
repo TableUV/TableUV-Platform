@@ -80,6 +80,14 @@ while wb_robot_step(TIME_STEP) ~= -1
     % IMU, Acce
     x_y_z_array = wb_accelerometer_get_values(imu_acc);
     
+    for i=1:3
+        if abs(x_y_z_array(i)) < 0.0001
+            x_y_z_array(i) = 0;
+        end 
+    end
+    
+    wb_console_print(sprintf('ACC values: %g %g %g\n', x_y_z_array(1), x_y_z_array(2), x_y_z_array(3)), WB_STDOUT);
+    
     %% PLOTTING
     % this is done repeatedly
     position = wb_supervisor_field_get_sf_vec3f(trans_field);
