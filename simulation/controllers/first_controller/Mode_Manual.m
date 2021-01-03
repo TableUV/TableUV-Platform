@@ -16,6 +16,11 @@ p(:, step) = pose;
 prev_enc_left = 0;
 prev_enc_right = 0;
 
+% initial position and velocity for IMU
+raw_imu_acc(:, step) = [0 0 0]';
+imu_vel(1) = 0;
+imu_dis(1) = 0;
+
 while wb_robot_step(TIME_STEP) ~= -1
     step = step + 1;
     
@@ -87,17 +92,22 @@ while wb_robot_step(TIME_STEP) ~= -1
     end
     
     wb_console_print(sprintf('ACC values: %g %g %g\n', x_y_z_array(1), x_y_z_array(2), x_y_z_array(3)), WB_STDOUT);
+    raw_imu_acc(:, step) = x_y_z_array';
     
     %% PLOTTING
-    % this is done repeatedly
+    % Getting true position
     position = wb_supervisor_field_get_sf_vec3f(trans_field);
     orientation = wb_supervisor_field_get_sf_rotation(orien_field);
-    
     p(1, step) = position(1);
     p(2, step) = position(3);
     p(3, step) = orientation(4);
     
-    % plotting position of robot on a map
+    % Plotting IMU values 
+    figure(1)
+    plot(raw_imu_acc(1, 1:step));
+    
+    % Plotting position of robot on a map (true, odometry)
+    figure(2)
     plot(p(1, step), -p(2, step), 'ro');
     hold on;
     plot(pose_enc(1, step), -pose_enc(2, step), 'bx');
