@@ -16,8 +16,8 @@ MAX_SPEED = 3;              %[m/s]
 
 %% SENSOR PARAMETERS
 % ENCODER 
-ENC_RESOLUTION = 0.1;      %[rad]
-ENC_NOISE = 0.05;           %[rad]
+ENC_RESOLUTION = -1;        %[rad]
+ENC_NOISE = 0;              %[rad]
 ENC_UNIT = WHEEL_CIRCUM / 6.28;
 
 % IMU_GYRO
@@ -38,6 +38,12 @@ TOF_MAX_RANGE = 4;          %[m]
 TOF_MOTION_BLUR = 0;
 TOF_NOISE = 0;
 TOF_RESOLUTION = -1;
+
+% IR
+
+% COLLISION
+
+
 
 
 
