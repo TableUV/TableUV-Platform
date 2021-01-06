@@ -1,7 +1,7 @@
 % uncomment the next two lines if you want to use
 % MATLAB's desktop to interact with the controller:
-% desktop;
-% keyboard;
+desktop;
+keyboard;
 
 % PARAMETERS
 Parameters;
