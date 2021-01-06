@@ -8,7 +8,7 @@ samples = 0;
 % initial pose of the robot
 position = wb_supervisor_field_get_sf_vec3f(trans_field);
 orientation = wb_supervisor_field_get_sf_rotation(orien_field);
-pose = [position(1) position(3) orientation(4)]'; % [x y theta]
+pose = [position(1) position(3) orientation(4)]'; % [x z theta]
 pose_enc(:, step) = pose;
 p(:, step) = pose;
 
@@ -18,8 +18,11 @@ prev_enc_right = 0;
 
 % initial position and velocity for IMU
 raw_imu_acc(:, step) = [0 0 0]';
-imu_vel(1) = 0;
-imu_dis(1) = 0;
+pose_imu(:, step) = pose;
+imu_vel_x(1) = 0;
+imu_dis_x(1) = 0;
+imu_vel_z(1) = 0;
+imu_dis_z(1) = 0;
 
 while wb_robot_step(TIME_STEP) ~= -1
     step = step + 1;
@@ -77,9 +80,17 @@ while wb_robot_step(TIME_STEP) ~= -1
     raw_imu_acc(:, step) = x_y_z_array';
     
     for i=2:step
-        imu_vel(i) = imu_vel(i-1) + (raw_imu_acc(1, i)+raw_imu_acc(1, i-1))/2;
-        imu_dis(i) = imu_dis(i-1) + imu_vel(i-1)+(imu_vel(i)+imu_vel(i-1))/2;
+        imu_vel_x(i) = imu_vel_x(i-1) + (raw_imu_acc(1, i)+raw_imu_acc(1, i-1))/2;
+        imu_dis_x(i) = imu_dis_x(i-1) + imu_vel_x(i-1)+(imu_vel_x(i)+imu_vel_x(i-1))/2;
+        
+        imu_vel_z(i) = imu_vel_z(i-1) + (raw_imu_acc(1, i)+raw_imu_acc(1, i-1))/2;
+        imu_dis_z(i) = imu_dis_z(i-1) + imu_vel_z(i-1)+(imu_vel_z(i)+imu_vel_z(i-1))/2;
     end
+    
+    pose_imu(1, step) = pose_imu(1, step-1) + imu_dis_x(step);
+    pose_imu(1, step) = pose_imu(1, step) / 100;
+    pose_imu(2, step) = pose_imu(2, step-1) + imu_dis_z(step);
+    pose_imu(2, step) = pose_imu(2, step) / 100;
     
     %% PLOTTING
     % Getting true position
@@ -90,26 +101,28 @@ while wb_robot_step(TIME_STEP) ~= -1
     p(2, step) = position(3);
     p(3, step) = orientation(4);
     
-    % Plotting IMU values 
+    %% Plotting IMU values 
     figure(1)
     subplot(3,1,1);
     plot(raw_imu_acc(1, 1:step));
     xlabel('Timestep');
     ylabel('Acceleration (m/s^2)');
     subplot(3,1,2);
-    plot(imu_vel(1:step));
+    plot(imu_vel_x(1:step));
     xlabel('Timestep');
     ylabel('Velocity (??)');
     subplot(3,1,3);
-    plot(imu_dis(1:step));
+    plot(imu_dis_x(1:step));
     xlabel('Timestep');
     ylabel('Distance (cm)');
     
-    % Plotting position of robot on a map (true, odometry)
+    %% Plotting position of robot on a map (true, odometry)
     figure(2)
     plot(p(1, step), -p(2, step), 'ro');
     hold on;
     plot(pose_enc(1, step), -pose_enc(2, step), 'bx');
+    hold on;
+    plot(pose_imu(1, step), -pose_imu(2, step), 'g.');
     hold on;
     axis([-0.8 0.8 -0.6 0.6]);
     rectangle('Position',[-TABLE_WIDTH/2 -TABLE_HEIGHT/2 TABLE_WIDTH TABLE_HEIGHT])
