@@ -17,9 +17,9 @@ prev_enc_left = 0;
 prev_enc_right = 0;
 
 % initial position and velocity for IMU
-raw_imu_acc(:, step) = [0 0 0]';
-imu_vel(1) = 0;
-imu_dis(1) = 0;
+pose_imu(:, step) = init_pose;
+prev_imu_acc_z = 0;
+prev_imu_vel_z = 0;
 
 while wb_robot_step(TIME_STEP) ~= -1
     step = step + 1;
@@ -80,41 +80,58 @@ while wb_robot_step(TIME_STEP) ~= -1
     
     %% IMU
     % IMU, Gyro
-    roll_pitch_yaw_array = wb_inertial_unit_get_roll_pitch_yaw(imu_gyro);
+    roll_pitch_yaw_array = wb_gyro_get_values(imu_gyro);
+    new_imu_gyro_y = roll_pitch_yaw_array(2);
     
     % IMU, Acce
     x_y_z_array = wb_accelerometer_get_values(imu_acc);
+    new_imu_acc_z = x_y_z_array(3);
     
-    for i=1:3
-        if abs(x_y_z_array(i)) < 0.0001
-            x_y_z_array(i) = 0;
-        end 
+    wb_console_print(sprintf('gyro: %g %g %g\n', roll_pitch_yaw_array(1), roll_pitch_yaw_array(2), roll_pitch_yaw_array(3)), WB_STDOUT);
+    wb_console_print(sprintf('acce: %g %g %g\n', x_y_z_array(1), x_y_z_array(2), x_y_z_array(3)), WB_STDOUT);
+    
+    vel_z = imu_acc2vel(new_imu_acc_z, prev_imu_vel_z, TIME_STEP);
+    
+    if abs(new_imu_gyro_y) < 0.001
+        new_imu_gyro_y = 0;
     end
- 
-    raw_imu_acc(:, step) = x_y_z_array';
+    
+    if abs(vel_z) < 0.001
+        vel_z = 0;
+    end
+    
+    U = [vel_z new_imu_gyro_y]';
+    
+    wb_console_print(sprintf('U: %g %g\n', U(1), U(2)), WB_STDOUT);
+    
+    mu = kinematicModel_vw(pose_imu(:, step-1), U, TIME_STEP);
+    
+    pose_imu(:, step) = mu;
+    prev_imu_acc_z = new_imu_acc_z;
+    prev_imu_vel_z = vel_z;
     
     %% PLOTTING
     % Getting true position
     position = wb_supervisor_field_get_sf_vec3f(trans_field);
     orientation = wb_supervisor_field_get_sf_rotation(orien_field);
+    
     true_pose(1, step) = position(1);
     true_pose(2, step) = position(3);
     true_pose(3, step) = orientation(4);
     
-    acc_x = raw_imu_acc(1, 1:step);
-    
-    %% Plotting IMU values 
-%     figure(1)
-%     plot(acc_x);
-    
     %% Plotting position of robot on a map (true, odometry)
-    figure(2)
+    figure(1)
     plot(true_pose(1, step), -true_pose(2, step), 'ro');
     hold on;
     plot(pose_enc(1, step), -pose_enc(2, step), 'bx');
     hold on;
+    plot(pose_imu(1, step), -pose_imu(2, step), 'g.');
+    hold on;
     axis([-0.8 0.8 -0.6 0.6]);
     rectangle('Position',[-TABLE_WIDTH/2 -TABLE_HEIGHT/2 TABLE_WIDTH TABLE_HEIGHT])
+    text(0.35,0.55,'True Position','Color','red');
+    text(0.35,0.50,'Odometry','Color','blue');
+    text(0.35,0.45,'IMU Estimation','Color','green');
     hold off;
 
     %% if your code plots some graphics, it needs to flushed like this:
