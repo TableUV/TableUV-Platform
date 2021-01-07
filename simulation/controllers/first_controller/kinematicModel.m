@@ -1,6 +1,7 @@
 function X_curr = kinematicModel(X_prev,U,TIME_STEP,WHEEL_RADIUS,WHEEL_FROM_CENTER)
-    %kinematicModel
-    %X_prev = [x z theta]'
+    % kinematicModel
+    % X_prev = [x z theta]'
+    % U = [w_left w_right]'
     
     r = WHEEL_RADIUS;
     l = WHEEL_FROM_CENTER;
