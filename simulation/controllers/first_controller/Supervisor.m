@@ -63,15 +63,12 @@ wb_supervisor_field_set_sf_float(robot_tof_noise, TOF_NOISE);
 wb_supervisor_field_set_sf_float(robot_tof_res, TOF_RESOLUTION);
 
 % IMU, Gyro
-robot_imu_gyro_noise = wb_supervisor_node_get_field(c('ROBOT_IMU_GYRO'), 'noise');
 robot_imu_gyro_res = wb_supervisor_node_get_field(c('ROBOT_IMU_GYRO'), 'resolution');
-wb_supervisor_field_set_sf_float(robot_imu_gyro_noise, IMU_GYRO_NOISE);
 wb_supervisor_field_set_sf_float(robot_imu_gyro_res, IMU_GYRO_RESOLUTION);
 
 % IMU, Acc
 robot_imu_acc_res = wb_supervisor_node_get_field(c('ROBOT_IMU_ACC'), 'resolution');
 wb_supervisor_field_set_sf_float(robot_imu_acc_res, IMU_ACC_RESOLUTION);
-
 
 %% TABLE SETUP
 table = wb_supervisor_node_get_from_def('TABLE');
