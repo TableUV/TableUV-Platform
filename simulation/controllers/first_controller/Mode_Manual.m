@@ -22,11 +22,13 @@ prev_imu_acc_z = 0;
 prev_imu_vel_z = 0;
 
 % kf
+% prior
+orient_mu = 0;
+orient_S  = 0.1;
+% motion model and measurement model
 [A,B,R,n] = motion_model(TIME_STEP);
-prev_orient = orientation(4);
-
 [C,D,Q,m] = measurement_model();
-
+% store in state space model (ssm)
 ssm.A = A;
 ssm.B = B;
 ssm.C = C;
@@ -35,6 +37,12 @@ ssm.R = R;
 ssm.Q = Q;
 ssm.n = n;
 ssm.m = m;
+% kf initializations
+orient_x(1) = orient_mu+sqrt(orient_S)*randn(1);
+U = wb_gyro_get_values(imu_gyro);
+gyro_u(1) = U(2);
+pose_imu_kalman(:, step) = [position(1) position(3) orient_x(1)]';
+
 
 while wb_robot_step(TIME_STEP) ~= -1
     step = step + 1;
@@ -90,27 +98,32 @@ while wb_robot_step(TIME_STEP) ~= -1
     prev_enc_left = new_enc_left;
     prev_enc_right = new_enc_right;
     
-    %% TOF
-    image = wb_range_finder_get_range_image(tof);
-    
     %% Kalman Filter
-    orientation = wb_supervisor_field_get_sf_rotation(orien_field);
-    
+    % Select motion disturbance
+    orient_e = normrnd(0, R);
+    % Input for motion model
     U = wb_gyro_get_values(imu_gyro);
-    u = U(2);
-    pred_of_orient_with_gyro = A*prev_orient + B*u;
+    gyro_u(step) = U(2);
+    % Update state
+    orient_x(step) = A*orient_x(step-1)+ B*gyro_u(step-1) + orient_e;
+%     orient_x = wrapTo2Pi(orient_x);
     
+    % Take measurement
+    % Select a measurement disturbance
+    orient_d = normrnd(0, Q);
+    % Determine measurement
     Y = wb_inertial_unit_get_roll_pitch_yaw(imu_mag);
-    y = Y(3);
-    meas_of_orient_with_mag = C*y;
+    orient_z = Y(3);
+    orient_y(step) = C*orient_z + orient_d;
+%     orient_y = wrapTo2Pi(orient_y);
     
-    prev_orient = pred_of_orient_with_gyro;
+    % Kalman Filter Estimation
+    [orient_mu,orient_S,orient_mup,orient_Sp,K] = kalman_filter(ssm,orient_mu,orient_S,gyro_u(step-1),orient_y(step));
     
-    wb_console_print(sprintf('ORIENT: %g %g %g\n', orientation(4), pred_of_orient_with_gyro, meas_of_orient_with_mag), WB_STDOUT);
-    
-    o_1(step) = orientation(4);
-    o_2(step) = pred_of_orient_with_gyro;
-    o_3(step) = meas_of_orient_with_mag;
+    % Store estimates
+    orient_mup_S(step) = orient_mup;
+    orient_mu_S(step) = orient_mu;
+    orient_kalman(step) = K;   
     
     %% IMU    
     % IMU, Gyro
@@ -131,12 +144,21 @@ while wb_robot_step(TIME_STEP) ~= -1
         vel_z = 0;
     end
     
+    U_Kalman = [vel_z orient_mu_S(step)]';
     U = [vel_z new_imu_gyro_y]';
+    
     mu = kinematicModel_vw(pose_imu(:, step-1), U, TIME_STEP);
+    mu_kalman = kinematicModel_vw(pose_imu_kalman(:, step-1), U_Kalman, TIME_STEP);
     
     pose_imu(:, step) = mu;
+    pose_imu_kalman(:, step) = mu_kalman;
     prev_imu_acc_z = new_imu_acc_z;
     prev_imu_vel_z = vel_z;
+    
+    
+    
+    %% TOF
+    image = wb_range_finder_get_range_image(tof);
     
     %% PLOTTING
     % Getting true position
@@ -154,6 +176,8 @@ while wb_robot_step(TIME_STEP) ~= -1
     hold on;
     plot(pose_imu(1, step), -pose_imu(2, step), 'g.');
     hold on;
+    plot(pose_imu_kalman(1, step), -pose_imu_kalman(2, step), 'c*');
+    hold on
     axis([-0.8 0.8 -0.6 0.6]);
     rectangle('Position',[-TABLE_WIDTH/2 -TABLE_HEIGHT/2 TABLE_WIDTH TABLE_HEIGHT])
     text(0.35,0.55,'True Position','Color','red');

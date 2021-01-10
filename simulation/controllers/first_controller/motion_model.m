@@ -3,7 +3,7 @@ function [A,B,R,n] = motion_model(dt)
     
     A = 1;
     B = dt;
-    R = 1;
+    R = 0.01;
     n = 1;
 end
 
