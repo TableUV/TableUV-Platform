@@ -21,6 +21,21 @@ pose_imu(:, step) = init_pose;
 prev_imu_acc_z = 0;
 prev_imu_vel_z = 0;
 
+% kf
+[A,B,R,n] = motion_model(TIME_STEP);
+prev_orient = orientation(4);
+
+[C,D,Q,m] = measurement_model();
+
+ssm.A = A;
+ssm.B = B;
+ssm.C = C;
+ssm.D = D;
+ssm.R = R;
+ssm.Q = Q;
+ssm.n = n;
+ssm.m = m;
+
 while wb_robot_step(TIME_STEP) ~= -1
     step = step + 1;
     
@@ -78,7 +93,26 @@ while wb_robot_step(TIME_STEP) ~= -1
     %% TOF
     image = wb_range_finder_get_range_image(tof);
     
-    %% IMU
+    %% Kalman Filter
+    orientation = wb_supervisor_field_get_sf_rotation(orien_field);
+    
+    U = wb_gyro_get_values(imu_gyro);
+    u = U(2);
+    pred_of_orient_with_gyro = A*prev_orient + B*u;
+    
+    Y = wb_inertial_unit_get_roll_pitch_yaw(imu_mag);
+    y = Y(3);
+    meas_of_orient_with_mag = C*y;
+    
+    prev_orient = pred_of_orient_with_gyro;
+    
+    wb_console_print(sprintf('ORIENT: %g %g %g\n', orientation(4), pred_of_orient_with_gyro, meas_of_orient_with_mag), WB_STDOUT);
+    
+    o_1(step) = orientation(4);
+    o_2(step) = pred_of_orient_with_gyro;
+    o_3(step) = meas_of_orient_with_mag;
+    
+    %% IMU    
     % IMU, Gyro
     roll_pitch_yaw_array = wb_gyro_get_values(imu_gyro);
     new_imu_gyro_y = roll_pitch_yaw_array(2);
@@ -86,9 +120,6 @@ while wb_robot_step(TIME_STEP) ~= -1
     % IMU, Acce
     x_y_z_array = wb_accelerometer_get_values(imu_acc);
     new_imu_acc_z = x_y_z_array(3);
-    
-    wb_console_print(sprintf('gyro: %g %g %g\n', roll_pitch_yaw_array(1), roll_pitch_yaw_array(2), roll_pitch_yaw_array(3)), WB_STDOUT);
-    wb_console_print(sprintf('acce: %g %g %g\n', x_y_z_array(1), x_y_z_array(2), x_y_z_array(3)), WB_STDOUT);
     
     vel_z = imu_acc2vel(new_imu_acc_z, prev_imu_vel_z, TIME_STEP);
     
@@ -101,9 +132,6 @@ while wb_robot_step(TIME_STEP) ~= -1
     end
     
     U = [vel_z new_imu_gyro_y]';
-    
-    wb_console_print(sprintf('U: %g %g\n', U(1), U(2)), WB_STDOUT);
-    
     mu = kinematicModel_vw(pose_imu(:, step-1), U, TIME_STEP);
     
     pose_imu(:, step) = mu;
@@ -114,12 +142,11 @@ while wb_robot_step(TIME_STEP) ~= -1
     % Getting true position
     position = wb_supervisor_field_get_sf_vec3f(trans_field);
     orientation = wb_supervisor_field_get_sf_rotation(orien_field);
-    
     true_pose(1, step) = position(1);
     true_pose(2, step) = position(3);
     true_pose(3, step) = orientation(4);
     
-    %% Plotting position of robot on a map (true, odometry)
+    % Plotting position of robot on a map (true, odometry)
     figure(1)
     plot(true_pose(1, step), -true_pose(2, step), 'ro');
     hold on;
@@ -134,7 +161,7 @@ while wb_robot_step(TIME_STEP) ~= -1
     text(0.35,0.45,'IMU Estimation','Color','green');
     hold off;
 
-    %% if your code plots some graphics, it needs to flushed like this:
+    % if your code plots some graphics, it needs to flushed like this:
     drawnow;
 end
 
