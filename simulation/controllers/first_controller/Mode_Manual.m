@@ -106,7 +106,6 @@ while wb_robot_step(TIME_STEP) ~= -1
     gyro_u(step) = U(2);
     % Update state
     orient_x(step) = A*orient_x(step-1)+ B*gyro_u(step-1) + orient_e;
-%     orient_x = wrapTo2Pi(orient_x);
     
     % Take measurement
     % Select a measurement disturbance
@@ -115,7 +114,6 @@ while wb_robot_step(TIME_STEP) ~= -1
     Y = wb_inertial_unit_get_roll_pitch_yaw(imu_mag);
     orient_z = Y(3);
     orient_y(step) = C*orient_z + orient_d;
-%     orient_y = wrapTo2Pi(orient_y);
     
     % Kalman Filter Estimation
     [orient_mu,orient_S,orient_mup,orient_Sp,K] = kalman_filter(ssm,orient_mu,orient_S,gyro_u(step-1),orient_y(step));
@@ -124,7 +122,7 @@ while wb_robot_step(TIME_STEP) ~= -1
     orient_mup_S(step) = orient_mup;
     orient_mu_S(step) = orient_mu;
     orient_kalman(step) = K;   
-    
+   
     %% IMU    
     % IMU, Gyro
     roll_pitch_yaw_array = wb_gyro_get_values(imu_gyro);
@@ -169,21 +167,42 @@ while wb_robot_step(TIME_STEP) ~= -1
     true_pose(3, step) = orientation(4);
     
     % Plotting position of robot on a map (true, odometry)
-    figure(1)
-    plot(true_pose(1, step), -true_pose(2, step), 'ro');
-    hold on;
-    plot(pose_enc(1, step), -pose_enc(2, step), 'bx');
-    hold on;
-    plot(pose_imu(1, step), -pose_imu(2, step), 'g.');
-    hold on;
-    plot(pose_imu_kalman(1, step), -pose_imu_kalman(2, step), 'c*');
-    hold on
-    axis([-0.8 0.8 -0.6 0.6]);
-    rectangle('Position',[-TABLE_WIDTH/2 -TABLE_HEIGHT/2 TABLE_WIDTH TABLE_HEIGHT])
-    text(0.35,0.55,'True Position','Color','red');
-    text(0.35,0.50,'Odometry','Color','blue');
-    text(0.35,0.45,'IMU Estimation','Color','green');
-    hold off;
+%     figure(1)
+%     plot(true_pose(1, step), -true_pose(2, step), 'ro');
+%     hold on;
+%     plot(pose_enc(1, step), -pose_enc(2, step), 'bx');
+%     hold on;
+%     plot(pose_imu(1, step), -pose_imu(2, step), 'g.');
+%     hold on;
+%     plot(pose_imu_kalman(1, step), -pose_imu_kalman(2, step), 'c*');
+%     hold on
+%     axis([-0.8 0.8 -0.6 0.6]);
+%     rectangle('Position',[-TABLE_WIDTH/2 -TABLE_HEIGHT/2 TABLE_WIDTH TABLE_HEIGHT])
+%     text(0.35,0.55,'True Position','Color','red');
+%     text(0.35,0.50,'Odometry','Color','blue');
+%     text(0.35,0.45,'IMU Estimation','Color','green');
+%     hold off;
+    
+    % Plotting compass showing current orientation of the robot
+    figure(2)
+    rad_enc = pose_enc(3, step);
+    rad_enc = rad_enc+pi/2;
+    u_enc = cos(rad_enc);
+    v_enc = sin(rad_enc);
+    
+    rad_imu = pose_imu(3, step);
+    rad_imu = rad_imu+pi/2;
+    u_imu = cos(rad_imu);
+    v_imu = sin(rad_imu);
+    
+    rad_kf = pose_imu_kalman(3, step);
+    rad_kf = rad_kf+pi/2;
+    u_kf = cos(rad_kf);
+    v_kf = sin(rad_kf);
+    
+    compass(u_enc,v_enc,'r'); hold on;
+    compass(u_kf,v_kf,'b');
+    compass(u_imu,v_imu,'g'); hold off;
 
     % if your code plots some graphics, it needs to flushed like this:
     drawnow;
