@@ -90,8 +90,8 @@ DEF TableUV Robot {
         }
       ]
       endPoint Solid {
-        translation -0.04000000040198491 -0.009998878983036004 5.847401392695447e-09
-        rotation 1.5461368107707866e-08 -1.518240091980168e-08 0.9999999999999998 1.5699999530302196
+        translation -0.04000000040198491 -0.009998878983036004 5.8474013926954475e-09
+        rotation 1.546136810770788e-08 -1.518240091980168e-08 0.9999999999999998 1.5699999530302196
         children [
           DEF WHEEL Shape {
             appearance PBRAppearance {
@@ -123,7 +123,7 @@ DEF TableUV Robot {
         }
       ]
       endPoint Solid {
-        translation 0.04 -0.00999889 4.164319999411153e-09
+        translation 0.04 -0.00999889 4.164319999411154e-09
         rotation 9.142114502326543e-10 -1.1821627446781977e-09 1 1.5700000469740278
         children [
           DEF WHEEL Shape {
