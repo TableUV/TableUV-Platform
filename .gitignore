@@ -1,3 +1,5 @@
 
 *.asv
 simulation/worlds/.desk.wbproj
+simulation/controllers/first_controller/test_plotting.m
+simulation/controllers/first_controller/manual.mat
