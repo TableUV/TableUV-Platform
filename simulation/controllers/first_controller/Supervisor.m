@@ -3,7 +3,9 @@
 c = containers.Map;
 robot_settings = { ROBOT_NAME,  'ROBOT_WHEEL_LEFT', 'ROBOT_WHEEL_RIGHT', ...
                   'ROBOT_BASE', 'ROBOT_ENC_LEFT',   'ROBOT_ENC_RIGHT',   ...
-                  'ROBOT_TOF' , 'ROBOT_IMU_GYRO',   'ROBOT_IMU_ACC'};
+                  'ROBOT_TOF' , 'ROBOT_IMU_GYRO',   'ROBOT_IMU_ACC',     ...
+                  'ROBOT_IMU_MAG'};
+              
 for index = 1:length(robot_settings)
     setting = char(robot_settings(index));
     node = wb_supervisor_node_get_from_def(setting);
@@ -71,6 +73,10 @@ wb_supervisor_field_set_sf_float(robot_imu_gyro_res, IMU_GYRO_RESOLUTION);
 % IMU, Acc
 robot_imu_acc_res = wb_supervisor_node_get_field(c('ROBOT_IMU_ACC'), 'resolution');
 wb_supervisor_field_set_sf_float(robot_imu_acc_res, IMU_ACC_RESOLUTION);
+
+% IMU, Mag
+robot_imu_mag_res = wb_supervisor_node_get_field(c('ROBOT_IMU_MAG'), 'resolution');
+wb_supervisor_field_set_sf_float(robot_imu_mag_res, IMU_MAG_RESOLUTION);
 
 %% TABLE SETUP
 table = wb_supervisor_node_get_from_def('TABLE');
