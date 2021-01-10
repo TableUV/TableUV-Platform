@@ -14,9 +14,11 @@ for index = 1:length(robot_settings)
     c(char(robot_settings(index))) = node;
 end
 
-% Robot True position
+% Robot Initial Position
 trans_field = wb_supervisor_node_get_field(c(ROBOT_NAME), 'translation');
 orien_field = wb_supervisor_node_get_field(c(ROBOT_NAME), 'rotation');
+wb_supervisor_field_set_sf_vec3f(trans_field, [0 0.787 0])
+wb_supervisor_field_set_sf_rotation(orien_field, [0 1 0 0])
 
 % Robot left wheel
 left_wheel_rad = wb_supervisor_node_get_field(c('ROBOT_WHEEL_LEFT'), 'radius');
