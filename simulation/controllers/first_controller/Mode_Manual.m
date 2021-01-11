@@ -146,14 +146,12 @@ while wb_robot_step(TIME_STEP) ~= -1
     U = [vel_z new_imu_gyro_y]';
     
     mu = kinematicModel_vw(pose_imu(:, step-1), U, TIME_STEP);
-    mu_kalman = kinematicModel_vw(pose_imu_kalman(:, step-1), U_Kalman, TIME_STEP);
+    mu_kalman = kinematicModel_kalman(pose_imu_kalman(:, step-1), U_Kalman, TIME_STEP);
     
     pose_imu(:, step) = mu;
     pose_imu_kalman(:, step) = mu_kalman;
     prev_imu_acc_z = new_imu_acc_z;
     prev_imu_vel_z = vel_z;
-    
-    
     
     %% TOF
     image = wb_range_finder_get_range_image(tof);
