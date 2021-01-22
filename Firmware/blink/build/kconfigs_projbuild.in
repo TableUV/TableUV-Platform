@@ -1,0 +1,5 @@
+source "/Users/tsugumi/esp/esp-idf/components/app_update/Kconfig.projbuild"
+source "/Users/tsugumi/esp/esp-idf/components/bootloader/Kconfig.projbuild"
+source "/Users/tsugumi/esp/esp-idf/components/esptool_py/Kconfig.projbuild"
+source "/Users/tsugumi/esp/esp-idf/components/partition_table/Kconfig.projbuild"
+source "/Users/tsugumi/Documents/GitHub/TableUV/FYDP__TableUV/Firmware/blink/main/Kconfig.projbuild"

@@ -1,0 +1,13 @@
+# Target labels
+ bootloader
+# Source files and their labels
+/Users/tsugumi/Documents/GitHub/TableUV/FYDP__TableUV/Firmware/blink/build/CMakeFiles/bootloader
+/Users/tsugumi/Documents/GitHub/TableUV/FYDP__TableUV/Firmware/blink/build/CMakeFiles/bootloader.rule
+/Users/tsugumi/Documents/GitHub/TableUV/FYDP__TableUV/Firmware/blink/build/CMakeFiles/bootloader-complete.rule
+/Users/tsugumi/Documents/GitHub/TableUV/FYDP__TableUV/Firmware/blink/build/bootloader-prefix/src/bootloader-stamp/bootloader-install.rule
+/Users/tsugumi/Documents/GitHub/TableUV/FYDP__TableUV/Firmware/blink/build/bootloader-prefix/src/bootloader-stamp/bootloader-mkdir.rule
+/Users/tsugumi/Documents/GitHub/TableUV/FYDP__TableUV/Firmware/blink/build/bootloader-prefix/src/bootloader-stamp/bootloader-download.rule
+/Users/tsugumi/Documents/GitHub/TableUV/FYDP__TableUV/Firmware/blink/build/bootloader-prefix/src/bootloader-stamp/bootloader-update.rule
+/Users/tsugumi/Documents/GitHub/TableUV/FYDP__TableUV/Firmware/blink/build/bootloader-prefix/src/bootloader-stamp/bootloader-patch.rule
+/Users/tsugumi/Documents/GitHub/TableUV/FYDP__TableUV/Firmware/blink/build/bootloader-prefix/src/bootloader-stamp/bootloader-configure.rule
+/Users/tsugumi/Documents/GitHub/TableUV/FYDP__TableUV/Firmware/blink/build/bootloader-prefix/src/bootloader-stamp/bootloader-build.rule
