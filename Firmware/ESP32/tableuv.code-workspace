@@ -10,7 +10,9 @@
 			"stdio.h": "c",
 			"sdkconfig.h": "c",
 			"freertos.h": "c",
-			"gpio.h": "c"
+			"gpio.h": "c",
+			"pinconfig.h": "c",
+			"ulp.h": "c"
 		}
 	}
 }

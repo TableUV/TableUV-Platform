@@ -47,24 +47,20 @@
 #include "lwip/err.h"
 #include "lwip/sys.h"
 
-// GPIO MACRO 
-#define STATUS_RED_LED       13
-#define STATUS_GREEN_LED     12
+#include "pinconfig.h"
 
 void app_main()
 {
-  
-    gpio_pad_select_gpio(STATUS_RED_LED);
-    gpio_pad_select_gpio(STATUS_GREEN_LED);
-    /* Set the GPIO as a push/pull output */
-    gpio_set_direction(STATUS_RED_LED, GPIO_MODE_OUTPUT);
-    gpio_set_direction(STATUS_GREEN_LED, GPIO_MODE_OUTPUT);
+    //pin setup function 
+    pin_setup();
+
     while(1) {
         /* Blink off (output low) */
 	printf("Turning off the LED\n");
         gpio_set_level(STATUS_RED_LED, 0);
         gpio_set_level(STATUS_GREEN_LED, 0);
         vTaskDelay(1000 / portTICK_PERIOD_MS);
+        
         /* Blink on (output high) */
 	printf("Turning on the LED\n");
         gpio_set_level(STATUS_RED_LED, 1);
