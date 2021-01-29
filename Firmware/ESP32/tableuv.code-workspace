@@ -12,7 +12,9 @@
 			"freertos.h": "c",
 			"gpio.h": "c",
 			"pinconfig.h": "c",
-			"ulp.h": "c"
+			"ulp.h": "c",
+			"i2c.h": "c",
+			"dac.h": "c"
 		}
 	}
 }

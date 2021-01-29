@@ -37,7 +37,7 @@ extern "C"{
 #define TOF_INT_1            35
 
 // DAC 
-#define ESP_DAC              26
+#define ESP_DAC              DAC_CHANNEL_2  //DAC_CHANNEL_2
 
 //ADC 
 
@@ -62,8 +62,6 @@ extern "C"{
 #define SDI_3V3              5
 
 
-// function
-void pin_setup();
 
 
 #ifdef __cplusplus  

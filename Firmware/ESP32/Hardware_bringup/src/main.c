@@ -18,12 +18,6 @@
 #include <string.h>
 #include <stdio.h>
 
-// Driver Libraries 
-#include "driver/gpio.h"
-#include "driver/rtc_io.h"
-#include "driver/adc.h"
-#include "driver/dac.h"
-
 // SDK config 
 #include "sdkconfig.h"
 
@@ -47,12 +41,17 @@
 #include "lwip/err.h"
 #include "lwip/sys.h"
 
-#include "pinconfig.h"
+#include "config.h"
+
+#include "driver/gpio.h"
+#include "driver/rtc_io.h"
+#include "driver/dac.h"
+#include "driver/i2c.h"
 
 void app_main()
 {
     //pin setup function 
-    pin_setup();
+    init_setup();
 
     while(1) {
         /* Blink off (output low) */
@@ -60,11 +59,30 @@ void app_main()
         gpio_set_level(STATUS_RED_LED, 0);
         gpio_set_level(STATUS_GREEN_LED, 0);
         vTaskDelay(1000 / portTICK_PERIOD_MS);
-        
+
         /* Blink on (output high) */
 	printf("Turning on the LED\n");
         gpio_set_level(STATUS_RED_LED, 1);
         gpio_set_level(STATUS_GREEN_LED, 1);
         vTaskDelay(1000 / portTICK_PERIOD_MS);
+
+    printf("Setting DAC output tp 50: \n");
+        dac_output_voltage(ESP_DAC , 50);
+        vTaskDelay(1000 / portTICK_PERIOD_MS);
+
+    printf("Setting DAC output tp 100: \n");
+        dac_output_voltage(ESP_DAC , 100);
+        vTaskDelay(1000 / portTICK_PERIOD_MS);
+
+    printf("Setting DAC output tp 150: \n");
+        dac_output_voltage(ESP_DAC , 150);
+        vTaskDelay(1000 / portTICK_PERIOD_MS);
+
+    printf("Setting DAC output tp 200: \n");
+        dac_output_voltage(ESP_DAC , 200);
+        vTaskDelay(1000 / portTICK_PERIOD_MS);
+
     }
+
+    
 }
