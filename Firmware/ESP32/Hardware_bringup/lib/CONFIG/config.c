@@ -18,10 +18,11 @@
 #include "config_gpio.c"
 #include "config_i2c.c"
 #include "config_dac.c"
+#include "config_pwm.c"
 
 void init_setup(){
 
     gpio_setup();
     dac_setup();
-
+    pwm_steup();
 }

@@ -47,42 +47,158 @@
 #include "driver/rtc_io.h"
 #include "driver/dac.h"
 #include "driver/i2c.h"
+#include "driver/ledc.h"
+
+
+// for pwm setting 
+#define PWM_CH_NUM        2
+#define PWM_FREQUENCY     1000
+#define PWM_RESOLUTION    LEDC_TIMER_13_BIT
+#define PWM_SPEED_MODE    LEDC_HIGH_SPEED_MODE
+#define PWM_TIMER_NUM     LEDC_TIMER_0
+
+typedef enum {
+    UVDRIVER_ARRAY_BOARD= 0, /*!< LEDC high speed speed_mode */
+    UVDRIVER_SINGLE_BOARD,      /*!< LEDC low speed speed_mode */
+} uv_driver_board_t;
+
+
+
+void testLED(){
+    printf("Turning off the LED\n");
+    gpio_set_level(STATUS_RED_LED, 0);
+    gpio_set_level(STATUS_GREEN_LED, 0);
+    vTaskDelay(1000 / portTICK_PERIOD_MS);
+
+        /* Blink on (output high) */
+	printf("Turning on the LED\n");
+    gpio_set_level(STATUS_RED_LED, 1);
+    gpio_set_level(STATUS_GREEN_LED, 1);
+    vTaskDelay(1000 / portTICK_PERIOD_MS);
+}
+
+void testDAC(uint8_t duty){
+    printf("Setting DAC output to : \n");
+    dac_output_voltage(ESP_DAC , duty);
+    vTaskDelay(1000 / portTICK_PERIOD_MS);
+}
+
+void testPWM(ledc_channel_config_t *ledc_ch, int duty){
+    printf("Setting PWM output to 3000/8191: \n");
+    ledc_set_duty(ledc_ch->speed_mode, ledc_ch->channel, duty);
+    ledc_update_duty(ledc_ch->speed_mode, ledc_ch->channel);
+    vTaskDelay(1000 / portTICK_PERIOD_MS);
+}
+
+
+void UVDriver(ledc_channel_config_t *pwm_ch, int pwm_duty, uint8_t dac_duty ){
+    dac_output_voltage(ESP_DAC , dac_duty);
+    ledc_set_duty(pwm_ch->speed_mode, pwm_ch->channel, pwm_duty);
+    ledc_update_duty(pwm_ch->speed_mode, pwm_ch->channel);
+
+}
+
+void testUVDriver(ledc_channel_config_t *ledc_ch){
+
+    //10% duty , 10% dac
+        printf("Setting UV Drive with 10 duty and 20 dac: \n");
+        UVDriver(&ledc_ch[UVDRIVER_ARRAY_BOARD],  800, 50);
+        UVDriver(&ledc_ch[UVDRIVER_SINGLE_BOARD], 800, 50);
+        vTaskDelay(1000 / portTICK_PERIOD_MS);
+
+        //10% duty , 50% dac
+        printf("Setting UV Drive with 10 duty and 50 dac: \n");
+        UVDriver(&ledc_ch[UVDRIVER_ARRAY_BOARD],  800, 125);
+        UVDriver(&ledc_ch[UVDRIVER_SINGLE_BOARD], 800, 125);
+        vTaskDelay(1000 / portTICK_PERIOD_MS);
+
+        //10% duty , 100% dac
+        printf("Setting UV Drive with 10 duty and 100 dac: \n");
+        UVDriver(&ledc_ch[UVDRIVER_ARRAY_BOARD],  800, 255);
+        UVDriver(&ledc_ch[UVDRIVER_SINGLE_BOARD], 800, 255);
+        vTaskDelay(1000 / portTICK_PERIOD_MS);
+
+        //50% duty , 10% dac
+        printf("Setting UV Drive with 50 duty and 20 dac: \n");
+        UVDriver(&ledc_ch[UVDRIVER_ARRAY_BOARD],  4000, 50);
+        UVDriver(&ledc_ch[UVDRIVER_SINGLE_BOARD], 4000, 50);
+        vTaskDelay(1000 / portTICK_PERIOD_MS);
+
+        //100% duty , 50% dac
+        printf("Setting UV Drive with 50 duty and 50 dac: \n");
+        UVDriver(&ledc_ch[UVDRIVER_ARRAY_BOARD],  4000, 125);
+        UVDriver(&ledc_ch[UVDRIVER_SINGLE_BOARD], 4000, 125);
+        vTaskDelay(1000 / portTICK_PERIOD_MS);
+
+        //100% duty , 100% dac
+        printf("Setting UV Drive with 50 duty and 100 dac: \n");
+        UVDriver(&ledc_ch[UVDRIVER_ARRAY_BOARD],  4000, 255);
+        UVDriver(&ledc_ch[UVDRIVER_SINGLE_BOARD], 4000, 255);
+        vTaskDelay(1000 / portTICK_PERIOD_MS);
+
+        //100% duty , 10% dac
+        printf("Setting UV Drive with 100 duty and 10 dac: \n");
+        UVDriver(&ledc_ch[UVDRIVER_ARRAY_BOARD],  8000, 50);
+        UVDriver(&ledc_ch[UVDRIVER_SINGLE_BOARD], 8000, 50);
+        vTaskDelay(1000 / portTICK_PERIOD_MS);
+
+        //100% duty , 50% dac
+        printf("Setting UV Drive with 100 duty and 50 dac: \n");
+        UVDriver(&ledc_ch[UVDRIVER_ARRAY_BOARD],  8000, 125);
+        UVDriver(&ledc_ch[UVDRIVER_SINGLE_BOARD], 8000, 125);
+        vTaskDelay(1000 / portTICK_PERIOD_MS);
+
+        //100% duty , 100% dac
+        printf("Setting UV Drive with 100 duty and 100 dac: \n");
+        UVDriver(&ledc_ch[UVDRIVER_ARRAY_BOARD],  8000, 255);
+        UVDriver(&ledc_ch[UVDRIVER_SINGLE_BOARD], 8000, 255);
+        vTaskDelay(1000 / portTICK_PERIOD_MS);
+        
+
+
+}
+
+
+void enable_FWShutdown(){
+     gpio_set_level(STATUS_RED_LED, 1);
+}
+
+void disable_FWShutdown(){
+     gpio_set_level(STATUS_RED_LED, 0);
+}
+
+
 
 void app_main()
 {
     //pin setup function 
     init_setup();
 
-    while(1) {
-        /* Blink off (output low) */
-	printf("Turning off the LED\n");
-        gpio_set_level(STATUS_RED_LED, 0);
-        gpio_set_level(STATUS_GREEN_LED, 0);
-        vTaskDelay(1000 / portTICK_PERIOD_MS);
+    ledc_channel_config_t ledc_channel[PWM_CH_NUM] = {
+         {
+            .channel    = LEDC_CHANNEL_0,
+            .duty       = 0,
+            .gpio_num   = LED_ROW_MODULATE,
+            .speed_mode = PWM_SPEED_MODE,
+            .hpoint     = 0,
+            .timer_sel  = PWM_TIMER_NUM
+        },
+        {
+            .channel    = LEDC_CHANNEL_1,
+            .duty       = 0,
+            .gpio_num   = LED_SIDE_MODULATE,
+            .speed_mode = PWM_SPEED_MODE,
+            .hpoint     = 0,
+            .timer_sel  = PWM_TIMER_NUM
+        }
+     };
 
-        /* Blink on (output high) */
-	printf("Turning on the LED\n");
-        gpio_set_level(STATUS_RED_LED, 1);
-        gpio_set_level(STATUS_GREEN_LED, 1);
-        vTaskDelay(1000 / portTICK_PERIOD_MS);
-
-    printf("Setting DAC output tp 50: \n");
-        dac_output_voltage(ESP_DAC , 50);
-        vTaskDelay(1000 / portTICK_PERIOD_MS);
-
-    printf("Setting DAC output tp 100: \n");
-        dac_output_voltage(ESP_DAC , 100);
-        vTaskDelay(1000 / portTICK_PERIOD_MS);
-
-    printf("Setting DAC output tp 150: \n");
-        dac_output_voltage(ESP_DAC , 150);
-        vTaskDelay(1000 / portTICK_PERIOD_MS);
-
-    printf("Setting DAC output tp 200: \n");
-        dac_output_voltage(ESP_DAC , 200);
-        vTaskDelay(1000 / portTICK_PERIOD_MS);
-
+     for (uint8_t ch = 0; ch < PWM_CH_NUM; ch++) {
+        ledc_channel_config(&ledc_channel[ch]);
     }
 
-    
+    while(1) {
+
+        testUVDriver(ledc_channel);
+    }
 }
