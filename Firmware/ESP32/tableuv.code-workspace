@@ -1,0 +1,20 @@
+{
+	"folders": [
+		{
+			"name": "Hardware_bringup",
+			"path": "Hardware_bringup"
+		}
+	],
+	"settings": {
+		"files.associations": {
+			"stdio.h": "c",
+			"sdkconfig.h": "c",
+			"freertos.h": "c",
+			"gpio.h": "c",
+			"pinconfig.h": "c",
+			"ulp.h": "c",
+			"i2c.h": "c",
+			"dac.h": "c"
+		}
+	}
+}
