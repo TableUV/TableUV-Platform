@@ -27,10 +27,10 @@
 #define ESP32_CORE_LOW_LEVEL    (0U)
 #define ESP32_CORE_HIGH_LEVEL   (1U)
 
-#define TASK_10MS               (10 / portTICK_PERIOD_MS)
-#define TASK_100MS              (100 / portTICK_PERIOD_MS)
-#define TASK_500MS              (500 / portTICK_PERIOD_MS)
-#define TASK_1000MS             (1000 / portTICK_PERIOD_MS)
+#define TASK_10MS               (10 / portTICK_PERIOD_MS)   // 100 [Hz]
+#define TASK_100MS              (100 / portTICK_PERIOD_MS)  //  10 [Hz]
+#define TASK_500MS              (500 / portTICK_PERIOD_MS)  //   2 [Hz]
+#define TASK_1000MS             (1000 / portTICK_PERIOD_MS) //   1 [Hz]
 
 /////////////////////////////////////////
 ///////   PRIVATE PROTOTYPE     /////////
@@ -45,7 +45,6 @@ static void core1_task_run500ms(void * pvParameters);
 ///////////////////////////
 ///////   DATA     ////////
 ///////////////////////////
-
 
 ////////////////////////////////////////
 ///////   PRIVATE FUNCTION     /////////
@@ -120,28 +119,33 @@ static void esp32_task_init()
         "core0_task_run10ms",   /* Name of the task */
         10000,                  /* Stack size in words */
         NULL,                   /* Task input parameter */
-        0,                      /* Priority of the task */
+        1,                      /* Priority of the task */
         NULL,                   /* Task handle. */
         ESP32_CORE_LOW_LEVEL    /* Core where the task should run */
     );  
+    vTaskDelay(TASK_500MS);
+
     xTaskCreatePinnedToCore(
         core0_task_run100ms,    /* Function to implement the task */
         "core0_task_run100ms",  /* Name of the task */
         10000,                  /* Stack size in words */
         NULL,                   /* Task input parameter */
-        0,                      /* Priority of the task */
+        2,                      /* Priority of the task */
         NULL,                   /* Task handle. */
         ESP32_CORE_LOW_LEVEL    /* Core where the task should run */
     );  
+    vTaskDelay(TASK_500MS);
+
     xTaskCreatePinnedToCore(
         core0_task_run1000ms,   /* Function to implement the task */
         "core0_task_run1000ms", /* Name of the task */
         10000,                  /* Stack size in words */
         NULL,                   /* Task input parameter */
-        0,                      /* Priority of the task */
+        3,                      /* Priority of the task */
         NULL,                   /* Task handle. */
         ESP32_CORE_LOW_LEVEL    /* Core where the task should run */
     );  
+    vTaskDelay(TASK_500MS);
 
     //  High Level Core Init.
     xTaskCreatePinnedToCore(
@@ -149,7 +153,7 @@ static void esp32_task_init()
         "core1_task_run500ms",  /* Name of the task */
         10000,                  /* Stack size in words */
         NULL,                   /* Task input parameter */
-        0,                      /* Priority of the task */
+        1,                      /* Priority of the task */
         NULL,                   /* Task handle. */
         ESP32_CORE_HIGH_LEVEL   /* Core where the task should run */
     );  
