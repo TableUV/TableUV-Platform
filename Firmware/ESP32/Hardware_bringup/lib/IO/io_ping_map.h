@@ -1,25 +1,19 @@
-/*
-#####################################################################
-#####################################################################
-                    PROJECT: TABLE UV 
-#####################################################################
-#####################################################################
+/**
+ * @file io_ping_map.h
+ * @author Tsugmui Murata
+ * @date 15 Feb 2021
+ * @brief IO Ping Map Configuration
+ *
+ * This document will contains ping definitions
+ */
 
-#####################################################################
-                    BOARD    : ESP32-WROOM-32U
-                    PROGRAM  : PINCONFIG.H
-                    DEVELOPER: Tsugumi Murata (github: tsuguminn0401)
-                    DESCRIPTION: pinconfig file for ESP32 
-#####################################################################
-*/
-
-#ifndef _PINCONFIG_H_
-#define _PINCONFIG_H_
+#ifndef IO_GPIO_MAP_H
+#define IO_GPIO_MAP_H
 
 
-#ifdef __cplusplus
-extern "C"{
-#endif 
+// #ifdef __cplusplus
+// extern "C"{
+// #endif 
 
 
 // GPIO 
@@ -64,9 +58,7 @@ extern "C"{
 
 
 
-#ifdef __cplusplus  
-}
-#endif 
-
-
-#endif 
+// #ifdef __cplusplus  
+// }
+// #endif 
+#endif //IO_GPIO_MAP_H

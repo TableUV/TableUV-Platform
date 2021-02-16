@@ -1,204 +1,175 @@
-/*
-#####################################################################
-#####################################################################
-                    PROJECT: TABLE UV 
-#####################################################################
-#####################################################################
+/**
+ * @file main.c
+ * @author Jianxiang (Jack) Xu
+ * @date 15 Feb 2021
+ * @brief Main File
+ *
+ */
 
-#####################################################################
-                    BOARD    : ESP32-WROOM-32U
-                    PROGRAM  : Hardware_Bringup Code
-                    DEVELOPER: Tsugumi Murata (github: tsuguminn0401)
-                    DESCRIPTION: General code to test ESP32 IO and peripherals 
-#####################################################################
-
-
-*/
 // Standard libraries 
 #include <string.h>
 #include <stdio.h>
 
+// TableUV Lib
+#include "dev_config.h"
+#include "io_ping_map.h"
+
 // SDK config 
 #include "sdkconfig.h"
 
-// Non-Volatile-Storage 
-#include "nvs.h"
-#include "nvs_flash.h"
-
-#include "soc/rtc_cntl_reg.h"
-#include "soc/sens_reg.h"
-#include "soc/rtc_periph.h"
-
+// FreeRTOS
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 
-#include "esp_system.h"
-#include "esp_wifi.h"
-#include "esp_event.h"
-#include "esp_log.h"
-#include "esp32/ulp.h"
+/////////////////////////////////
+///////   DEFINITION     ////////
+/////////////////////////////////
+#define ESP32_CORE_LOW_LEVEL    (0U)
+#define ESP32_CORE_HIGH_LEVEL   (1U)
 
-#include "lwip/err.h"
-#include "lwip/sys.h"
+#define TASK_10MS               (10 / portTICK_PERIOD_MS)   // 100 [Hz]
+#define TASK_100MS              (100 / portTICK_PERIOD_MS)  //  10 [Hz]
+#define TASK_500MS              (500 / portTICK_PERIOD_MS)  //   2 [Hz]
+#define TASK_1000MS             (1000 / portTICK_PERIOD_MS) //   1 [Hz]
 
-#include "config.h"
+/////////////////////////////////////////
+///////   PRIVATE PROTOTYPE     /////////
+/////////////////////////////////////////
+static void esp32_task_init(void);
 
-#include "driver/gpio.h"
-#include "driver/rtc_io.h"
-#include "driver/dac.h"
-#include "driver/i2c.h"
-#include "driver/ledc.h"
+static void core0_task_run10ms(void * pvParameters);
+static void core0_task_run100ms(void * pvParameters);
+static void core0_task_run1000ms(void * pvParameters);
+static void core1_task_run500ms(void * pvParameters);
 
+///////////////////////////
+///////   DATA     ////////
+///////////////////////////
 
-// for pwm setting 
-#define PWM_CH_NUM        2
-#define PWM_FREQUENCY     1000
-#define PWM_RESOLUTION    LEDC_TIMER_13_BIT
-#define PWM_SPEED_MODE    LEDC_HIGH_SPEED_MODE
-#define PWM_TIMER_NUM     LEDC_TIMER_0
+////////////////////////////////////////
+///////   PRIVATE FUNCTION     /////////
+////////////////////////////////////////
+static void core0_task_run10ms(void * pvParameters)
+{
+    /* Block for 10ms. */
+    const TickType_t xDelay = TASK_10MS;
 
-typedef enum {
-    UVDRIVER_ARRAY_BOARD= 0, /*!< LEDC high speed speed_mode */
-    UVDRIVER_SINGLE_BOARD,      /*!< LEDC low speed speed_mode */
-} uv_driver_board_t;
+    for( ;; )
+    {
+        /* Do sth at */
+        {
+            //  add task
+            dev_run10ms();
+        }
+        vTaskDelay( xDelay );
+    }
+}
+static void core0_task_run100ms(void * pvParameters)
+{
+    /* Block for 100ms. */
+    const TickType_t xDelay = TASK_100MS;
 
+    for( ;; )
+    {
+        /* Do sth at */
+        {
+            //  add task
+            dev_run100ms();
+        }
+        vTaskDelay( xDelay );
+    }
+}
+static void core0_task_run1000ms(void * pvParameters)
+{
+    /* Block for 1000ms. */
+    const TickType_t xDelay = TASK_1000MS;
 
-
-void testLED(){
-    printf("Turning off the LED\n");
-    gpio_set_level(STATUS_RED_LED, 0);
-    gpio_set_level(STATUS_GREEN_LED, 0);
-    vTaskDelay(1000 / portTICK_PERIOD_MS);
-
-        /* Blink on (output high) */
-	printf("Turning on the LED\n");
-    gpio_set_level(STATUS_RED_LED, 1);
-    gpio_set_level(STATUS_GREEN_LED, 1);
-    vTaskDelay(1000 / portTICK_PERIOD_MS);
+    for( ;; )
+    {
+        /* Do sth at */
+        {
+            //  add task
+            dev_run1000ms();
+        }
+        vTaskDelay( xDelay );
+    }
 }
 
-void testDAC(uint8_t duty){
-    printf("Setting DAC output to : \n");
-    dac_output_voltage(ESP_DAC , duty);
-    vTaskDelay(1000 / portTICK_PERIOD_MS);
+static void core1_task_run500ms(void * pvParameters)
+{
+    // 20 Hz Update
+    /* Block for 500ms. */
+    const TickType_t xDelay = TASK_500MS;
+
+    for( ;; )
+    {
+        /* Do sth at */
+        {
+            //  add task (High Level)
+        }
+        vTaskDelay( xDelay );
+    }
 }
 
-void testPWM(ledc_channel_config_t *ledc_ch, int duty){
-    printf("Setting PWM output to 3000/8191: \n");
-    ledc_set_duty(ledc_ch->speed_mode, ledc_ch->channel, duty);
-    ledc_update_duty(ledc_ch->speed_mode, ledc_ch->channel);
-    vTaskDelay(1000 / portTICK_PERIOD_MS);
+static void esp32_task_init()
+{
+    // Low Level Core Init.
+    xTaskCreatePinnedToCore(
+        core0_task_run10ms,     /* Function to implement the task */
+        "core0_task_run10ms",   /* Name of the task */
+        10000,                  /* Stack size in words */
+        NULL,                   /* Task input parameter */
+        1,                      /* Priority of the task */
+        NULL,                   /* Task handle. */
+        ESP32_CORE_LOW_LEVEL    /* Core where the task should run */
+    );  
+    vTaskDelay(TASK_500MS);
+
+    xTaskCreatePinnedToCore(
+        core0_task_run100ms,    /* Function to implement the task */
+        "core0_task_run100ms",  /* Name of the task */
+        10000,                  /* Stack size in words */
+        NULL,                   /* Task input parameter */
+        2,                      /* Priority of the task */
+        NULL,                   /* Task handle. */
+        ESP32_CORE_LOW_LEVEL    /* Core where the task should run */
+    );  
+    vTaskDelay(TASK_500MS);
+
+    xTaskCreatePinnedToCore(
+        core0_task_run1000ms,   /* Function to implement the task */
+        "core0_task_run1000ms", /* Name of the task */
+        10000,                  /* Stack size in words */
+        NULL,                   /* Task input parameter */
+        3,                      /* Priority of the task */
+        NULL,                   /* Task handle. */
+        ESP32_CORE_LOW_LEVEL    /* Core where the task should run */
+    );  
+    vTaskDelay(TASK_500MS);
+
+    //  High Level Core Init.
+    xTaskCreatePinnedToCore(
+        core1_task_run500ms,    /* Function to implement the task */
+        "core1_task_run500ms",  /* Name of the task */
+        10000,                  /* Stack size in words */
+        NULL,                   /* Task input parameter */
+        1,                      /* Priority of the task */
+        NULL,                   /* Task handle. */
+        ESP32_CORE_HIGH_LEVEL   /* Core where the task should run */
+    );  
 }
 
-
-void UVDriver(ledc_channel_config_t *pwm_ch, int pwm_duty, uint8_t dac_duty ){
-    dac_output_voltage(ESP_DAC , dac_duty);
-    ledc_set_duty(pwm_ch->speed_mode, pwm_ch->channel, pwm_duty);
-    ledc_update_duty(pwm_ch->speed_mode, pwm_ch->channel);
-
-}
-
-void testUVDriver(ledc_channel_config_t *ledc_ch){
-
-    //10% duty , 10% dac
-        printf("Setting UV Drive with 10 duty and 20 dac: \n");
-        UVDriver(&ledc_ch[UVDRIVER_ARRAY_BOARD],  800, 50);
-        UVDriver(&ledc_ch[UVDRIVER_SINGLE_BOARD], 800, 50);
-        vTaskDelay(1000 / portTICK_PERIOD_MS);
-
-        //10% duty , 50% dac
-        printf("Setting UV Drive with 10 duty and 50 dac: \n");
-        UVDriver(&ledc_ch[UVDRIVER_ARRAY_BOARD],  800, 125);
-        UVDriver(&ledc_ch[UVDRIVER_SINGLE_BOARD], 800, 125);
-        vTaskDelay(1000 / portTICK_PERIOD_MS);
-
-        //10% duty , 100% dac
-        printf("Setting UV Drive with 10 duty and 100 dac: \n");
-        UVDriver(&ledc_ch[UVDRIVER_ARRAY_BOARD],  800, 255);
-        UVDriver(&ledc_ch[UVDRIVER_SINGLE_BOARD], 800, 255);
-        vTaskDelay(1000 / portTICK_PERIOD_MS);
-
-        //50% duty , 10% dac
-        printf("Setting UV Drive with 50 duty and 20 dac: \n");
-        UVDriver(&ledc_ch[UVDRIVER_ARRAY_BOARD],  4000, 50);
-        UVDriver(&ledc_ch[UVDRIVER_SINGLE_BOARD], 4000, 50);
-        vTaskDelay(1000 / portTICK_PERIOD_MS);
-
-        //100% duty , 50% dac
-        printf("Setting UV Drive with 50 duty and 50 dac: \n");
-        UVDriver(&ledc_ch[UVDRIVER_ARRAY_BOARD],  4000, 125);
-        UVDriver(&ledc_ch[UVDRIVER_SINGLE_BOARD], 4000, 125);
-        vTaskDelay(1000 / portTICK_PERIOD_MS);
-
-        //100% duty , 100% dac
-        printf("Setting UV Drive with 50 duty and 100 dac: \n");
-        UVDriver(&ledc_ch[UVDRIVER_ARRAY_BOARD],  4000, 255);
-        UVDriver(&ledc_ch[UVDRIVER_SINGLE_BOARD], 4000, 255);
-        vTaskDelay(1000 / portTICK_PERIOD_MS);
-
-        //100% duty , 10% dac
-        printf("Setting UV Drive with 100 duty and 10 dac: \n");
-        UVDriver(&ledc_ch[UVDRIVER_ARRAY_BOARD],  8000, 50);
-        UVDriver(&ledc_ch[UVDRIVER_SINGLE_BOARD], 8000, 50);
-        vTaskDelay(1000 / portTICK_PERIOD_MS);
-
-        //100% duty , 50% dac
-        printf("Setting UV Drive with 100 duty and 50 dac: \n");
-        UVDriver(&ledc_ch[UVDRIVER_ARRAY_BOARD],  8000, 125);
-        UVDriver(&ledc_ch[UVDRIVER_SINGLE_BOARD], 8000, 125);
-        vTaskDelay(1000 / portTICK_PERIOD_MS);
-
-        //100% duty , 100% dac
-        printf("Setting UV Drive with 100 duty and 100 dac: \n");
-        UVDriver(&ledc_ch[UVDRIVER_ARRAY_BOARD],  8000, 255);
-        UVDriver(&ledc_ch[UVDRIVER_SINGLE_BOARD], 8000, 255);
-        vTaskDelay(1000 / portTICK_PERIOD_MS);
-        
-
-
-}
-
-
-void enable_FWShutdown(){
-     gpio_set_level(STATUS_RED_LED, 1);
-}
-
-void disable_FWShutdown(){
-     gpio_set_level(STATUS_RED_LED, 0);
-}
-
-
-
+///////////////////////////////////////
+///////   PUBLIC FUNCTION     /////////
+///////////////////////////////////////
 void app_main()
 {
-    //pin setup function 
-    init_setup();
+    // device initialization
+    dev_init();
 
-    ledc_channel_config_t ledc_channel[PWM_CH_NUM] = {
-         {
-            .channel    = LEDC_CHANNEL_0,
-            .duty       = 0,
-            .gpio_num   = LED_ROW_MODULATE,
-            .speed_mode = PWM_SPEED_MODE,
-            .hpoint     = 0,
-            .timer_sel  = PWM_TIMER_NUM
-        },
-        {
-            .channel    = LEDC_CHANNEL_1,
-            .duty       = 0,
-            .gpio_num   = LED_SIDE_MODULATE,
-            .speed_mode = PWM_SPEED_MODE,
-            .hpoint     = 0,
-            .timer_sel  = PWM_TIMER_NUM
-        }
-     };
+    // esp32 task initialization
+    esp32_task_init();
 
-     for (uint8_t ch = 0; ch < PWM_CH_NUM; ch++) {
-        ledc_channel_config(&ledc_channel[ch]);
-    }
-
-    while(1) {
-
-        testUVDriver(ledc_channel);
-    }
+    // forever loop
+    while (true){};
 }
