@@ -14,7 +14,16 @@
 			"pinconfig.h": "c",
 			"ulp.h": "c",
 			"i2c.h": "c",
-			"dac.h": "c"
+			"dac.h": "c",
+			"ledc.h": "c",
+			"io_ping_map.h": "c",
+			"dev_avr_actuator.h": "c",
+			"dev_avr_sensor.h": "c",
+			"dev_battery.h": "c",
+			"dev_led.h": "c",
+			"dev_tof_lidar.h": "c",
+			"dev_uv.h": "c",
+			"dev_vl53l1x.h": "c"
 		}
 	}
 }
