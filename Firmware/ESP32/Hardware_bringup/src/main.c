@@ -13,6 +13,8 @@
 // TableUV Lib
 #include "dev_config.h"
 #include "io_ping_map.h"
+#include "APP/app_slam.h"
+#include "APP/app_supervisor.h"
 
 // SDK config 
 #include "sdkconfig.h"
@@ -24,14 +26,18 @@
 /////////////////////////////////
 ///////   DEFINITION     ////////
 /////////////////////////////////
-#define ESP32_CORE_LOW_LEVEL    (0U)
-#define ESP32_CORE_HIGH_LEVEL   (1U)
+#define ESP32_CORE_LOW_LEVEL        (0U)
+#define ESP32_CORE_HIGH_LEVEL       (1U)
 
-#define TASK_10MS               (10 / portTICK_PERIOD_MS)   // 100 [Hz]
-#define TASK_100MS              (100 / portTICK_PERIOD_MS)  //  10 [Hz]
-#define TASK_500MS              (500 / portTICK_PERIOD_MS)  //   2 [Hz]
-#define TASK_1000MS             (1000 / portTICK_PERIOD_MS) //   1 [Hz]
+#define TASK_SLAM_TASK_TICK         (TASK_HZ_TO_TASK_TICK(  20/*[Hz]*/))
+#define TASK_SUPERVISOR_TASK_TICK   (TASK_HZ_TO_TASK_TICK(  50/*[Hz]*/))
+#define TASK_100HZ_TASK_TICK        (TASK_HZ_TO_TASK_TICK( 100/*[Hz]*/)) // TODO: we may not need 100 Hz, 50Hz shall be enough?
+#define TASK_10HZ_TASK_TICK         (TASK_HZ_TO_TASK_TICK(  10/*[Hz]*/))
+#define TASK_1HZ_TASK_TICK          (TASK_HZ_TO_TASK_TICK(   1/*[Hz]*/))
+#define T_500MS_TASK_TICK           (MS_TO_TASK_TICK(      500/*[ms]*/))
 
+#define MS_TO_TASK_TICK(x)          (TickType_t)((x)/(portTICK_PERIOD_MS))
+#define TASK_HZ_TO_TASK_TICK(x)     (MS_TO_TASK_TICK(1000/(x))) // Range: [ < 1 kHz]
 /////////////////////////////////////////
 ///////   PRIVATE PROTOTYPE     /////////
 /////////////////////////////////////////
@@ -40,7 +46,7 @@ static void esp32_task_init(void);
 static void core0_task_run10ms(void * pvParameters);
 static void core0_task_run100ms(void * pvParameters);
 static void core0_task_run1000ms(void * pvParameters);
-static void core1_task_run500ms(void * pvParameters);
+static void core1_task_runSLAM(void * pvParameters);
 
 ///////////////////////////
 ///////   DATA     ////////
@@ -51,9 +57,6 @@ static void core1_task_run500ms(void * pvParameters);
 ////////////////////////////////////////
 static void core0_task_run10ms(void * pvParameters)
 {
-    /* Block for 10ms. */
-    const TickType_t xDelay = TASK_10MS;
-
     for( ;; )
     {
         /* Do sth at */
@@ -61,14 +64,11 @@ static void core0_task_run10ms(void * pvParameters)
             //  add task
             dev_run10ms();
         }
-        vTaskDelay( xDelay );
+        vTaskDelay( TASK_100HZ_TASK_TICK );
     }
 }
 static void core0_task_run100ms(void * pvParameters)
 {
-    /* Block for 100ms. */
-    const TickType_t xDelay = TASK_100MS;
-
     for( ;; )
     {
         /* Do sth at */
@@ -76,14 +76,11 @@ static void core0_task_run100ms(void * pvParameters)
             //  add task
             dev_run100ms();
         }
-        vTaskDelay( xDelay );
+        vTaskDelay( TASK_10HZ_TASK_TICK );
     }
 }
 static void core0_task_run1000ms(void * pvParameters)
 {
-    /* Block for 1000ms. */
-    const TickType_t xDelay = TASK_1000MS;
-
     for( ;; )
     {
         /* Do sth at */
@@ -91,23 +88,33 @@ static void core0_task_run1000ms(void * pvParameters)
             //  add task
             dev_run1000ms();
         }
-        vTaskDelay( xDelay );
+        vTaskDelay( TASK_1HZ_TASK_TICK );
     }
 }
 
-static void core1_task_run500ms(void * pvParameters)
+static void core1_task_runSLAM(void * pvParameters)
 {
-    // 20 Hz Update
-    /* Block for 500ms. */
-    const TickType_t xDelay = TASK_500MS;
-
     for( ;; )
     {
         /* Do sth at */
         {
             //  add task (High Level)
+            app_slam_run50ms();
         }
-        vTaskDelay( xDelay );
+        vTaskDelay( TASK_SLAM_TASK_TICK );
+    }
+}
+
+static void core1_task_runSupervisor(void * pvParameters)
+{
+    for( ;; )
+    {
+        /* Do sth at */
+        {
+            //  add task (High Level)
+            app_supervisor_run20ms();
+        }
+        vTaskDelay( TASK_SUPERVISOR_TASK_TICK );
     }
 }
 
@@ -123,7 +130,7 @@ static void esp32_task_init()
         NULL,                   /* Task handle. */
         ESP32_CORE_LOW_LEVEL    /* Core where the task should run */
     );  
-    vTaskDelay(TASK_500MS);
+    vTaskDelay(T_500MS_TASK_TICK);
 
     xTaskCreatePinnedToCore(
         core0_task_run100ms,    /* Function to implement the task */
@@ -134,7 +141,7 @@ static void esp32_task_init()
         NULL,                   /* Task handle. */
         ESP32_CORE_LOW_LEVEL    /* Core where the task should run */
     );  
-    vTaskDelay(TASK_500MS);
+    vTaskDelay(T_500MS_TASK_TICK);
 
     xTaskCreatePinnedToCore(
         core0_task_run1000ms,   /* Function to implement the task */
@@ -145,12 +152,23 @@ static void esp32_task_init()
         NULL,                   /* Task handle. */
         ESP32_CORE_LOW_LEVEL    /* Core where the task should run */
     );  
-    vTaskDelay(TASK_500MS);
+    vTaskDelay(T_500MS_TASK_TICK);
 
     //  High Level Core Init.
     xTaskCreatePinnedToCore(
-        core1_task_run500ms,    /* Function to implement the task */
-        "core1_task_run500ms",  /* Name of the task */
+        core1_task_runSLAM,    /* Function to implement the task */
+        "core1_task_runSLAM",  /* Name of the task */
+        10000,                  /* Stack size in words */
+        NULL,                   /* Task input parameter */
+        1,                      /* Priority of the task */
+        NULL,                   /* Task handle. */
+        ESP32_CORE_HIGH_LEVEL   /* Core where the task should run */
+    );  
+    vTaskDelay(T_500MS_TASK_TICK);
+    
+    xTaskCreatePinnedToCore(
+        core1_task_runSupervisor,    /* Function to implement the task */
+        "core1_task_runSupervisor",  /* Name of the task */
         10000,                  /* Stack size in words */
         NULL,                   /* Task input parameter */
         1,                      /* Priority of the task */
@@ -169,6 +187,10 @@ void app_main()
 
     // esp32 task initialization
     esp32_task_init();
+
+    // app level init
+    app_slam_init();
+    app_supervisor_init();
 
     // forever loop
     while (true){};

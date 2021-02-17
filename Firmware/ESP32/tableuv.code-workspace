@@ -23,7 +23,10 @@
 			"dev_led.h": "c",
 			"dev_tof_lidar.h": "c",
 			"dev_uv.h": "c",
-			"dev_vl53l1x.h": "c"
+			"dev_vl53l1x.h": "c",
+			"*.ipp": "c",
+			"cstring": "c",
+			"app_supervisor.h": "c"
 		}
 	}
 }
