@@ -44,32 +44,34 @@ static app_slam_data_S slam_data;
 ////////////////////////////////////////
 static void app_slam_private_localization(void)
 {
-    // TODO
+    // TODO: intake  IMU, Encoder => EKF
 }
 
 static void app_slam_private_localMapUpdate(void)
 {
-    // TODO
+    // reset the lmap
+    // TODO: intake  ToF + Collision + IR => Grid Occupancy
 }
 
 static void app_slam_private_globalMapUpdate(void)
 {
-    // TODO
+    // TODO: intake  app/localization + app/localMap => Grid Map (GMap)
+    // Bilinear interpolation from  lmap -> gmap: sampling lmap
 }
 
 static void app_slam_private_obstacleDetection(void)
 {
-    // TODO
+    // TODO: in gMap: 
 }
 
 static void app_slam_private_pathPlanning(void)
 {
-    // TODO
+    // TODO: if need to generate new path, do partial path planning
 }
 
 static void app_slam_private_motionPlanning(void)
 {
-    // TODO
+    // TODO: plan the motions (velocity arrays for the next 50ms)
 }
 
 
