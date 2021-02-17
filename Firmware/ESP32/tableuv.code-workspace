@@ -25,7 +25,8 @@
 			"dev_uv.h": "c",
 			"dev_vl53l1x.h": "c",
 			"*.ipp": "c",
-			"cstring": "c"
+			"cstring": "c",
+			"app_supervisor.h": "c"
 		}
 	}
 }

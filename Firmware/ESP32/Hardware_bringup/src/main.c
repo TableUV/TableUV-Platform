@@ -14,6 +14,7 @@
 #include "dev_config.h"
 #include "io_ping_map.h"
 #include "APP/app_slam.h"
+#include "APP/app_supervisor.h"
 
 // SDK config 
 #include "sdkconfig.h"
@@ -30,7 +31,7 @@
 
 #define TASK_SLAM_TASK_TICK         (TASK_HZ_TO_TASK_TICK(  20/*[Hz]*/))
 #define TASK_SUPERVISOR_TASK_TICK   (TASK_HZ_TO_TASK_TICK(  50/*[Hz]*/))
-#define TASK_100HZ_TASK_TICK        (TASK_HZ_TO_TASK_TICK( 100/*[Hz]*/))
+#define TASK_100HZ_TASK_TICK        (TASK_HZ_TO_TASK_TICK( 100/*[Hz]*/)) // TODO: we may not need 100 Hz, 50Hz shall be enough?
 #define TASK_10HZ_TASK_TICK         (TASK_HZ_TO_TASK_TICK(  10/*[Hz]*/))
 #define TASK_1HZ_TASK_TICK          (TASK_HZ_TO_TASK_TICK(   1/*[Hz]*/))
 #define T_500MS_TASK_TICK           (MS_TO_TASK_TICK(      500/*[ms]*/))
@@ -111,6 +112,7 @@ static void core1_task_runSupervisor(void * pvParameters)
         /* Do sth at */
         {
             //  add task (High Level)
+            app_supervisor_run20ms();
         }
         vTaskDelay( TASK_SUPERVISOR_TASK_TICK );
     }
@@ -188,6 +190,7 @@ void app_main()
 
     // app level init
     app_slam_init();
+    app_supervisor_init();
 
     // forever loop
     while (true){};
