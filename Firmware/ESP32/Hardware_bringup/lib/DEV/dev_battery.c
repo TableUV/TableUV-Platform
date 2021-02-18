@@ -43,7 +43,11 @@ static inline void dev_battery_private_gpio_config(void)
     gpio_config_t io_conf;
     //gpio config for input 
     io_conf.mode = GPIO_MODE_INPUT;
-    io_conf.pin_bit_mask =  ((1ULL<< CHARGE_STATUS)|(1ULL<< BATTERY_VOLTAGE)) ; 
+    io_conf.pin_bit_mask =  (1ULL<< CHARGE_STATUS); 
+    gpio_config(&io_conf);
+
+    io_conf.pull_down_en = GPIO_PULLDOWN_ENABLE;
+    io_conf.pin_bit_mask = (1ULL<< BATTERY_VOLTAGE);
     gpio_config(&io_conf);
 }
 
