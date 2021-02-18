@@ -9,22 +9,18 @@
 
 #include "dev_battery.h"
 
-// Standard libraries 
-#include <stdint.h>
-
-// TableUV Lib
-#include "../IO/io_ping_map.h"
-
-// External Lib
-#include "driver/gpio.h"
-#include "driver/adc.h"
-
 /////////////////////////////////
 ///////   DEFINITION     ////////
 /////////////////////////////////
-typedef struct{
+typedef enum {
+    CHARGING,
+    CHARGE_COMPLETE_SLEEP,
+    CHARGER_FAULT
+} charger_ic_status_t;
+typedef struct {
     float battery_voltage;
     int32_t battery_voltage_raw;
+    charger_ic_status_t charger_status;
 } dev_battery_data_S;
 
 /////////////////////////////////////////
@@ -37,10 +33,16 @@ static inline void dev_battery_private_gpio_config(void);
 ///////   DATA     ////////
 ///////////////////////////
 static dev_battery_data_S battery_data;
+static volatile bool edge_detected = 0;
 
 ////////////////////////////////////////
 ///////   PRIVATE FUNCTION     /////////
 ////////////////////////////////////////
+static void IRAM_ATTR charger_fault_isr_handler(void* arg)
+{
+    edge_detected = 1;
+}
+
 static inline void dev_battery_private_gpio_config(void)
 {
     //IO mode select  
@@ -50,8 +52,16 @@ static inline void dev_battery_private_gpio_config(void)
     gpio_config_t io_conf;
     //gpio config for input 
     io_conf.mode = GPIO_MODE_INPUT;
-    io_conf.pin_bit_mask =  ((1ULL<< CHARGE_STATUS) | (1ULL<< BATTERY_VOLTAGE)); 
+    io_conf.pin_bit_mask =  (1ULL<< BATTERY_VOLTAGE); 
     gpio_config(&io_conf);
+
+    io_conf.pin_bit_mask = (1ULL<< CHARGE_STATUS);
+    io_conf.intr_type = GPIO_INTR_ANYEDGE;
+    gpio_config(&io_conf);
+
+    gpio_install_isr_service(0);
+    gpio_isr_handler_add(CHARGE_STATUS, charger_fault_isr_handler, (void*)CHARGE_STATUS);
+    gpio_intr_disable(CHARGE_STATUS);
 }
 
 ///////////////////////////////////////
@@ -97,4 +107,46 @@ int32_t dev_battery_read_raw(void)
     }
 
     return raw_voltage;
+}
+void dev_charger_status_update(void)
+{
+    edge_detected = 0;
+    gpio_intr_enable(CHARGE_STATUS);
+    vTaskDelay(1000 / portTICK_RATE_MS);
+    if(edge_detected)
+    {
+        battery_data.charger_status = CHARGER_FAULT;
+    }
+    else if(gpio_get_level(CHARGE_STATUS))
+    {
+        battery_data.charger_status = CHARGING;
+    }
+    else
+    {
+        battery_data.charger_status = CHARGE_COMPLETE_SLEEP;
+    }
+}
+
+charger_ic_status_t dev_charger_status_get(void)
+{
+    return battery_data.charger_status;
+}
+
+charger_ic_status_t dev_charger_status_read(void)
+{
+    edge_detected = 0;
+    gpio_intr_enable(CHARGE_STATUS);
+    vTaskDelay(1000 / portTICK_RATE_MS);
+    if(edge_detected)
+    {
+        return CHARGER_FAULT;
+    }
+    else if(gpio_get_level(CHARGE_STATUS))
+    {
+        return CHARGING;
+    }
+    else
+    {
+        return CHARGE_COMPLETE_SLEEP;
+    }
 }
