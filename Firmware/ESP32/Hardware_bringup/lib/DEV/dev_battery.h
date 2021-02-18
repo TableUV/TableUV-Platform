@@ -33,8 +33,8 @@ void dev_battery_update(void);
 float dev_battery_get(void);
 int32_t dev_battery_read_raw(void);
 void dev_charger_status_update(void);
-charger_ic_status_t dev_charger_status_get(void);
-charger_ic_status_t dev_charger_status_read(void);
+int8_t dev_charger_status_get(void);
+int8_t dev_charger_status_read(void);
 
 
 #endif //DEV_BATTERY_H

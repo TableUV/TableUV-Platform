@@ -13,13 +13,13 @@
 ///////   DEFINITION     ////////
 /////////////////////////////////
 typedef enum {
-    CHARGING,
-    CHARGE_COMPLETE_SLEEP,
-    CHARGER_FAULT
+    CHARGING,                   // STAT Pin Low
+    CHARGE_COMPLETE_SLEEP,      // STAT Pin HIGH
+    CHARGER_FAULT               // STAT Pin Blinkings
 } charger_ic_status_t;
 typedef struct {
-    float battery_voltage;
-    int32_t battery_voltage_raw;
+    float battery_voltage;              // Volts
+    int32_t battery_voltage_raw;        // 0 - 4096
     charger_ic_status_t charger_status;
 } dev_battery_data_S;
 
@@ -108,45 +108,50 @@ int32_t dev_battery_read_raw(void)
 
     return raw_voltage;
 }
+
 void dev_charger_status_update(void)
 {
     edge_detected = 0;
     gpio_intr_enable(CHARGE_STATUS);
-    vTaskDelay(1000 / portTICK_RATE_MS);
+    vTaskDelay(2000 / portTICK_RATE_MS);
+    gpio_intr_disable(CHARGE_STATUS);
+    
     if(edge_detected)
     {
         battery_data.charger_status = CHARGER_FAULT;
     }
     else if(gpio_get_level(CHARGE_STATUS))
     {
-        battery_data.charger_status = CHARGING;
+        battery_data.charger_status = CHARGE_COMPLETE_SLEEP;
     }
     else
     {
-        battery_data.charger_status = CHARGE_COMPLETE_SLEEP;
+        battery_data.charger_status = CHARGING;
     }
 }
 
-charger_ic_status_t dev_charger_status_get(void)
+int8_t dev_charger_status_get(void)
 {
     return battery_data.charger_status;
 }
 
-charger_ic_status_t dev_charger_status_read(void)
+int8_t dev_charger_status_read(void)
 {
     edge_detected = 0;
     gpio_intr_enable(CHARGE_STATUS);
-    vTaskDelay(1000 / portTICK_RATE_MS);
+    vTaskDelay(2000 / portTICK_RATE_MS);
+    gpio_intr_disable(CHARGE_STATUS);
+
     if(edge_detected)
     {
         return CHARGER_FAULT;
     }
     else if(gpio_get_level(CHARGE_STATUS))
     {
-        return CHARGING;
+        return CHARGE_COMPLETE_SLEEP;
     }
     else
     {
-        return CHARGE_COMPLETE_SLEEP;
+        return CHARGING;
     }
 }
