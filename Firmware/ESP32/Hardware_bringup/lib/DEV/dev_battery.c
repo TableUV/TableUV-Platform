@@ -1,6 +1,6 @@
 /**
  * @file dev_battery.c
- * @author Jianxiang (Jack) Xu
+ * @author Jerome Villapando
  * @date 15 Feb 2021
  * @brief Device configure files
  *

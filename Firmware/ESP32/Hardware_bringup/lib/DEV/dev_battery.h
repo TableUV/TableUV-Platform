@@ -1,11 +1,14 @@
 /**
  * @file dev_battery.h
- * @author Jianxiang (Jack) Xu
+ * @author Jerome Villapando
  * @date 15 Feb 2021
  * @brief Device configure header files
  *
  * This document will contains device configure content
  */
+
+#ifndef DEV_BATTERY_H
+#define DEV_BATTERY_H
 
 // Standard libraries 
 #include <stdint.h>
@@ -18,10 +21,6 @@
 #include "driver/adc.h"
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
-
-// Defines
-#ifndef DEV_BATTERY_H
-#define DEV_BATTERY_H
 
 #define BATTERY_PULLUP_KOHMS    249
 #define BATTERY_PULLDOWN_KOHMS  16.9
