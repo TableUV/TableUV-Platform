@@ -11,6 +11,10 @@
 #include <util/delay.h>      
 #include <stdint.h>  
 
-int main(){
-  
+#include "../include/pinConfig.h"
+#include "collision.h"
+
+int main()
+{
+    collision_init();
 }
