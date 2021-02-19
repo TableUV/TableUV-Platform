@@ -7,6 +7,10 @@
  * This document will contains device configure content
  */
 
+#include "pinConfig.h"
+#include <avr/io.h>
+#include <avr/interrupt.h>  
+#include <stdbool.h>
 
 #ifndef COLLISION_H
 #define COLLISION_H

@@ -19,8 +19,8 @@ extern "C"{
 #define PIN_DIR_INPUT       0
 #define PIN_DIR_OUTPUT      1
 
-#define RIGHT_COLLISION     PB0     //output, OC0A
-#define LEFT_COLLISION      PB1     //output, OC0B
+#define RIGHT_COLLISION     PB0     // PCINT8
+#define LEFT_COLLISION      PB1     // PCINT9
 
 #define IR_FRONT_1          PA7
 #define IR_FRONT_2          PA6
