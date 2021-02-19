@@ -126,7 +126,7 @@ bool col_pressed_get(void)
     return temp;
 }
 
-bool col_pressed_clear(void)
+void col_pressed_clear(void)
 {
     cli();
     col_pressed = false;
@@ -135,33 +135,33 @@ bool col_pressed_clear(void)
 
 void collision_test(void)
 {
-    collision_init();
-    DDRA |= ((PIN_DIR_OUTPUT << PA0) | (PIN_DIR_OUTPUT << PA1));
-    uint8_t temp = 0;
+    // collision_init();
+    // DDRA |= ((PIN_DIR_OUTPUT << PA0) | (PIN_DIR_OUTPUT << PA1));
+    // uint8_t temp = 0;
     
-    while(1)
-    {
-        temp = collision_status_retrieve();
-        switch(temp)
-        {
-            case 0:
-                PORTA &= ~(1 << PA0);
-                PORTA &= ~(1 << PA1);
-                break;
-            case 1:
-                PORTA |= (1 << PA0);
-                PORTA &= ~(1 << PA1);
-                break;
-            case 2:
-                PORTA |= (1 << PA1);
-                PORTA &= ~(1 << PA0);
-                break;
-            case 3:
-                PORTA |= (1 << PA0);
-                PORTA |= (1 << PA1);   
-                break;         
-        }
+    // while(1)
+    // {
+    //     temp = collision_status_retrieve();
+    //     switch(temp)
+    //     {
+    //         case 0:
+    //             PORTA &= ~(1 << PA0);
+    //             PORTA &= ~(1 << PA1);
+    //             break;
+    //         case 1:
+    //             PORTA |= (1 << PA0);
+    //             PORTA &= ~(1 << PA1);
+    //             break;
+    //         case 2:
+    //             PORTA |= (1 << PA1);
+    //             PORTA &= ~(1 << PA0);
+    //             break;
+    //         case 3:
+    //             PORTA |= (1 << PA0);
+    //             PORTA |= (1 << PA1);   
+    //             break;         
+    //     }
 
-        _delay_ms(500/8);
-    }
+    //     _delay_ms(500/8);
+    // }
 }

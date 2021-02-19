@@ -13,8 +13,10 @@
 
 #include "../include/pinConfig.h"
 #include "collision.h"
+#include "uart_attiny.h"
 
 int main()
 {
-    collision_init();
+    // collision_init();
+    uart_test_code();
 }

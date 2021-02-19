@@ -20,7 +20,7 @@ void collision_init(void);
 uint8_t collision_status_get(void);
 uint8_t collision_status_retrieve(void);
 bool col_pressed_get(void);
-bool col_pressed_clear(void);
+void col_pressed_clear(void);
 void collision_test(void);
 
 

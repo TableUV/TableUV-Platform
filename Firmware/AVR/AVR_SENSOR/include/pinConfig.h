@@ -30,7 +30,11 @@ extern "C"{
 #define IR_LEFT_2           PA3
 
 #define UART_TX             PA2
-#define UART_RX             PA1                          
+#define TX_PORT             PORTA
+#define TX_DDR              DDRA
+#define TX_DDR_PIN          DDA2                      
+
+#define UART_RX             PA1   
 
 #ifdef __cplusplus  
 }
