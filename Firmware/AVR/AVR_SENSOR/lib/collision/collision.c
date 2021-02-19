@@ -46,11 +46,11 @@ ISR(PCINT0_vect)
     {
         col_data.right_col_pressed = true;
     }
-    else if(PINB & _BV(RIGHT_COLLISION == 0)
+    else if(PINB & _BV(RIGHT_COLLISION == 0))
     {
         col_data.right_col_pressed = false;
     }
-    else if(PINB & _BV(LEFT_COLLISION == 0)
+    else if(PINB & _BV(LEFT_COLLISION == 0))
     {
         col_data.right_col_pressed = false;
     }
