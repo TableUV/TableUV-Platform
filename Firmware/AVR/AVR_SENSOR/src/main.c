@@ -17,6 +17,6 @@
 
 int main()
 {
-    // collision_init();
-    uart_test_code();
+    collision_init();
+    uart_attiny_init();
 }
