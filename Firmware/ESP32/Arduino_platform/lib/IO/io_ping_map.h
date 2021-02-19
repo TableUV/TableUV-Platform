@@ -27,8 +27,8 @@ extern "C"{
 
 // INT
 #define TOF_INT_3            39
-#define TOF_INT_2            34
-#define TOF_INT_1            35
+#define TOF_INT_2            35
+#define TOF_INT_1            34
 
 // DAC 
 #define ESP_DAC              DAC_CHANNEL_2  //DAC_CHANNEL_2

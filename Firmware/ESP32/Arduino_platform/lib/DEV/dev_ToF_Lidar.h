@@ -14,7 +14,23 @@
 extern "C"{
 # endif 
 
+/////////////////////////////////
+///////   DEFINITION     ////////
+/////////////////////////////////
+typedef enum{
+    DEV_TOF_LIDAR_R,
+    DEV_TOF_LIDAR_C,
+    DEV_TOF_LIDAR_L,
+    DEV_TOF_LIDAR_COUNT,
+    DEV_TOF_LIDAR_UNKNOWN
+} DEV_TOF_LIDAR_E;
+
+///////////////////////////////////////
+///////   PUBLIC PROTOTYPE    /////////
+///////////////////////////////////////
 void dev_ToF_Lidar_init(void);
+void dev_ToF_Lidar_update(void);
+
 
 # ifdef __cplusplus  
 }
