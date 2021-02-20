@@ -12,12 +12,29 @@
 #define DEV_IMU_H
 # ifdef __cplusplus
 extern "C"{
-# endif 
+# endif
+
+// External Lib
+#include <stdbool.h>
+
+typedef enum {
+    ACC_X,
+    ACC_Y,
+    ACC_Z,
+    GYR_X,
+    GYR_Y,
+    GYR_Z,
+    MAG_X,
+    MAG_Y,
+    MAG_Z,
+    IMU_COUNT,
+    IMU_UNDEFINED
+} IMU;
 
 void dev_imu_init(void);
-float* dev_imu_run1000ms(float*, ICM_20948_SPI*)
+bool dev_imu_get_values(IMU axis, float* data_ptr);
 
 # ifdef __cplusplus  
 }
 # endif 
-#endif //DEV_LED_H
+#endif //DEV_IMU_H
