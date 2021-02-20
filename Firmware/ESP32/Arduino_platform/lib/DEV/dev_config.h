@@ -15,7 +15,7 @@ extern "C"{
 # endif 
 
 void dev_init(void);
-void dev_run10ms(void);
+void dev_run20ms(void);
 void dev_run100ms(void);
 void dev_run1000ms(void);
 

@@ -1,9 +1,28 @@
 /**
  * @file main.c
+ * 
  * @author Jianxiang (Jack) Xu
+ * @author Tsugumi Murata
+ * @author Jerome Villapando
+ * @author Dong Jae (Alex) Park
+ * 
  * @date 15 Feb 2021
  * @brief Main File
- *
+ * 
+ * @license OpenSource (Non-Commercial)
+ * 
+ * -------------------------------------------------------------------
+ * -------------------------------------------------------------------
+ * --- *********************************************************** ---
+ * --- * ___________     ___.   .__          ____ _______   ____ * ---
+ * --- * \__    ___/____ \_ |__ |  |   ____ |    |   \   \ /   / * ---
+ * --- *   |    |  \__  \ | __ \|  | _/ __ \|    |   /\   Y   /  * ---
+ * --- *   |    |   / __ \| \_\ \  |_\  ___/|    |  /  \     /   * ---
+ * --- *   |____|  (____  /___  /____/\___  >______/    \___/    * ---
+ * --- *                \/    \/          \/                     * ---
+ * --- *********************************************************** ---
+ * -------------------------------------------------------------------
+ * -------------------------------------------------------------------
  */
 
 #include <Arduino.h>
@@ -33,7 +52,7 @@
 
 #define TASK_SLAM_TASK_TICK         (TASK_HZ_TO_TASK_TICK(  20/*[Hz]*/))
 #define TASK_SUPERVISOR_TASK_TICK   (TASK_HZ_TO_TASK_TICK(  50/*[Hz]*/))
-#define TASK_100HZ_TASK_TICK        (TASK_HZ_TO_TASK_TICK( 100/*[Hz]*/)) // TODO: we may not need 100 Hz, 50Hz shall be enough?
+#define TASK_50HZ_TASK_TICK         (TASK_HZ_TO_TASK_TICK(  50/*[Hz]*/)) // TODO: we may not need 100 Hz, 50Hz shall be enough?
 #define TASK_10HZ_TASK_TICK         (TASK_HZ_TO_TASK_TICK(  10/*[Hz]*/))
 #define TASK_1HZ_TASK_TICK          (TASK_HZ_TO_TASK_TICK(   1/*[Hz]*/))
 #define T_500MS_TASK_TICK           (MS_TO_TASK_TICK(      500/*[ms]*/))
@@ -45,7 +64,7 @@
 /////////////////////////////////////////
 static void esp32_task_init(void);
 
-static void core0_task_run10ms(void * pvParameters);
+static void core0_task_run20ms(void * pvParameters);
 static void core0_task_run100ms(void * pvParameters);
 static void core0_task_run1000ms(void * pvParameters);
 static void core1_task_runSLAM(void * pvParameters);
@@ -57,20 +76,24 @@ static void core1_task_runSLAM(void * pvParameters);
 ////////////////////////////////////////
 ///////   PRIVATE FUNCTION     /////////
 ////////////////////////////////////////
-static void core0_task_run10ms(void * pvParameters)
+static void core0_task_run20ms(void * pvParameters)
 {
+    TickType_t xLastWakeTime;
+    xLastWakeTime = xTaskGetTickCount ();
     for( ;; )
     {
         /* Do sth at */
         {
             //  add task
-            dev_run10ms();
+            dev_run20ms();
         }
-        vTaskDelay( TASK_100HZ_TASK_TICK );
+        vTaskDelayUntil(&xLastWakeTime, TASK_50HZ_TASK_TICK);
     }
 }
 static void core0_task_run100ms(void * pvParameters)
 {
+    TickType_t xLastWakeTime;
+    xLastWakeTime = xTaskGetTickCount ();
     for( ;; )
     {
         /* Do sth at */
@@ -78,11 +101,13 @@ static void core0_task_run100ms(void * pvParameters)
             //  add task
             dev_run100ms();
         }
-        vTaskDelay( TASK_10HZ_TASK_TICK );
+        vTaskDelayUntil(&xLastWakeTime, TASK_10HZ_TASK_TICK);
     }
 }
 static void core0_task_run1000ms(void * pvParameters)
 {
+    TickType_t xLastWakeTime;
+    xLastWakeTime = xTaskGetTickCount ();
     for( ;; )
     {
         /* Do sth at */
@@ -90,12 +115,14 @@ static void core0_task_run1000ms(void * pvParameters)
             //  add task
             dev_run1000ms();
         }
-        vTaskDelay( TASK_1HZ_TASK_TICK );
+        vTaskDelayUntil(&xLastWakeTime, TASK_1HZ_TASK_TICK);
     }
 }
 
 static void core1_task_runSLAM(void * pvParameters)
 {
+    TickType_t xLastWakeTime;
+    xLastWakeTime = xTaskGetTickCount ();
     for( ;; )
     {
         /* Do sth at */
@@ -103,12 +130,14 @@ static void core1_task_runSLAM(void * pvParameters)
             //  add task (High Level)
             app_slam_run50ms();
         }
-        vTaskDelay( TASK_SLAM_TASK_TICK );
+        vTaskDelayUntil(&xLastWakeTime, TASK_SLAM_TASK_TICK);
     }
 }
 
 static void core1_task_runSupervisor(void * pvParameters)
 {
+    TickType_t xLastWakeTime;
+    xLastWakeTime = xTaskGetTickCount ();
     for( ;; )
     {
         /* Do sth at */
@@ -116,7 +145,7 @@ static void core1_task_runSupervisor(void * pvParameters)
             //  add task (High Level)
             app_supervisor_run20ms();
         }
-        vTaskDelay( TASK_SUPERVISOR_TASK_TICK );
+        vTaskDelayUntil(&xLastWakeTime, TASK_SUPERVISOR_TASK_TICK);
     }
 }
 
@@ -124,8 +153,8 @@ static void esp32_task_init()
 {
     // Low Level Core Init.
     xTaskCreatePinnedToCore(
-        core0_task_run10ms,     /* Function to implement the task */
-        "core0_task_run10ms",   /* Name of the task */
+        core0_task_run20ms,     /* Function to implement the task */
+        "core0_task_run20ms",   /* Name of the task */
         10000,                  /* Stack size in words */
         NULL,                   /* Task input parameter */
         1,                      /* Priority of the task */
