@@ -17,50 +17,57 @@
 #include "waterLevel.h"
 #include "mistActuator.h"
 
-int main(void)
-{
-    
+
+static uint8_t getDriverMode(){
     // check which driver avr it is 
     DDRB &= ~_BV(MODE_SELECT); 
-    uint8_t driver_mode = (PINB & _BV(MODE_SELECT));
+    return (PINB & _BV(MODE_SELECT));
+}
 
+
+int main(void)
+{
+    // set system clock to 8MHz
+    CLKPR  = _BV(CLKPCE);
+    CLKPR  = 0;
+    
+    // define local variables 
+    uint8_t driver_mode = 0; 
     uint8_t driver_avr = 0;
     uint8_t slave_address = 0x2A;  
 
-    DDRB |= _BV(PB0);
-    PORTB ^= _BV(PB0);
+    //check mode pin 
+    driver_mode = getDriverMode(); 
+
     //left driver 
     if (driver_mode) {
         driver_avr = 1; 
         slave_address = 0x2A;   //slave address for left driver avr 
-        // pin setup 
-        DDRA |= _BV(TWI_I2C_SCL ) | _BV(TWI_I2C_SDA); 
     }
     //right driver 
     else{
         driver_avr = 0;
         slave_address = 0x0A ;   //slave address for right driver avr 
-        // pin setup 
-        DDRA |= _BV(TWI_I2C_SCL ) | _BV(TWI_I2C_SDA); 
-    }
-
-    //setup encoder interrupt settings 
-    setupEncoderConfig(); 
-    setupMotorConfig(); 
-
-    //setup only needed for right avr driver 
-    if(!driver_avr){
+        //setup only needed for right avr driver 
         setupWaterLevelConfig();
         setupMistActuatorConfig();
     }
 
+    //setup usi twi settings 
+    setupUsiTwiConfig();
+
+    //setup encoder interrupt settings 
+    setupEncoderConfig(); 
+    //setup motor config 
+    setupMotorConfig(PHASE_CORRECT_PWM); 
+
     //Set up the USI communicatin
     usiTwiSlaveInit(slave_address);
 
-       while(1)
-    { 
-        // _delay_ms(500);
+    DDRB |= _BV(PB0);
 
+    while(1)
+    { 
         //if data received from master
         if(usiTwiDataInReceiveBuffer()){
 

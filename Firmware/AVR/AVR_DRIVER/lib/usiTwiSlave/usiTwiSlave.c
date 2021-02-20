@@ -21,6 +21,7 @@
  26 Apr 2007  Fixed ACK of slave address on a read.
  04 Jul 2007  Fixed USISIF in ATtiny45 def
  31 Jul 2009  Added support for ATtiny24, 44, 84
+ 20 Feb 2021  Modified by tmurata, add functin specific for TableUV robot 
  ********************************************************************************/
 
 
@@ -284,8 +285,11 @@ void
 /********************************************************************************
  public functions
  ********************************************************************************/
-
-
+// added by tmurata 
+void setupUsiTwiConfig(){
+    // pin setup 
+    DDRA |= _BV(TWI_I2C_SCL) | _BV(TWI_I2C_SDA); 
+}
 
 // initialise USI for TWI slave mode
 

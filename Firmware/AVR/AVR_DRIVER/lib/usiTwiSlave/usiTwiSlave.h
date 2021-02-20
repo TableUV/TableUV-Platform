@@ -16,7 +16,8 @@
  Change Activity:
  Date       Description
  ------      -------------
- 15 Mar 2007  Created.
+ 15 Mar 2007  Created. 
+ 20 Feb 2021  Modified by tmurata, add functin specific for TableUV robot 
  ********************************************************************************/
 
 
@@ -31,6 +32,8 @@
  ********************************************************************************/
 
 #include <stdbool.h>
+//added by tmurata
+#include "../../include/pinConfig.h"
 
 /********************************************************************************
  prototypes
@@ -42,6 +45,8 @@ void    usiTwiTransmitByte( int16_t );
 uint8_t usiTwiReceiveByte( void );
 bool    usiTwiDataInReceiveBuffer( void );
 
+// added by tmurata 
+void setupUsiTwiConfig(); 
 
 
 /********************************************************************************

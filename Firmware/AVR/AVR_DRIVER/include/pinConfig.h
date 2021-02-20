@@ -31,6 +31,10 @@ extern "C"{
 #define MIST_ACTUATOR       PA3     //output
 #define WATER_LEVEL_SIG     PA5     //input, ADC
 
+#define TOF_CONFIG_1        PA2     //output
+#define TOF_CONFIG_2        PA3     //output
+#define TOF_CONFIG_3        PA5     //output
+
 #ifdef __cplusplus  
 }
 #endif 
