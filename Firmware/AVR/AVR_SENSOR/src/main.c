@@ -20,6 +20,4 @@ int main()
 {
     collision_init();
     uart_attiny_init();
-
-    ir_test_code();
 }

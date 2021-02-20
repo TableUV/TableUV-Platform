@@ -13,6 +13,7 @@
 #include <avr/interrupt.h>
 #include <stdint.h>
 #include <util/delay.h>
+#include <stdio.h>
 
 #include "../../include/pinConfig.h"
 

@@ -8,6 +8,7 @@
  */
 
 #include "uart_attiny.h"
+#include <stdio.h>
 
 
 /////////////////////////////////
@@ -70,6 +71,7 @@ static inline void ir_private_gpio_config(void)
             
     ADCSRB = 
             (1 << ADLAR);      // left shift result (for 8-bit values)
+        
 }
 
 ///////////////////////////////////////
@@ -172,8 +174,12 @@ void ir_test_code(void)
     {
         ir_sensor_data = ir_sensor_retrieve();
 
-        UART_tx_str("IR_FRONT_1_MUX:");
-        UART_tx(ir_sensor_data.ir_front_1_data);
+        char my_string[7];
+
+        sprintf(my_string, "IR_DATA = %d\n", ir_sensor_data.ir_left_2_data);
+        UART_tx_str(my_string);
+
         _delay_ms(500/8);
     }
 }
+
