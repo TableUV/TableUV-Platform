@@ -4,7 +4,7 @@
  * @date 18 Feb 2021
  * @brief Device IMU
  * 
- * This document will contains device configure content
+ * This document is the header file for interfacing with the IMU.
  */
 
 
@@ -18,21 +18,35 @@ extern "C"{
 #include <stdbool.h>
 
 typedef enum {
-    ACC_X,
-    ACC_Y,
-    ACC_Z,
-    GYR_X,
-    GYR_Y,
-    GYR_Z,
-    MAG_X,
-    MAG_Y,
-    MAG_Z,
-    IMU_COUNT,
-    IMU_UNDEFINED
-} IMU;
+    IMU_AXIS_ACC_X,
+    IMU_AXIS_ACC_Y,
+    IMU_AXIS_ACC_Z,
+    IMU_AXIS_GYR_X,
+    IMU_AXIS_GYR_Y,
+    IMU_AXIS_GYR_Z,
+    IMU_AXIS_MAG_X,
+    IMU_AXIS_MAG_Y,
+    IMU_AXIS_MAG_Z,
+    IMU_AXIS_IMU_COUNT,
+    IMU_AXIS_IMU_UNDEFINED
+} IMU_AXIS_E;
 
+/**
+ * @brief This function initializes the IMU by setting the SPI bus
+ */
 void dev_imu_init(void);
-bool dev_imu_get_values(IMU axis, float* data_ptr);
+
+
+/**
+ * @brief This function fetches data from the IMU
+ * 
+ *  NOTE: Expecting app level call this function once per XX Hz (XXXms)
+ *  NOTE: Acceleration values are converted from [mg] to [m/s^2]
+ * @param data_ptr: pointer used to copy over the data
+ * 
+ * @return boolean on whether getting values were successful or not
+ */
+bool dev_imu_get_values(float* data_ptr);
 
 # ifdef __cplusplus  
 }
