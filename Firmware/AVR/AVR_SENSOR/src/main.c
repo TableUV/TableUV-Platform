@@ -14,9 +14,12 @@
 #include "../include/pinConfig.h"
 #include "collision.h"
 #include "uart_attiny.h"
+#include "ir_sensor.h"
 
 int main()
 {
     collision_init();
     uart_attiny_init();
+
+    ir_test_code();
 }

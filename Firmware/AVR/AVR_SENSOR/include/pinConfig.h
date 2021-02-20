@@ -29,12 +29,19 @@ extern "C"{
 #define IR_LEFT_1           PA0
 #define IR_LEFT_2           PA3
 
+#define IR_FRONT_1_MUX      0b00000111  //ADC7
+#define IR_FRONT_2_MUX      0b00000110  //ADC6
+#define IR_RIGHT_1_MUX      0b00000100  //ADC4  
+#define IR_RIGHT_2_MUX      0b00000101  //ADC5
+#define IR_LEFT_1_MUX       0b00000000  //ADC0
+#define IR_LEFT_2_MUX       0b00000011  //ADC3
+
 #define UART_TX             PA2
 #define TX_PORT             PORTA
 #define TX_DDR              DDRA
 #define TX_DDR_PIN          DDA2                      
 
-#define UART_RX             PA1   
+#define UART_RX             PA1 
 
 #ifdef __cplusplus  
 }
