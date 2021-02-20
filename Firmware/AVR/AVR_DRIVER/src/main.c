@@ -14,60 +14,65 @@
 #include "pinConfig.h"
 #include "motor.h"
 #include "encoder.h"
-
-
-/*********************************
-    select which driver avr  
-**********************************/
-//comment out this line if coding for right avr 
-
-//#define USE_LEFT_DRIVER_AVR TRUE
-
-
-#ifdef USE_LEFT_DRIVER_AVR
-    #define DRIVER_AVR      0
-    #define SLAVE_ADDRESS   0x55    //slave address for left driver avr 
-#else
-    #define DRIVER_AVR      1
-    #define SLAVE_ADDRESS   0x56    //slave address for right driver avr 
-#endif 
-
-
-/*********************************
-             ISR 
-**********************************/
-ISR(PCINT0_vect){
-
-}
-
+#include "waterLevel.h"
+#include "mistActuator.h"
 
 int main(void)
 {
-    // pin setup 
-    DDRA |= ( PIN_DIR_INPUT << ENCODER_SIG_A ) | ( PIN_DIR_INPUT << ENCODER_SIG_B ) | ( PIN_DIR_OUTPUT << TWI_I2C_SCL ) | ( PIN_DIR_OUTPUT << TWI_I2C_SDA) | ( PIN_DIR_OUTPUT << MOTOR_OUT_B); 
-    DDRB |= ( PIN_DIR_INPUT << MODE_SELECT) | ( PIN_DIR_OUTPUT << MOTOR_OUT_A); 
+    
+    // check which driver avr it is 
+    DDRB &= ~_BV(MODE_SELECT); 
+    uint8_t driver_mode = (PINB & _BV(MODE_SELECT));
+
+    uint8_t driver_avr = 0;
+    uint8_t slave_address = 0x2A;  
+
+    DDRB |= _BV(PB0);
+    PORTB ^= _BV(PB0);
+    //left driver 
+    if (driver_mode) {
+        driver_avr = 1; 
+        slave_address = 0x2A;   //slave address for left driver avr 
+        // pin setup 
+        DDRA |= _BV(TWI_I2C_SCL ) | _BV(TWI_I2C_SDA); 
+    }
+    //right driver 
+    else{
+        driver_avr = 0;
+        slave_address = 0x0A ;   //slave address for right driver avr 
+        // pin setup 
+        DDRA |= _BV(TWI_I2C_SCL ) | _BV(TWI_I2C_SDA); 
+    }
 
     //setup encoder interrupt settings 
-    setupInterruptEncoder(); 
+    setupEncoderConfig(); 
+    setupMotorConfig(); 
+
+    //setup only needed for right avr driver 
+    if(!driver_avr){
+        setupWaterLevelConfig();
+        setupMistActuatorConfig();
+    }
 
     //Set up the USI communicatin
-    usiTwiSlaveInit(SLAVE_ADDRESS);
+    usiTwiSlaveInit(slave_address);
 
        while(1)
     { 
+        // _delay_ms(500);
+
         //if data received from master
         if(usiTwiDataInReceiveBuffer()){
-            
+
             switch(usiTwiReceiveByte()){
                 //trigger signal detected from master
                 case 'r':
-                cli();                              //disable interrupt
-                
+                cli();
                 //send encod_count to master (first 8 bit)
-                usiTwiTransmitByte( (encod_count & FIRST_8BIT) >> 8 );
+                usiTwiTransmitByte(getEncoderCount16_first_8bit());
                 //send encod_count to master (second 8 bit)
-                usiTwiTransmitByte( (encod_count & SECOND_8BIT ));
-                encod_count = 0;                    //reset the count
+                usiTwiTransmitByte(getEncoderCount16_second_8bit());
+                //setEncoderCount(0);                   //reset the count
                 
                 sei();                              //enable interrupt
                 break;

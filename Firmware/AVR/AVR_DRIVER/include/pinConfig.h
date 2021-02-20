@@ -16,9 +16,6 @@ extern "C"{
 #endif 
 
 
-#define PIN_DIR_INPUT       0
-#define PIN_DIR_OUTPUT      1
-
 #define MOTOR_OUT_A         PB2     //output, OC0A
 #define MOTOR_OUT_B         PA7     //output, OC0B
 
@@ -29,6 +26,10 @@ extern "C"{
 
 #define TWI_I2C_SDA         PA6     //bi-directional, SDA
 #define TWI_I2C_SCL         PA4     //output, SCL 
+
+#define STATUS_LED          PA2     //output
+#define MIST_ACTUATOR       PA3     //output
+#define WATER_LEVEL_SIG     PA5     //input, ADC
 
 #ifdef __cplusplus  
 }

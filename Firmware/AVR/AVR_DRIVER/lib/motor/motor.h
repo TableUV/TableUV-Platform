@@ -16,6 +16,9 @@ extern "C"{
 #endif 
 
 #include <stdio.h>
+#include "../../include/pinConfig.h"
+
+#define REG_MAX 255
 
 typedef enum motor_mode{
     COAST,
@@ -27,6 +30,9 @@ typedef enum motor_mode{
 } motor_modo_t; 
 
 
+void setupMotorConfig(); 
+void setMotor(motor_modo_t motor_mode, uint8_t percent_pwm); 
+void eStopMotor(); 
 
 #ifdef __cplusplus  
 }
