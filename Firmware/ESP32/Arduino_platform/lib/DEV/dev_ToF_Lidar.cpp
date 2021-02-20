@@ -2,9 +2,11 @@
  * @file dev_ToF_Lidar.c
  * @author Jianxiang (Jack) Xu
  * @date 15 Feb 2021
- * @brief Device configure files
+ * @brief ToF Lidar Scanner
  *
- * This document will contains device configure content
+ * This file will utilize modified SparkFun lite library for VL53L1X to perform custom scanning.
+ * 
+ * Sensor would be updating at 20Hz per firing, 5 frames per sequence. => Total: 15 data points per 100 ms update.
  * 
  * Datasheet: https://www.st.com/resource/en/datasheet/vl53l1x.pdf
  * Driver: https://www.st.com/resource/en/user_manual/dm00562924-a-guide-to-using-the-vl53l1x-ultra-lite-driver-stmicroelectronics.pdf

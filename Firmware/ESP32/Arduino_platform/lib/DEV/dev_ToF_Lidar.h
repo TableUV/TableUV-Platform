@@ -4,7 +4,7 @@
  * @date 15 Feb 2021
  * @brief Array of ToF Lidars
  * 
- * This document will contains device configure content
+ * This file contains the header file of ToF Lidar.
  */
 
 
