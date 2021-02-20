@@ -12,15 +12,10 @@
 /////////////////////////////////
 ///////   DEFINITION     ////////
 /////////////////////////////////
-typedef enum {
-    CHARGING,                   // STAT Pin Low
-    CHARGE_COMPLETE_SLEEP,      // STAT Pin HIGH
-    CHARGER_FAULT               // STAT Pin Blinkings
-} charger_ic_status_t;
 typedef struct {
     float battery_voltage;              // Volts
     int32_t battery_voltage_raw;        // 0 - 4096
-    charger_ic_status_t charger_status;
+    charger_ic_status_E charger_status;
 } dev_battery_data_S;
 
 /////////////////////////////////////////
@@ -75,7 +70,7 @@ void dev_battery_init(void)
 
 float dev_battery_convert_to_lipo_volts(int32_t raw_adc)
 {
-    return raw_adc * 0.8/4096 * (BATTERY_PULLUP_KOHMS + BATTERY_PULLDOWN_KOHMS) / BATTERY_PULLDOWN_KOHMS;
+    return raw_adc * 0.8/4096 * (DEV_BATTERY_PULLUP_KOHMS + DEV_BATTERY_PULLDOWN_KOHMS) / DEV_BATTERY_PULLDOWN_KOHMS;
 }
 
 void dev_battery_update(void)
@@ -130,12 +125,12 @@ void dev_charger_status_update(void)
     }
 }
 
-int8_t dev_charger_status_get(void)
+charger_ic_status_E dev_charger_status_get(void)
 {
     return battery_data.charger_status;
 }
 
-int8_t dev_charger_status_read(void)
+charger_ic_status_E dev_charger_status_read(void)
 {
     edge_detected = 0;
     gpio_intr_enable(CHARGE_STATUS);
