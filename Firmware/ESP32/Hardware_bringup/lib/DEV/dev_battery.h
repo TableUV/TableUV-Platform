@@ -22,8 +22,10 @@
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 
-#define DEV_BATTERY_PULLUP_KOHMS    249
-#define DEV_BATTERY_PULLDOWN_KOHMS  16.9
+#define DEV_BATTERY_PULLUP_KOHMS                249
+#define DEV_BATTERY_PULLDOWN_KOHMS              16.9
+#define DEV_BATTERY_CHARGE_STAT_FREQ_HZ         10
+#define DEV_BATTERY_CHARGE_FAULT_FREQ_HZ        2
 
 typedef enum {
     CHARGING,                   // STAT Pin Low
