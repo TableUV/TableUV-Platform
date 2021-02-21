@@ -10,6 +10,8 @@
 #ifndef DEV_BATTERY_H
 #define DEV_BATTERY_H
 
+
+
 // Standard libraries 
 #include <stdint.h>
 
