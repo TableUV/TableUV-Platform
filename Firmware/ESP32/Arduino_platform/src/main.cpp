@@ -45,6 +45,9 @@
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 
+// Test Code
+#include "dev_avr_sensor.h"
+
 /////////////////////////////////
 ///////   DEFINITION     ////////
 /////////////////////////////////
@@ -52,7 +55,7 @@
 #define ESP32_CORE_HIGH_LEVEL       (1U)
 
 #define TASK_SLAM_TASK_TICK         (TASK_HZ_TO_TASK_TICK(  10/*[Hz]*/))
-#define TASK_SUPERVISOR_TASK_TICK   (TASK_HZ_TO_TASK_TICK(  50/*[Hz]*/))
+#define TASK_SUPERVISOR_TASK_TICK   (TASK_HZ_TO_TASK_TICK(  20/*[Hz]*/))
 #define TASK_50HZ_TASK_TICK         (TASK_HZ_TO_TASK_TICK(  50/*[Hz]*/)) // TODO: we may not need 100 Hz, 50Hz shall be enough?
 #define TASK_10HZ_TASK_TICK         (TASK_HZ_TO_TASK_TICK(  10/*[Hz]*/))
 #define TASK_1HZ_TASK_TICK          (TASK_HZ_TO_TASK_TICK(   1/*[Hz]*/))
@@ -60,6 +63,16 @@
 
 #define MS_TO_TASK_TICK(x)          (TickType_t)((x)/(portTICK_PERIOD_MS))
 #define TASK_HZ_TO_TASK_TICK(x)     (MS_TO_TASK_TICK(1000/(x))) // Range: [ < 1 kHz]
+
+#define BYTE_TO_BINARY(byte)  \
+  (byte & 0x80 ? '1' : '0'), \
+  (byte & 0x40 ? '1' : '0'), \
+  (byte & 0x20 ? '1' : '0'), \
+  (byte & 0x10 ? '1' : '0'), \
+  (byte & 0x08 ? '1' : '0'), \
+  (byte & 0x04 ? '1' : '0'), \
+  (byte & 0x02 ? '1' : '0'), \
+  (byte & 0x01 ? '1' : '0') 
 /////////////////////////////////////////
 ///////   PRIVATE PROTOTYPE     /////////
 /////////////////////////////////////////
@@ -144,7 +157,7 @@ static void core1_task_runSupervisor(void * pvParameters)
         /* Do sth at */
         {
             //  add task (High Level)
-            app_supervisor_run20ms();
+            app_supervisor_run50ms();
         }
         vTaskDelayUntil(&xLastWakeTime, TASK_SUPERVISOR_TASK_TICK);
     }
@@ -231,6 +244,6 @@ void setup() {
 
 void loop() {
     // forever loop
-    while (true){};
+    // while (true){};
 }
 

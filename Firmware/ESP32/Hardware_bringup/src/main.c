@@ -112,7 +112,7 @@ static void core1_task_runSupervisor(void * pvParameters)
         /* Do sth at */
         {
             //  add task (High Level)
-            app_supervisor_run20ms();
+            app_supervisor_run50ms();
         }
         vTaskDelay( TASK_SUPERVISOR_TASK_TICK );
     }
