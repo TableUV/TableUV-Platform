@@ -202,10 +202,11 @@ void loop() {
     // forever loop
     // while (true){};
 
-    uint8_t temp = dev_charger_status_read();
+    charger_ic_status_E temp = dev_charger_status_read();
+    // int temp = gpio_get_level(CHARGE_STATUS);
     printf("%d\n", temp);
     // printf("hello\n");
 
-    delay(400);
+    delay(10000);
 }
 

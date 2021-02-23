@@ -9,6 +9,9 @@
 
 #include "dev_battery.h"
 
+#define sei()
+#define cli()
+
 /////////////////////////////////
 ///////   DEFINITION     ////////
 /////////////////////////////////
@@ -35,7 +38,9 @@ static volatile uint8_t edge_count = 0;
 ////////////////////////////////////////
 static void IRAM_ATTR charger_fault_isr_handler(void* arg)
 {
+    cli();
     edge_count++;
+    sei();
 }
 
 static inline void dev_battery_private_gpio_config(void)
@@ -51,7 +56,8 @@ static inline void dev_battery_private_gpio_config(void)
     gpio_config(&io_conf);
 
     io_conf.pin_bit_mask = (1ULL<< CHARGE_STATUS);
-    io_conf.intr_type = GPIO_INTR_ANYEDGE;
+    io_conf.intr_type = GPIO_INTR_POSEDGE;
+
     gpio_config(&io_conf);
 
     gpio_install_isr_service(0);
@@ -106,11 +112,7 @@ int32_t dev_battery_read_raw(void)
 
 void dev_charger_status_update(void)
 {
-    if(edge_count > DEV_BATTERY_CHARGE_STAT_FREQ_HZ/DEV_BATTERY_CHARGE_FAULT_FREQ_HZ)
-    {
-        battery_data.charger_status = CHARGER_FAULT;
-    }
-    else if(gpio_get_level(CHARGE_STATUS))
+    if(gpio_get_level(CHARGE_STATUS))
     {
         battery_data.charger_status = CHARGE_COMPLETE_SLEEP;
     }
@@ -119,7 +121,13 @@ void dev_charger_status_update(void)
         battery_data.charger_status = CHARGING;
     }
 
+    cli();
+    if(edge_count >= DEV_BATTERY_CHARGE_STAT_FREQ_HZ/DEV_BATTERY_CHARGE_FAULT_FREQ_HZ)
+    {
+        battery_data.charger_status = CHARGER_FAULT;
+    }
     edge_count = 0;
+    sei();
 }
 
 charger_ic_status_E dev_charger_status_get(void)
@@ -129,21 +137,6 @@ charger_ic_status_E dev_charger_status_get(void)
 
 charger_ic_status_E dev_charger_status_read(void)
 {
-    if(edge_count > DEV_BATTERY_CHARGE_STAT_FREQ_HZ/DEV_BATTERY_CHARGE_FAULT_FREQ_HZ)
-    {
-        return CHARGER_FAULT;
-    }
-    else
-    {
-        edge_count = 0;
-    }
-    
-    if(gpio_get_level(CHARGE_STATUS))
-    {
-        return CHARGE_COMPLETE_SLEEP;
-    }
-    else
-    {
-        return CHARGING;
-    }
+    dev_charger_status_update();
+    return battery_data.charger_status;
 }

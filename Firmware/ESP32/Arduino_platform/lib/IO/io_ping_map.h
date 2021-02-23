@@ -21,8 +21,8 @@ extern "C"{
 #define TOF_SHUT             25
 #define STATUS_GREEN_LED     12
 #define STATUS_RED_LED       13
-#define CHARGE_STATUS        15
-#define BATTERY_VOLTAGE      2
+#define CHARGE_STATUS        GPIO_NUM_15
+#define BATTERY_VOLTAGE      GPIO_NUM_2
 #define FW_SHUTDOWN          18
 
 // INT
