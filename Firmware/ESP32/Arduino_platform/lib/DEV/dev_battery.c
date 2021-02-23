@@ -129,16 +129,16 @@ charger_ic_status_E dev_charger_status_get(void)
 
 charger_ic_status_E dev_charger_status_read(void)
 {
-    edge_count = 0;
-    gpio_intr_enable(CHARGE_STATUS);
-    vTaskDelay(2000 / portTICK_RATE_MS);
-    gpio_intr_disable(CHARGE_STATUS);
-
-    if(edge_count)
+    if(edge_count > DEV_BATTERY_CHARGE_STAT_FREQ_HZ/DEV_BATTERY_CHARGE_FAULT_FREQ_HZ)
     {
         return CHARGER_FAULT;
     }
-    else if(gpio_get_level(CHARGE_STATUS))
+    else
+    {
+        edge_count = 0;
+    }
+    
+    if(gpio_get_level(CHARGE_STATUS))
     {
         return CHARGE_COMPLETE_SLEEP;
     }

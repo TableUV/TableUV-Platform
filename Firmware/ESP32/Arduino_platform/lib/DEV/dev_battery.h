@@ -9,6 +9,9 @@
 
 #ifndef DEV_BATTERY_H
 #define DEV_BATTERY_H
+# ifdef __cplusplus
+extern "C"{
+# endif 
 
 // Standard libraries 
 #include <stdint.h>
@@ -43,5 +46,7 @@ void dev_charger_status_update(void);
 charger_ic_status_E dev_charger_status_get(void);
 charger_ic_status_E dev_charger_status_read(void);
 
-
+# ifdef __cplusplus  
+}
+# endif 
 #endif //DEV_BATTERY_H

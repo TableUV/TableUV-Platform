@@ -25,6 +25,9 @@
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 
+// TEST code
+#include "dev_battery.h"
+
 /////////////////////////////////
 ///////   DEFINITION     ////////
 /////////////////////////////////
@@ -197,6 +200,12 @@ void setup() {
 
 void loop() {
     // forever loop
-    while (true){};
+    // while (true){};
+
+    uint8_t temp = dev_charger_status_read();
+    printf("%d\n", temp);
+    // printf("hello\n");
+
+    delay(400);
 }
 
