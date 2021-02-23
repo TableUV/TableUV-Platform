@@ -26,6 +26,7 @@ extern "C"{
 /////////////////////////////////////////
 #define FEATURE_LIDAR                   (ENABLE) // (WIP)
 #define FEATURE_LIDAR_CALIBRATION_MODE  (DISABLE) // TODO: implement calibration strategy
+#define FEATURE_SENSOR_AVR              (ENABLE)
 
 #define FEATURE_AVR_DRIVER_ALL          (ENABLE) //
 

@@ -12,16 +12,29 @@
 // Std. Lib
 #include <stdio.h>
 #include <string.h>
+#include <stdint.h>
 
 // TableUV Lib
+#include "common.h"
+#include "dev_avr_sensor.h"
 
 // External Library
+
+#define BYTE_TO_BINARY(byte)  \
+  (byte & 0x80 ? '1' : '0'), \
+  (byte & 0x40 ? '1' : '0'), \
+  (byte & 0x20 ? '1' : '0'), \
+  (byte & 0x10 ? '1' : '0'), \
+  (byte & 0x08 ? '1' : '0'), \
+  (byte & 0x04 ? '1' : '0'), \
+  (byte & 0x02 ? '1' : '0'), \
+  (byte & 0x01 ? '1' : '0') 
 
 /////////////////////////////////
 ///////   DEFINITION     ////////
 /////////////////////////////////
 typedef struct{
-    
+    uint8_t avr_sensor_data;    
 } app_supervisor_data_S;
 
 /////////////////////////////////////////
@@ -46,9 +59,13 @@ void app_supervisor_init(void)
     memset(&supervisor_data, 0x00, sizeof(app_supervisor_data_S));
 }
 
-void app_supervisor_run20ms(void)
+void app_supervisor_run50ms(void)
 {
     // TODO: to be implemented
+#if (FEATURE_SENSOR_AVR)    
+    supervisor_data.avr_sensor_data = dev_avr_sensor_uart_get();
+    PRINTF("AVR Sensor data: %c%c%c%c%c%c%c%c\n", BYTE_TO_BINARY(supervisor_data.avr_sensor_data));
+#endif    
 }
 
 

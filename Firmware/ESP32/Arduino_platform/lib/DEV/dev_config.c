@@ -1,6 +1,6 @@
 /**
  * @file dev_config.c
- * @author Jianxiang (Jack) Xu
+	 * @author Jianxiang (Jack) Xu
  * @date 15 Feb 2021
  * @brief Device configure files
  *
@@ -64,8 +64,9 @@ void dev_run20ms(void)
 #if (FEATURE_LIDAR)
     dev_ToF_Lidar_update20ms();
 #endif
- 
-
+#if (FEATURE_SENSOR_AVR)
+    dev_avr_sensor_uart_update();
+#endif
 }
 
 void dev_run100ms(void)
