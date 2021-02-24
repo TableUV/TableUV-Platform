@@ -1,0 +1,19 @@
+{
+	"folders": [
+		{
+			"path": ".."
+		},
+		{
+			"name": "Hardware_bringup",
+			"path": "../../../ESP32/Hardware_bringup"
+		}
+	],
+	"settings": {
+		"files.associations": {
+			"usitwislave.h": "c",
+			"decodei2c.h": "c",
+			"io.h": "c",
+			"delay.h": "c"
+		}
+	}
+}

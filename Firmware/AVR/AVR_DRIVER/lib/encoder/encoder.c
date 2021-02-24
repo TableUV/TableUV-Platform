@@ -10,13 +10,14 @@
 #include <avr/io.h>
 #include <avr/interrupt.h>  
 #include "encoder.h"
+#include "../../include/avr_driver_common.h"
 
 volatile int32_t encod_count           = 0x00;
-volatile encoder_state_t encod_curr    = ZERO_ZERO;
-volatile encoder_state_t encod_prev    = ZERO_ZERO;
+volatile encoder_state_E encod_curr    = ENCODER_PHASE_ZERO_ZERO;
+volatile encoder_state_E encod_prev    = ENCODER_PHASE_ZERO_ZERO;
 
 
-static encoder_state_t getCurrentPhase(){
+static encoder_state_E getCurrentPhase(){
     return ((PINA) & (ENCODER_SIG_MASK)); 
 }
 
@@ -27,21 +28,23 @@ ISR(PCINT0_vect){
     cli(); 
     encod_curr = getCurrentPhase(); 
     switch(encod_prev){
-        case(ZERO_ZERO):
-            if (encod_curr == ONE_ZERO) encod_count ++; 
-            else if(encod_curr == ZERO_ONE) encod_count --; 
+        case(ENCODER_PHASE_ZERO_ZERO):
+            if (encod_curr == ENCODER_PHASE_ONE_ZERO) encod_count ++; 
+            else if(encod_curr == ENCODER_PHASE_ZERO_ONE) encod_count --; 
         break;
-        case(ZERO_ONE):
-            if (encod_curr == ZERO_ZERO) encod_count ++; 
-            else if(encod_curr == ONE_ONE) encod_count --; 
+        case(ENCODER_PHASE_ZERO_ONE):
+            if (encod_curr == ENCODER_PHASE_ZERO_ZERO) encod_count ++; 
+            else if(encod_curr == ENCODER_PHASE_ONE_ONE) encod_count --; 
         break;
-        case(ONE_ZERO):
-            if (encod_curr == ONE_ONE) encod_count ++; 
-            else if(encod_curr == ZERO_ZERO) encod_count --; 
+        case(ENCODER_PHASE_ONE_ZERO):
+            if (encod_curr == ENCODER_PHASE_ONE_ONE) encod_count ++; 
+            else if(encod_curr == ENCODER_PHASE_ZERO_ZERO) encod_count --; 
         break;
-        case(ONE_ONE):
-            if (encod_curr == ZERO_ONE) encod_count ++; 
-            else if(encod_curr == ONE_ZERO) encod_count --; 
+        case(ENCODER_PHASE_ONE_ONE):
+            if (encod_curr == ENCODER_PHASE_ZERO_ONE) encod_count ++; 
+            else if(encod_curr == ENCODER_PHASE_ONE_ZERO) encod_count --; 
+        break;
+        default:
         break;
     }
     encod_prev = encod_curr;
@@ -75,24 +78,24 @@ int8_t getEncoderCount8(){
 }
 
 int8_t getEncoderCount16_first_8bit(){
-    return ((encod_count & ENCODER16_FIRST_8BIT) >> 8);
+    return ((encod_count & DATA_MASK_16BIT_FIRST_8BIT) >> 8);
 }
 int8_t getEncoderCount16_second_8bit(){
-    return (encod_count & ENCODER16_SECOND_8BIT);
+    return (encod_count & DATA_MASK_16BIT_SECOND_8BIT);
 }
 
 int8_t getEncoderCount32_first_8bit(){
-    return ((encod_count & ENCODER32_FIRST_8BIT) >> 24);
+    return ((encod_count & DATA_MASK_32BIT_FIRST_8BIT) >> 24);
 }
 
 int8_t getEncoderCount32_second_8bit(){
-    return ((encod_count & ENCODER32_SECOND_8BIT) >> 16);
+    return ((encod_count & DATA_MASK_32BIT_SECOND_8BIT) >> 16);
 }
 
 int8_t getEncoderCount32_third_8bit(){
-    return ((encod_count & ENCODER32_THIRD_8BIT) >> 8);
+    return ((encod_count & DATA_MASK_32BIT_THIRD_8BIT) >> 8);
 }
 
 int8_t getEncoderCount32_fourth_8bit(){
-    return (encod_count & ENCODER32_FOURTH_8BIT);
+    return (encod_count & DATA_MASK_32BIT_FOURTH_8BIT);
 }

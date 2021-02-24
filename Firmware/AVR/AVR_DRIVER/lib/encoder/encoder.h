@@ -20,20 +20,13 @@ extern "C"{
 
 #define ENCODER_SIG_MASK (_BV(ENCODER_SIG_A) | _BV(ENCODER_SIG_B) )
 
-#define ENCODER16_FIRST_8BIT             0xFF00
-#define ENCODER16_SECOND_8BIT            0x00FF
-
-#define ENCODER32_FIRST_8BIT             0xFF000000
-#define ENCODER32_SECOND_8BIT            0x00FF0000
-#define ENCODER32_THIRD_8BIT             0x0000FF00
-#define ENCODER32_FOURTH_8BIT            0x000000FF
 
 typedef enum {
-    ZERO_ZERO,
-    ZERO_ONE ,
-    ONE_ZERO ,
-    ONE_ONE
-} encoder_state_t;
+    ENCODER_PHASE_ZERO_ZERO,
+    ENCODER_PHASE_ZERO_ONE ,
+    ENCODER_PHASE_ONE_ZERO ,
+    ENCODER_PHASE_ONE_ONE
+} encoder_state_E;
 
 // public function
 void setupEncoderConfig();

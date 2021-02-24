@@ -9,7 +9,7 @@
 #include <avr/io.h>
 #include "motor.h"
 
-void setupMotorConfig(pwm_mode_t pwm_mode){
+void setupMotorConfig(pwm_mode_E pwm_mode){
     DDRA |= _BV(MOTOR_OUT_B);
     DDRB |= _BV(MOTOR_OUT_A); 
 
@@ -22,14 +22,14 @@ void setupMotorConfig(pwm_mode_t pwm_mode){
             // Clear (output low) on Compare Match when up-counting.
             // Set (output high) Compare Match when down-counting.
 
-    if (pwm_mode == FAST_PWM_MODE){
+    if (pwm_mode == PWM_MODE_FAST){
         // set WGM (waveform generation mode)
         TCCR0A |= _BV(WGM01) | _BV(WGM00);
         // set prescaler of 8, freq = 3.91khz
         TCCR0B |=  _BV(CS01);
 
     }
-    else if (pwm_mode == PHASE_CORRECT_PWM){
+    else if (pwm_mode == PWM_MODE_PHASE_CORRECT){
         // set WGM (waveform generation mode)
         TCCR0A |= _BV(WGM00);
         // set prescaler of 8 , freq = 1.95khz (phase correct pwm is half freq of fast pwm mode)
@@ -38,41 +38,43 @@ void setupMotorConfig(pwm_mode_t pwm_mode){
     }
 }
 
-void setMotor(motor_mode_t motor_mode, motor_pwm_duty_t percent_pwm){
+void setMotor(motor_mode_E motor_mode, motor_pwm_duty_E percent_pwm){
     switch(motor_mode){
-        case(COAST):
+        case(MOTOR_MODE_COAST):
             //PORTB &= ~_BV(MOTOR_OUT_A); 
             //PORTA &= ~_BV(MOTOR_OUT_B);
             OCR0A = 0; 
             OCR0B = 0; 
         break;
 
-        case(FW_COAST):
+        case(MOTOR_MODE_CW_COAST):
             OCR0A = percent_pwm * REG_MAX / 10 ;
             OCR0B = 0; 
             //PORTA &= ~_BV(MOTOR_OUT_B);
         break; 
 
-        case(REV_COAST):
+        case(MOTOR_MODE_CCW_COAST):
             //PORTB &= ~_BV(MOTOR_OUT_A); 
             OCR0A = 0; 
             OCR0B = percent_pwm * REG_MAX / 10;
         break; 
 
-        case(FW_BREAK):
+        case(MOTOR_MODE_CW_BREAK):
             OCR0A = 255 ;
             OCR0B = percent_pwm * REG_MAX / 10;
         break; 
 
-        case(REV_BREAK):
+        case(MOTOR_MODE_CCW_BREAK):
             OCR0A = percent_pwm * REG_MAX / 10 ;
             OCR0B = 255 ;
         break; 
 
-        case(BREAK):
+        case(MOTOR_MODE_BREAK):
             OCR0A = 255;
             OCR0B = 255;
         break; 
+        default:
+        break;
     }
 }
 
@@ -82,16 +84,16 @@ void eStopMotor(){
 }
 
 void testMotorAll(){
-    setMotor(COAST, MOTOR_DUTY_50_PERCENT);
+    setMotor(MOTOR_MODE_COAST, MOTOR_PWM_DUTY_50_PERCENT);
     _delay_ms(500);
-    setMotor(FW_COAST, MOTOR_DUTY_50_PERCENT);
+    setMotor(MOTOR_MODE_CW_COAST, MOTOR_PWM_DUTY_50_PERCENT);
     _delay_ms(5000);
-    setMotor(REV_COAST, MOTOR_DUTY_50_PERCENT);
+    setMotor(MOTOR_MODE_CCW_COAST, MOTOR_PWM_DUTY_50_PERCENT);
     _delay_ms(500);
-    setMotor(FW_BREAK, MOTOR_DUTY_50_PERCENT);
+    setMotor(MOTOR_MODE_CW_BREAK, MOTOR_PWM_DUTY_50_PERCENT);
     _delay_ms(500);
-    setMotor(REV_BREAK, MOTOR_DUTY_50_PERCENT);
+    setMotor(MOTOR_MODE_CCW_BREAK, MOTOR_PWM_DUTY_50_PERCENT);
     _delay_ms(500);
-    setMotor(BREAK, MOTOR_DUTY_50_PERCENT);
+    setMotor(MOTOR_MODE_BREAK, MOTOR_PWM_DUTY_50_PERCENT);
     _delay_ms(500);
 }
