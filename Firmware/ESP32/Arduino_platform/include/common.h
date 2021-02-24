@@ -24,9 +24,10 @@ extern "C"{
 /////////////////////////////////////////
 ///////   FEATURE DEFINITION     ////////
 /////////////////////////////////////////
-#define FEATURE_LIDAR   (DISABLE) // (WIP)
+#define FEATURE_LIDAR                   (ENABLE) // (WIP)
+#define FEATURE_LIDAR_CALIBRATION_MODE  (DISABLE) // TODO: implement calibration strategy
 
-#define DEBUG_FPRINT    (ENABLE)
+#define DEBUG_FPRINT                    (ENABLE)
 
 ///////////////////////////////////////////
 ///////   MACRO FUNC DEFINITION     ///////

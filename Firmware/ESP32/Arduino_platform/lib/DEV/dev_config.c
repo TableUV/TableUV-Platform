@@ -55,9 +55,12 @@ void dev_init(void)
     dev_uv_init();
 }
 
-void dev_run10ms(void)
+void dev_run20ms(void)
 {
     // Do  nothing
+#if (FEATURE_LIDAR)
+    dev_ToF_Lidar_update20ms();
+#endif
 }
 
 void dev_run100ms(void)
@@ -67,9 +70,5 @@ void dev_run100ms(void)
 
 void dev_run1000ms(void)
 {
-    // Do  nothing
-#if (FEATURE_LIDAR)
-    dev_ToF_Lidar_update();
-#endif
 }
 
