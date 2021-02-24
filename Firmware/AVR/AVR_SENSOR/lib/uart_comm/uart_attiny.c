@@ -97,10 +97,10 @@ void UART_tx(char character)
    TCCR0B = (1<<CS00);
 }
 
-void UART_tx_str(char* string)
+void UART_tx_str(char* string, uint8_t len)
 {
-    while( *string ){
-        UART_tx( *string++ );
+    for(uint8_t i = 0; i < len; i ++){
+        UART_tx( string[i] );
         //wait until transmission is finished
         while(tx_shift_reg);
     }
@@ -108,11 +108,15 @@ void UART_tx_str(char* string)
 
 void uart_test_code(void)
 {
-    uart_attiny_init();
+    // uart_attiny_init();
+
+    char test_array[6] = {'1', '2', '3', '4', '5', '6'};
     
     while(1)
     {
-       UART_tx_str("Hello world!\n");
+        
+        UART_tx_str(test_array, 6);
+        // UART_tx_str("Hello\n");
         _delay_ms(100);
     }
 }

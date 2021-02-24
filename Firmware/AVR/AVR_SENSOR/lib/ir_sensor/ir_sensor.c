@@ -177,7 +177,7 @@ void ir_test_code(void)
         char my_string[7];
 
         sprintf(my_string, "IR_DATA = %d\n", ir_sensor_data.ir_left_2_data);
-        UART_tx_str(my_string);
+        // UART_tx_str(my_string);
 
         _delay_ms(500/8);
     }

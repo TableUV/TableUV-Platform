@@ -19,7 +19,7 @@
 
 void uart_attiny_init(void);
 void UART_tx(char character);
-void UART_tx_str(char* string);
+void UART_tx_str(char* string, uint8_t len);
 void uart_test_code(void);
 
 
