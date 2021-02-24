@@ -28,10 +28,12 @@
 /////////////////////////////////
 #define TOF_TIMING_BUDGET_MS                (15U)
 #define TOF_WIDTH_OF_SPADS_PER_ZONE         (5U) // MIN: 4 pix
-#define TOF_HEIGHT_OF_SPADS_PER_ZONE        (6U) // MIN: 4 pix
+#define TOF_HEIGHT_OF_SPADS_PER_ZONE        (5U) // MIN: 4 pix
 #define TOF_MAX_DIST_MM                     (1300U) // 1.3 [m] in short range mode
 #define TOF_INTERMEDIATE_SETTING_DELAY_MS   (20U)
 #define MP_MUTEX_BLOCK_TIME_MS              ((1U)/portTICK_PERIOD_MS)
+#define TOF_SENSOR_COUNT                    (1U) // (DEV_TOF_LIDAR_COUNT)
+
 typedef struct{
     SFEVL53L1X          tofs[DEV_TOF_LIDAR_COUNT];
     const uint8_t       address[DEV_TOF_LIDAR_COUNT];
@@ -58,7 +60,9 @@ static dev_tof_lidar_data_S lidar_data = {
         SFEVL53L1X(Wire, 23, TOF_INT_3),//TOF_SHUT, TOF_INT_3)
     },
     .address = { 
-        0x62, 0x64, 0x66 // Arbitrary Address (non-default)
+        0x62, 
+        0x64, 
+        0x66 // Arbitrary Address (non-default)
     },
 /**Table of Optical Centers**
 *
@@ -84,7 +88,8 @@ static dev_tof_lidar_data_S lidar_data = {
 *
 * To set the center, set the pad that is to the right and above the exact center of the region you'd like to measure as your opticalCenter*/
     .firing_sequence = {
-        199, 151, 239, 175, 215 
+        197, 149, 237, 173, 213
+        // 199, 151, 239, 175, 215
         //Firing Order:  Left <-    [2] - [4] - [1] - [5] - [3]    -> Right
     },
     .firing_sequence_label = {
@@ -134,7 +139,7 @@ void dev_ToF_reset_all_sensors(void)
 	// int16_t offset;
 
     // start ToFs
-    for (int sensor_id = DEV_TOF_LIDAR_R; sensor_id < DEV_TOF_LIDAR_COUNT; sensor_id ++)
+    for (int sensor_id = DEV_TOF_LIDAR_R; sensor_id < TOF_SENSOR_COUNT; sensor_id ++)
     {
         sensor = & (lidar_data.tofs[sensor_id]);
         if (sensor->begin() == true)
@@ -153,7 +158,7 @@ void dev_ToF_reset_all_sensors(void)
     delay(TOF_INTERMEDIATE_SETTING_DELAY_MS);
 
     // read sensor initial values & set address & activate sensor
-    for (int sensor_id = DEV_TOF_LIDAR_R; sensor_id < DEV_TOF_LIDAR_COUNT; sensor_id ++)
+    for (int sensor_id = DEV_TOF_LIDAR_R; sensor_id < TOF_SENSOR_COUNT; sensor_id ++)
     {
         sensor = & (lidar_data.tofs[sensor_id]);
 
@@ -211,7 +216,7 @@ void dev_ToF_Lidar_update20ms(void)
     uint8_t geo_label;
     
     // firing
-    for (uint8_t sensor_id = DEV_TOF_LIDAR_R; sensor_id < DEV_TOF_LIDAR_COUNT; sensor_id ++)
+    for (uint8_t sensor_id = DEV_TOF_LIDAR_R; sensor_id < TOF_SENSOR_COUNT; sensor_id ++)
     {
         sensor = & (lidar_data.tofs[sensor_id]);
         // if data ready
