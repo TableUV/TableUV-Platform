@@ -18,8 +18,20 @@
 
 int main()
 {
+    CLKPR = _BV(CLKPCE); 
+    CLKPR = 0;
+
     collision_init();
     uart_attiny_init();
 
-    uart_test_code();
+    // Test code
+    char test_array[8] = {'1', '2', '3', '4', '5', '6', '7', '8'};
+
+    while(1)
+    {
+        // collision_status_retrieve();
+        // ir_sensor_retrieve();
+        UART_tx_str(test_array, 8);
+        _delay_ms(100);
+    }
 }

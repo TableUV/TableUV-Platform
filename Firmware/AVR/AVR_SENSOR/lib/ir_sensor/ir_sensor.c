@@ -7,21 +7,17 @@
  * This document will contains device configure content
  */
 
-#include "uart_attiny.h"
 #include <stdio.h>
+#include "ir_sensor.h"
+
+
+// Test code
+#include "uart_attiny.h"
 
 
 /////////////////////////////////
 ///////   DEFINITION     ////////
 /////////////////////////////////
-typedef struct{
-    volatile uint8_t ir_front_1_data;
-    volatile uint8_t ir_front_2_data;
-    volatile uint8_t ir_right_1_data;
-    volatile uint8_t ir_right_2_data;
-    volatile uint8_t ir_left_1_data;
-    volatile uint8_t ir_left_2_data;
-} ir_data_S;
 
 /////////////////////////////////////////
 ///////   PRIVATE PROTOTYPE     /////////
