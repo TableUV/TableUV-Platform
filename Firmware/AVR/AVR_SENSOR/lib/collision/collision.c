@@ -13,15 +13,15 @@
 /////////////////////////////////
 ///////   DEFINITION     ////////
 /////////////////////////////////
+#define COL_INT_ENABLED  0
+
 typedef enum{
     BOTH_OPEN,
     LEFT_PRESSED,
     RIGHT_PRESSED,
     BOTH_PRESSED
 } collision_status_t;
-typedef struct{
-    volatile collision_status_t col_status;
-} collision_data_S;
+
 
 /////////////////////////////////////////
 ///////   PRIVATE PROTOTYPE     /////////
@@ -34,13 +34,17 @@ static inline void collision_private_gpio_config(void);
 ///////   DATA     ////////
 ///////////////////////////
 static collision_data_S col_data;
+
+#if (COL_INT_ENABLED)
 static volatile bool col_pressed = false;
+#endif //COL_INT_ENABLED
 
 
 
 ////////////////////////////////////////
 ///////   PRIVATE FUNCTION     /////////
 ////////////////////////////////////////
+#if (COL_INT_ENABLED)
 ISR(PCINT1_vect)
 {
     cli();
@@ -67,17 +71,21 @@ ISR(PCINT1_vect)
 
     sei();
 }
-
+#endif //COL_INT_ENABLED
 static inline void collision_private_gpio_config(void)
 {
     //Set as input
     DDRB &= ~(_BV(LEFT_COLLISION) | _BV(RIGHT_COLLISION));
+
+
+#if (COL_INT_ENABLED)
     // Enable Global Interrupts
     SREG |= _BV(7);
     // Enable PCINT8 to PCINT11
     GIMSK |= _BV(PCIE1);
     // Enable PCINT8 and PCINT9 for left and right collision
     PCMSK1 |= _BV(PCINT8) | _BV(PCINT9);
+#endif //COL_INT_ENABLED
 }
 
 ///////////////////////////////////////
@@ -90,14 +98,19 @@ void collision_init(void)
 
 uint8_t collision_status_get(void)
 {
+#if (COL_INT_ENABLED)    
     return (uint8_t) col_data.col_status;
+#else
+    return 0;    
+#endif //COL_INT_ENABLED    
 }
 
-uint8_t collision_status_retrieve(void)
+collision_data_S collision_status_retrieve(void)
 {
-
+#if (COL_INT_ENABLED)
     uint8_t pinb_reg = PINB & (_BV(LEFT_COLLISION) | _BV(RIGHT_COLLISION));
     uint8_t temp_col_status = 0;
+    collision_data_S temp_struct;
     
     switch(pinb_reg)
     {
@@ -114,23 +127,55 @@ uint8_t collision_status_retrieve(void)
             temp_col_status = BOTH_OPEN;
             break;
     }
-    return temp_col_status;
+    temp_struct.col_status = temp_col_status;
+    return temp_struct;
+#else
+    uint8_t pinb_reg = PINB & (_BV(LEFT_COLLISION) | _BV(RIGHT_COLLISION));
+    switch(pinb_reg)
+    {
+        case _BV(LEFT_COLLISION) :                          // Left collision open, right collision pressed
+            col_data.right_col_pressed = true;
+            col_data.left_col_pressed = false;
+            break;
+        case _BV(RIGHT_COLLISION) :                         // Right collision open, left collision pressed
+            col_data.right_col_pressed = true;
+            col_data.left_col_pressed = true;
+            break;
+        case (_BV(LEFT_COLLISION) | _BV(RIGHT_COLLISION)) : // Both switches open
+            col_data.right_col_pressed = true;
+            col_data.left_col_pressed = true;
+            break;
+        case 0 :                                            // Both switches pressed
+            col_data.right_col_pressed = false;
+            col_data.left_col_pressed = false;            
+            break;
+    }
+    return col_data;
+
+#endif //COL_INT_ENABLED    
 }
+
 
 bool col_pressed_get(void)
 {
+#if (COL_INT_ENABLED)    
     cli();
     bool temp = col_pressed;
     sei();
 
     return temp;
+#else
+    return false;    
+#endif //COL_INT_ENABLED   
 }
 
 void col_pressed_clear(void)
 {
+#if (COL_INT_ENABLED)    
     cli();
     col_pressed = false;
     sei();
+#endif //COL_INT_ENABLED    
 }
 
 void collision_test(void)

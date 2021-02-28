@@ -16,9 +16,17 @@
 #define COLLISION_H
 #include "../../include/pinConfig.h"
 
+typedef struct{
+#if (COL_INT_ENABLED)    
+    volatile collision_status_t col_status;
+#endif //COL_INT_ENABLED    
+    bool left_col_pressed;
+    bool right_col_pressed;
+} collision_data_S;
+
 void collision_init(void);
 uint8_t collision_status_get(void);
-uint8_t collision_status_retrieve(void);
+collision_data_S collision_status_retrieve(void);
 bool col_pressed_get(void);
 void col_pressed_clear(void);
 void collision_test(void);

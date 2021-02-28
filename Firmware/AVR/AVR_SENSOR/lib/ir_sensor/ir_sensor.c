@@ -11,9 +11,6 @@
 #include "ir_sensor.h"
 
 
-// Test code
-#include "uart_attiny.h"
-
 
 /////////////////////////////////
 ///////   DEFINITION     ////////
