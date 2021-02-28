@@ -107,10 +107,6 @@ int main()
     ir_attiny_init();
     timer_scheduler_init();
 
-    // Test code
-    DDRB |= _BV(DDB0);
-    DDRB |= _BV(DDA2);
-
 
     while(1)
     {
