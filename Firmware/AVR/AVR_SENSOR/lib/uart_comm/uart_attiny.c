@@ -41,7 +41,7 @@ static inline void uart_private_gpio_config(void)
     TCCR0A = (1<<WGM01);
     //enable output compare 0 A interrupt
     TIMSK0 |= (1<<OCF0A);
-    //set compare value to 69 to achieve a 115200 baud rate (i.e. 104µs)
+    //set compare value to 69 to achieve a 115200 baud rate (i.e. 69µs)
     //together with the 8MHz/8=1MHz timer0 clock
     /*NOTE: since the internal 8MHz oscillator is not very accurate, this value can be tuned
         to achieve the desired baud rate, so if it doesn't work with the nominal value (103), try

@@ -17,10 +17,11 @@
 #include "ir_sensor.h"
 
 #define BUFFER_SIZE                     (10U)
-#define COLLISION_FILTER_THRESHOLD      (0.8)
-#define IR_FILTER_THRESHOLD             (0.2)
-#define SENSOR_READ_FREQ                200
-#define FILTER_FREQ                     20
+#define COLLISION_FILTER_THRESHOLD      (0.8F)
+#define IR_FILTER_THRESHOLD             (0.2F)
+#define SENSOR_READ_FREQ                (200U) // Max 7kHz otherwise change the timer prescaler
+#define FILTER_FREQ                     (20U)
+#define SENSOR_FILTER_RATIO             (SENSOR_READ_FREQ/FILTER_FREQ)
 
 typedef enum {
     LEFT_COLLISION_BIT,
@@ -48,6 +49,7 @@ uint8_t uart_byte_send = 0;
 
 volatile bool sensor_read_stage = false;
 volatile bool filter_stage = false;
+volatile uint8_t filter_counter = 0;
 
 void IR_filter_check(uint8_t* ir_arr, uint8_t bit_num)
 {
@@ -63,30 +65,38 @@ void IR_filter_check(uint8_t* ir_arr, uint8_t bit_num)
 
 void timer_scheduler_init(void)
 {
-    //set timer1 to CTC mode
-    TCCR1A = (1<<WGM11);
-    //enable output compare 0 A interrupt
-    TIMSK1 |= ( (1<<OCIE1A) | (1<<OCIE1B) );
-    //set compare value to 69 to achieve a 115200 baud rate (i.e. 104µs)
-    //together with the 8MHz/8=1MHz timer0 clock
-    /*NOTE: since the internal 8MHz oscillator is not very accurate, this value can be tuned
-        to achieve the desired baud rate, so if it doesn't work with the nominal value (103), try
-        increasing or decreasing the value by 1 or 2 */
-    OCR1A = (uint16_t) ((1/SENSOR_READ_FREQ) * 1000000);
-    OCR1B = (uint16_t) ((1/FILTER_FREQ) * 1000000);
+    
+    TCCR1A = 0;
+    TCCR1A = 0;// set entire TCCR1A register to 0
+    TCCR1B = 0;// same for TCCR1B
+    TCNT1  = 0;//initialize counter value to 0
+    // set compare match register for xhz increments
+    OCR1A = (uint16_t) (8000000/ (SENSOR_READ_FREQ * 1024));//i.e. 39 = (8*10^6) / (200 Hz *1024) - 1 (must be <65536)
+
+    // turn on CTC mode
+    TCCR1B |= (1 << WGM12);
+    // Set CS12 and CS10 bits for 1024 prescaler
+    TCCR1B |= (1 << CS12) | (1 << CS10);
+    // enable timer compare interrupt
+    TIMSK1 |= (1 << OCIE1A);    
+
     //enable interrupts
     sei();
 }
 
+// Sensor read ISR
 ISR(TIM1_COMPA_vect)
 {
     sensor_read_stage = true;
+
+    filter_counter++;
+    if(filter_counter >= SENSOR_FILTER_RATIO)
+    {
+        filter_stage = true;
+        filter_counter = 0;
+    }
 }
 
-ISR(TIM1_COMPB_vect)
-{
-    filter_stage = true;
-}
 int main()
 {
     CLKPR = _BV(CLKPCE); 
@@ -95,6 +105,12 @@ int main()
     collision_init();
     uart_attiny_init();
     ir_attiny_init();
+    timer_scheduler_init();
+
+    // Test code
+    DDRB |= _BV(DDB0);
+    DDRB |= _BV(DDA2);
+
 
     while(1)
     {
@@ -116,6 +132,8 @@ int main()
             if(ir_index >= BUFFER_SIZE) ir_index = 0;
 
             sensor_read_stage = false;
+
+            
         }
 
         if(filter_stage)
