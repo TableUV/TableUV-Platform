@@ -15,6 +15,7 @@
 /////////////////////////////////
 ///////   DEFINITION     ////////
 /////////////////////////////////
+#define DEV_BATTERY_RAW_TO_VOLTAGE(raw_adc) (float)( ((int32_t)(raw_adc) * (DEV_BATTERY_PULLUP_KOHMS + DEV_BATTERY_PULLDOWN_KOHMS) * 0.8) / (DEV_BATTERY_PULLDOWN_KOHMS * 4096) )
 typedef struct {
     float battery_voltage;              // Volts
     int32_t battery_voltage_raw;        // 0 - 4096
@@ -74,11 +75,6 @@ void dev_battery_init(void)
     adc2_config_channel_atten( ADC2_CHANNEL_2, ADC_ATTEN_DB_0 );
 }
 
-float dev_battery_convert_to_lipo_volts(int32_t raw_adc)
-{
-    return raw_adc * 0.8/4096 * (DEV_BATTERY_PULLUP_KOHMS + DEV_BATTERY_PULLDOWN_KOHMS) / DEV_BATTERY_PULLDOWN_KOHMS;
-}
-
 void dev_battery_update(void)
 {
     esp_err_t r = adc2_get_raw( ADC2_CHANNEL_2, ADC_WIDTH_12Bit, &battery_data.battery_voltage_raw);
@@ -87,7 +83,7 @@ void dev_battery_update(void)
         printf("ADC2 used by Wi-Fi.\n");
     }
 
-    battery_data.battery_voltage = dev_battery_convert_to_lipo_volts(battery_data.battery_voltage_raw);
+    battery_data.battery_voltage = DEV_BATTERY_RAW_TO_VOLTAGE(battery_data.battery_voltage_raw);
 
 }
 
