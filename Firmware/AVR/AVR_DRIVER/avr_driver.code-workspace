@@ -1,0 +1,14 @@
+{
+	"folders": [
+		{
+			"path": "."
+		}
+	],
+	"settings": {
+		"files.associations": {
+			"usitwislave.h": "c",
+			"interrupt.h": "c",
+			"delay.h": "c"
+		}
+	}
+}
