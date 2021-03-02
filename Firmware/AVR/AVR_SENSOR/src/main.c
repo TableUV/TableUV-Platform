@@ -57,7 +57,7 @@ void IR_filter_check(uint8_t* ir_arr, uint8_t bit_num)
     for(uint8_t i = 0; i < BUFFER_SIZE; i++){
         ir_sum += ir_arr[i];
     }
-    if (ir_sum/BUFFER_SIZE < (IR_FILTER_THRESHOLD * UINT8_MAX * BUFFER_SIZE) )
+    if ((ir_sum/BUFFER_SIZE) < (IR_FILTER_THRESHOLD * UINT8_MAX) )
     {
         uart_byte_send |= _BV(bit_num);
     }    
@@ -106,10 +106,6 @@ int main()
     uart_attiny_init();
     ir_attiny_init();
     timer_scheduler_init();
-
-    // Test code
-    DDRB |= _BV(DDB0);
-    DDRB |= _BV(DDA2);
 
 
     while(1)

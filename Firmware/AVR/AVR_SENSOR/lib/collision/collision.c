@@ -138,7 +138,7 @@ collision_data_S collision_status_retrieve(void)
             col_data.left_col_pressed = false;
             break;
         case _BV(RIGHT_COLLISION) :                         // Right collision open, left collision pressed
-            col_data.right_col_pressed = true;
+            col_data.right_col_pressed = false;
             col_data.left_col_pressed = true;
             break;
         case (_BV(LEFT_COLLISION) | _BV(RIGHT_COLLISION)) : // Both switches open
