@@ -15,14 +15,59 @@
 
 // TableUV Lib
 #include "dev_ToF_Lidar.h"
+#include "slam_math.h"
 
 // External Library
+
 
 /////////////////////////////////
 ///////   DEFINITION     ////////
 /////////////////////////////////
+typedef uint8_t map_t;
+
+/*** (parameterization) ***/
+// Robot Characteristics 
+#define ROBOT_SIZE_R_MM                     (100U)  // 100 [mm] => boundary would be (100 + 10/2) = 105 [mm]
+// Global Map
+#define GMAP_SQUARE_EDGE_SIZE_MM            (1000U) // 1   [m]
+#define GMAP_UNIT_GRID_STEP_SIZE_MM         (10U)   // 10  [mm]
+
+/*** (Pre-compile const.) ***/
+// Robot Characteristics 
+#define ROBOT_SIZE_R_PIXEL                  ((ROBOT_SIZE_R_MM)/(GMAP_UNIT_GRID_STEP_SIZE_MM))
+// Global Map 
+#define GMAP_GRID_EDGE_SIZE_PIXEL           ((GMAP_SQUARE_EDGE_SIZE_MM)/(GMAP_UNIT_GRID_STEP_SIZE_MM))
+#define GMAP_WN_PIXEL                       ((GMAP_GRID_EDGE_SIZE_PIXEL) + (1U))
+#define GMAP_HN_PIXEL                       ((GMAP_GRID_EDGE_SIZE_PIXEL) + (1U))
+#define GMAP_CENTRAL_X_INDEX_PIXEL          ((GMAP_GRID_EDGE_SIZE_PIXEL) / (2U))
+#define GMAP_CENTRAL_Y_INDEX_PIXEL          ((GMAP_GRID_EDGE_SIZE_PIXEL) / (2U))
+#define GMAP_VISIBILITY_RANGE_MAX           ((GMAP_SQUARE_EDGE_SIZE_MM)  / (2U))
+
+/* === === [ Global Grid Occupancy Map ] === ===
+ *
+ *      +------+----- WN = (E + 1) ------+
+ *      |      |  0    ... E/2  ...    E |
+ *      +------+-------------------------+
+ *      | 0    |                         |
+ *      | .    |                         |
+ *      | .    |                         |
+ *      | E/2  |          (0,0)          |   HN = (E + 1)
+ *      | .    |                         |
+ *      | .    |                         |
+ *      | E    |                         |
+ *      +------+-------------------------+
+ */
+typedef struct{
+    map_t                       data[GMAP_WN_PIXEL * GMAP_HN_PIXEL];
+    math_cart_coord_int32_S     C_coord_pixel;  // \in [0, GMAP_VISIBILITY_RANGE_MAX]
+    math_cart_coord_float_S     dC_coord_mm;    // \in [0,10] [mm] | to cache float value within a pixel
+} map_S;
+
 typedef struct{
     dev_tof_lidar_sensor_data_S lidar_data;
+
+    // global map info.
+    map_S                       gMap;
 } app_slam_data_S;
 
 /////////////////////////////////////////
@@ -65,7 +110,7 @@ static void app_slam_private_localMapUpdate(void)
 
     // 3. Process data
     {
-        //
+        // TODO: data transformation
     }
 }
 
