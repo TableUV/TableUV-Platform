@@ -31,9 +31,9 @@ extern "C"{
 #define DEV_BATTERY_CHARGE_FAULT_FREQ_HZ        2
 
 typedef enum {
-    CHARGING,                   // STAT Pin Low
-    CHARGE_COMPLETE_SLEEP,      // STAT Pin HIGH
-    CHARGER_FAULT               // STAT Pin Blinkings
+    CHARGER_IC_STATUS_CHARGING,                   // STAT Pin Low
+    CHARGER_IC_STATUS_COMPLETE_SLEEP,      // STAT Pin HIGH
+    CHARGER_IC_STATUS_FAULT               // STAT Pin Blinkings
 } charger_ic_status_E;
 
 // Function Prototypes

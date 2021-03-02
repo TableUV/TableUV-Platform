@@ -114,17 +114,17 @@ void dev_charger_status_update(void)
 {
     if(gpio_get_level(CHARGE_STATUS))
     {
-        battery_data.charger_status = CHARGE_COMPLETE_SLEEP;
+        battery_data.charger_status = CHARGER_IC_STATUS_COMPLETE_SLEEP;
     }
     else
     {
-        battery_data.charger_status = CHARGING;
+        battery_data.charger_status = CHARGER_IC_STATUS_CHARGING;
     }
 
     cli();
     if(edge_count >= DEV_BATTERY_CHARGE_STAT_FREQ_HZ/DEV_BATTERY_CHARGE_FAULT_FREQ_HZ)
     {
-        battery_data.charger_status = CHARGER_FAULT;
+        battery_data.charger_status = CHARGER_IC_STATUS_FAULT;
     }
     edge_count = 0;
     sei();
