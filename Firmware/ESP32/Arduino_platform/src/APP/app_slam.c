@@ -14,6 +14,7 @@
 #include <string.h>
 
 // TableUV Lib
+#include "dev_ToF_Lidar.h"
 
 // External Library
 
@@ -21,7 +22,7 @@
 ///////   DEFINITION     ////////
 /////////////////////////////////
 typedef struct{
-    
+    dev_tof_lidar_sensor_data_S lidar_data;
 } app_slam_data_S;
 
 /////////////////////////////////////////
@@ -47,10 +48,25 @@ static void app_slam_private_localization(void)
     // TODO: intake  IMU, Encoder => EKF
 }
 
+/**
+ * @brief Feature Map Update
+ * 
+ * STEP:
+ *      1. grab tof data from 'dev_ToF_Lidar'
+ *      2. grab IR + Collision Data
+ *      3. process data
+ */
 static void app_slam_private_localMapUpdate(void)
 {
-    // reset the lmap
-    // TODO: intake  ToF + Collision + IR => Grid Occupancy
+    // 1. Grab data from Lidar
+    dev_ToF_Lidar_dampDataBuffer(& (slam_data.lidar_data));
+
+    // TODO: 2. Grab IR + Collision Data
+
+    // 3. Process data
+    {
+        //
+    }
 }
 
 static void app_slam_private_globalMapUpdate(void)
@@ -83,7 +99,7 @@ void app_slam_init(void)
     memset(&slam_data, 0x00, sizeof(app_slam_data_S));
 }
 
-void app_slam_run50ms(void)
+void app_slam_run100ms(void)
 {
     app_slam_private_localization();
     app_slam_private_localMapUpdate();

@@ -50,7 +50,7 @@
 #define ESP32_CORE_LOW_LEVEL        (0U)
 #define ESP32_CORE_HIGH_LEVEL       (1U)
 
-#define TASK_SLAM_TASK_TICK         (TASK_HZ_TO_TASK_TICK(  20/*[Hz]*/))
+#define TASK_SLAM_TASK_TICK         (TASK_HZ_TO_TASK_TICK(  10/*[Hz]*/))
 #define TASK_SUPERVISOR_TASK_TICK   (TASK_HZ_TO_TASK_TICK(  50/*[Hz]*/))
 #define TASK_50HZ_TASK_TICK         (TASK_HZ_TO_TASK_TICK(  50/*[Hz]*/)) // TODO: we may not need 100 Hz, 50Hz shall be enough?
 #define TASK_10HZ_TASK_TICK         (TASK_HZ_TO_TASK_TICK(  10/*[Hz]*/))
@@ -128,7 +128,7 @@ static void core1_task_runSLAM(void * pvParameters)
         /* Do sth at */
         {
             //  add task (High Level)
-            app_slam_run50ms();
+            app_slam_run100ms();
         }
         vTaskDelayUntil(&xLastWakeTime, TASK_SLAM_TASK_TICK);
     }

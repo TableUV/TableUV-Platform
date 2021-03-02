@@ -14,7 +14,7 @@ extern "C"{
 # endif 
 
 void app_slam_init(void);
-void app_slam_run50ms(void);
+void app_slam_run100ms(void);
 
 # ifdef __cplusplus  
 }
