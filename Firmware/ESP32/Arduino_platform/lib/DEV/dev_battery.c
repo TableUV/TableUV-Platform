@@ -9,9 +9,6 @@
 
 #include "dev_battery.h"
 
-#define sei()
-#define cli()
-
 /////////////////////////////////
 ///////   DEFINITION     ////////
 /////////////////////////////////
@@ -39,9 +36,7 @@ static volatile uint8_t edge_count = 0;
 ////////////////////////////////////////
 static void IRAM_ATTR charger_fault_isr_handler(void* arg)
 {
-    cli();
     edge_count++;
-    sei();
 }
 
 static inline void dev_battery_private_gpio_config(void)
@@ -117,13 +112,11 @@ void dev_charger_status_update(void)
         battery_data.charger_status = CHARGER_IC_STATUS_CHARGING;
     }
 
-    cli();
     if(edge_count >= DEV_BATTERY_CHARGE_STAT_FREQ_HZ/DEV_BATTERY_CHARGE_FAULT_FREQ_HZ)
     {
         battery_data.charger_status = CHARGER_IC_STATUS_FAULT;
     }
     edge_count = 0;
-    sei();
 }
 
 charger_ic_status_E dev_charger_status_get(void)
