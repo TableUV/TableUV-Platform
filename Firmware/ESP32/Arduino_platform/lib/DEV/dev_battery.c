@@ -12,7 +12,7 @@
 /////////////////////////////////
 ///////   DEFINITION     ////////
 /////////////////////////////////
-#define DEV_BATTERY_RAW_TO_VOLTAGE(raw_adc) (float)( ((int32_t)(raw_adc) * (DEV_BATTERY_PULLUP_KOHMS + DEV_BATTERY_PULLDOWN_KOHMS) * 0.8) / (DEV_BATTERY_PULLDOWN_KOHMS * 4096) )
+#define DEV_BATTERY_RAW_TO_VOLTAGE(raw_adc) (float)( ((int32_t)(raw_adc) * (DEV_BATTERY_PULLUP_KOHMS + DEV_BATTERY_PULLDOWN_KOHMS) * DEV_BATTERY_ESP_ADC_TO_VOLT) / (DEV_BATTERY_PULLDOWN_KOHMS) )
 typedef struct {
     float battery_voltage;              // Volts
     int32_t battery_voltage_raw;        // 0 - 4096
@@ -49,6 +49,8 @@ static inline void dev_battery_private_gpio_config(void)
     //gpio config for input 
     io_conf.mode = GPIO_MODE_INPUT;
     io_conf.pin_bit_mask =  (1ULL<< BATTERY_VOLTAGE); 
+    io_conf.pull_down_en = GPIO_PULLDOWN_DISABLE;
+    io_conf.pull_down_en = GPIO_PULLUP_DISABLE;
     gpio_config(&io_conf);
 
     io_conf.pin_bit_mask = (1ULL<< CHARGE_STATUS);

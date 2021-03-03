@@ -29,6 +29,7 @@ extern "C"{
 #define DEV_BATTERY_PULLDOWN_KOHMS              (16.9)
 #define DEV_BATTERY_CHARGE_STAT_FREQ_HZ         (10)
 #define DEV_BATTERY_CHARGE_FAULT_FREQ_HZ        (2)
+#define DEV_BATTERY_ESP_ADC_TO_VOLT             (1.0/4096)
 
 typedef enum {
     CHARGER_IC_STATUS_CHARGING,                   // STAT Pin Low
