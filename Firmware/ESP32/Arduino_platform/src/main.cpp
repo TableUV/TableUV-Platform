@@ -216,14 +216,12 @@ void setup() {
     // device initialization
     dev_init();
 
-    // esp32 task initialization
-    esp32_task_init();
-
     // app level init
     app_slam_init();
     app_supervisor_init();
-    
 
+    // esp32 task initialization
+    esp32_task_init();
 }
 
 void loop() {
