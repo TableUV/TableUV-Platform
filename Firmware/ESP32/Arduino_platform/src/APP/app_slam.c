@@ -250,7 +250,6 @@ static void app_slam_private_clearVehicleRegion(void)
             mdata[y + x] = GRID_CELL_VISITED;
         }
     }
-
 }
 
 static void app_slam_private_globalMapUpdate(void)
@@ -304,6 +303,47 @@ static void app_slam_private_motionPlanning(void)
     // TODO: plan the motions (velocity arrays for the next 50ms)
 }
 
+#if (DEBUG_FPRINT_FEATURE_MAP)
+static void app_slam_private_debugPrintMap(bool central)
+{
+    // [0, W | H )
+    const int32_t cx= slam_data.gMap.map_center_pixel.x;
+    const int32_t cy= slam_data.gMap.map_center_pixel.y;
+    map_pixel_data_t* mdata = (slam_data.gMap.data);
+    int32_t x,y;
+    printf("MAP: \n");
+    if (central)
+    {
+        for (int32_t j = 0; j < GMAP_WN_PIXEL; j ++)
+        {
+            y = cy + j;
+            y += MAP_OFFSET[ARG_RANGE_INCLUSIVE((int32_t)(y), 0, GMAP_HN_PIXEL)];
+            y *= GMAP_WN_PIXEL;
+            for (int32_t i = 0; i < GMAP_HN_PIXEL; i ++)
+            {
+                x = cx + i;
+                x += MAP_OFFSET[ARG_RANGE_INCLUSIVE((int32_t)(x), 0, GMAP_HN_PIXEL)];
+                PRINTF("%d,", mdata[y + x]);
+            }
+            PRINTF("%d\n", 0);
+        }
+    }
+    else // raw gmap
+    {
+        for (int32_t j = 0; j < GMAP_WN_PIXEL; j ++)
+        {
+            y = j;
+            y *= GMAP_WN_PIXEL;
+            for (int32_t i = 0; i < GMAP_HN_PIXEL; i ++)
+            {
+                x = i;
+                PRINTF("%d,", mdata[y + x]);
+            }
+            PRINTF("%d\n", 0);
+        }
+    }
+}
+#endif
 
 ///////////////////////////////////////
 ///////   PUBLIC FUNCTION     /////////
@@ -324,6 +364,10 @@ void app_slam_run100ms(void)
     app_slam_private_obstacleDetection();
     app_slam_private_pathPlanning();
     app_slam_private_motionPlanning();
+
+#if (DEBUG_FPRINT_FEATURE_MAP)
+    app_slam_private_debugPrintMap(FALSE);
+#endif
 }
 
 

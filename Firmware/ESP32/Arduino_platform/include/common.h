@@ -38,6 +38,7 @@ extern "C"{
 
 #define DEBUG_FPRINT                    (ENABLE)
 #define DEBUG_FPRINT_FEATURE_LIDAR      (DISABLE) // Live feed of sensor readings
+#define DEBUG_FPRINT_FEATURE_MAP        (ENABLE)
 
 ///////////////////////////////////////////
 ///////   MACRO FUNC DEFINITION     ///////
