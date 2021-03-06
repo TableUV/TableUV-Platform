@@ -22,6 +22,7 @@
 #define SENSOR_READ_FREQ                (200U) // Max 7kHz otherwise change the timer prescaler
 #define FILTER_FREQ                     (20U)
 #define SENSOR_FILTER_RATIO             (SENSOR_READ_FREQ/FILTER_FREQ)
+#define SCHEDULER_TIMER_COMPARE         (39U)//(8000000U/(SENSOR_READ_FREQ * 1024U))
 
 typedef enum {
     LEFT_COLLISION_BIT,
@@ -71,7 +72,7 @@ void timer_scheduler_init(void)
     TCCR1B = 0;// same for TCCR1B
     TCNT1  = 0;//initialize counter value to 0
     // set compare match register for xhz increments
-    OCR1A = (uint16_t) (8000000/ (SENSOR_READ_FREQ * 1024));//i.e. 39 = (8*10^6) / (200 Hz *1024) - 1 (must be <65536)
+    OCR1A = SCHEDULER_TIMER_COMPARE; //(uint16_t) (8000000/ (SENSOR_READ_FREQ * 1024));//i.e. 39 = (8*10^6) / (200 Hz *1024) - 1 (must be <65536)
 
     // turn on CTC mode
     TCCR1B |= (1 << WGM12);
@@ -128,8 +129,6 @@ int main()
             if(ir_index >= BUFFER_SIZE) ir_index = 0;
 
             sensor_read_stage = false;
-
-            
         }
 
         if(filter_stage)
