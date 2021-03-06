@@ -36,12 +36,12 @@ extern "C"{
 #define IR_LEFT_1_MUX       0b00000000  //ADC0
 #define IR_LEFT_2_MUX       0b00000011  //ADC3
 
-#define UART_TX             PA2
+#define UART_TX             PA1
 #define TX_PORT             PORTA
 #define TX_DDR              DDRA
-#define TX_DDR_PIN          DDA2                      
+#define TX_DDR_PIN          DDA1                      
 
-#define UART_RX             PA1 
+#define UART_RX             PA2 
 
 #ifdef __cplusplus  
 }
