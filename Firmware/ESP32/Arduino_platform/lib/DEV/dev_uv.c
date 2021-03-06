@@ -87,7 +87,7 @@ void dev_uv_init(void)
 
 void dev_uv_set_both(int pwm_duty, uint8_t dac_duty)
 {
-    ledc_channel_config_t* channel = &(uv_data.ledc_channel);
+    ledc_channel_config_t* channel = uv_data.ledc_channel;
     for (int ch = 0; ch < DEV_UV_LED_COUNT; ch++)
     {
         dac_output_voltage(ESP_DAC, dac_duty);
@@ -98,23 +98,23 @@ void dev_uv_set_both(int pwm_duty, uint8_t dac_duty)
 
 void dev_uv_set_row(int pwm_duty, uint8_t dac_duty)
 {
-    ledc_channel_config_t* row = &(uv_data.ledc_channel[DEV_UV_LED_ROW]);
+    ledc_channel_config_t row = uv_data.ledc_channel[DEV_UV_LED_ROW];
     dac_output_voltage(ESP_DAC, dac_duty);
-    ledc_set_duty(row->speed_mode, row->channel, pwm_duty);
-    ledc_update_duty(row->speed_mode, row->channel);
+    ledc_set_duty(row.speed_mode, row.channel, pwm_duty);
+    ledc_update_duty(row.speed_mode, row.channel);
 }
 
 void dev_uv_set_side(int pwm_duty, uint8_t dac_duty)
 {
-    ledc_channel_config_t* side = &(uv_data.ledc_channel[DEV_UV_LED_SIDE]);
+    ledc_channel_config_t side = uv_data.ledc_channel[DEV_UV_LED_SIDE];
     dac_output_voltage(ESP_DAC, dac_duty);
-    ledc_set_duty(side->speed_mode, side->channel, pwm_duty);
-    ledc_update_duty(side->speed_mode, side->channel);
+    ledc_set_duty(side.speed_mode, side.channel, pwm_duty);
+    ledc_update_duty(side.speed_mode, side.channel);
 }
 
 void dev_uv_stop() 
 {
-    ledc_channel_config_t* channel = &(uv_data.ledc_channel);
+    ledc_channel_config_t* channel = uv_data.ledc_channel;
     for (int ch = 0; ch < DEV_UV_LED_COUNT; ch++)
     {
         ledc_stop(channel[ch].speed_mode, channel[ch].channel, 0);
