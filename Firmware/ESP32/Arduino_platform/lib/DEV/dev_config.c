@@ -17,6 +17,7 @@
 #include "dev_led.h"
 #include "dev_ToF_Lidar.h"
 #include "dev_uv.h"
+#include "dev_imu.h"
 #include "../../include/common.h"
 
 /////////////////////////////////
@@ -53,6 +54,7 @@ void dev_init(void)
     dev_ToF_Lidar_init();
 #endif
     dev_uv_init();
+    dev_imu_init();
 }
 
 void dev_run20ms(void)
