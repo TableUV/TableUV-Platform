@@ -200,11 +200,7 @@ void setup() {
 void loop() {
     // forever loop
     // while (true){};
-    dev_battery_update();
-    dev_charger_status_update();
-
-    printf("Battery voltage: %f\n", dev_battery_get());
-    printf("Charger status: %d\n", (uint8_t) dev_charger_status_get());
+    dev_battery_test_code();
     delay(100);
 }
 

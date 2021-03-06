@@ -131,3 +131,12 @@ charger_ic_status_E dev_charger_status_read(void)
     dev_charger_status_update();
     return battery_data.charger_status;
 }
+
+void dev_battery_test_code(void)
+{
+    dev_battery_update();
+    dev_charger_status_update();
+
+    printf("Battery voltage: %f\n", dev_battery_get());
+    printf("Charger status: %d\n", (uint8_t) dev_charger_status_get()); 
+}

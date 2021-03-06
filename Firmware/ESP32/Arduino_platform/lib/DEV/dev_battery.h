@@ -29,7 +29,7 @@ extern "C"{
 #define DEV_BATTERY_PULLDOWN_KOHMS              (16.9)
 #define DEV_BATTERY_CHARGE_STAT_FREQ_HZ         (10)
 #define DEV_BATTERY_CHARGE_FAULT_FREQ_HZ        (2)
-#define DEV_BATTERY_ESP_ADC_TO_VOLT             (1.0/4096)
+#define DEV_BATTERY_ESP_ADC_TO_VOLT             (0.79/4096)
 
 typedef enum {
     CHARGER_IC_STATUS_CHARGING,                   // STAT Pin Low
@@ -45,6 +45,7 @@ int32_t dev_battery_read_raw(void);
 void dev_charger_status_update(void);
 charger_ic_status_E dev_charger_status_get(void);
 charger_ic_status_E dev_charger_status_read(void);
+void dev_battery_test_code(void);
 
 # ifdef __cplusplus  
 }
