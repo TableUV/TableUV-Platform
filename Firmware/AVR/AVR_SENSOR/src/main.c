@@ -17,8 +17,7 @@
 #include "ir_sensor.h"
 
 #define BUFFER_SIZE                     (10U)
-#define COLLISION_FILTER_THRESHOLD      (0.8F)
-#define IR_FILTER_THRESHOLD             (0.2F)
+#define COLLISION_FILTER_THRESHOLD      (0.5F)
 #define SENSOR_READ_FREQ                (200U) // Max 7kHz otherwise change the timer prescaler
 #define FILTER_FREQ                     (20U)
 #define SENSOR_FILTER_RATIO             (SENSOR_READ_FREQ/FILTER_FREQ)
@@ -52,13 +51,13 @@ volatile bool sensor_read_stage = false;
 volatile bool filter_stage = false;
 volatile uint8_t filter_counter = 0;
 
-void IR_filter_check(uint8_t* ir_arr, uint8_t bit_num)
+void IR_filter_check(uint8_t* ir_arr, uint8_t bit_num, uint8_t ir_threshold)
 {
     uint16_t ir_sum = 0;
     for(uint8_t i = 0; i < BUFFER_SIZE; i++){
         ir_sum += ir_arr[i];
     }
-    if ((ir_sum/BUFFER_SIZE) < (IR_FILTER_THRESHOLD * UINT8_MAX) )
+    if ((ir_sum/BUFFER_SIZE) > (ir_threshold) )
     {
         uart_byte_send |= _BV(bit_num);
     }    
@@ -134,23 +133,24 @@ int main()
         if(filter_stage)
         {
             // Filter stage
-            if (left_collision_count > COLLISION_FILTER_THRESHOLD * BUFFER_SIZE)
+            if (left_collision_count < COLLISION_FILTER_THRESHOLD * BUFFER_SIZE)
             {
                 uart_byte_send |= _BV(LEFT_COLLISION_BIT);
                 left_collision_count = 0;
             }
-            if (right_collision_count > COLLISION_FILTER_THRESHOLD * BUFFER_SIZE)
+            if (right_collision_count < COLLISION_FILTER_THRESHOLD * BUFFER_SIZE)
             {
                 uart_byte_send |= _BV(RIGHT_COLLISION_BIT);
                 right_collision_count = 0;
             }
 
-            IR_filter_check(ir_f1_data_buf, IR_FRONT_1_BIT);
-            IR_filter_check(ir_f2_data_buf, IR_FRONT_2_BIT);
-            IR_filter_check(ir_l1_data_buf, IR_LEFT_1_BIT);
-            IR_filter_check(ir_l2_data_buf, IR_LEFT_2_BIT);
-            IR_filter_check(ir_r1_data_buf, IR_RIGHT_1_BIT);
-            IR_filter_check(ir_r2_data_buf, IR_RIGHT_2_BIT);
+            IR_filter_check(ir_f1_data_buf, IR_FRONT_1_BIT, 249);
+            IR_filter_check(ir_f2_data_buf, IR_FRONT_2_BIT, 246);
+            IR_filter_check(ir_r1_data_buf, IR_RIGHT_1_BIT, 228);
+            IR_filter_check(ir_r2_data_buf, IR_RIGHT_2_BIT, 226);            
+            IR_filter_check(ir_l1_data_buf, IR_LEFT_1_BIT, 227);
+            IR_filter_check(ir_l2_data_buf, IR_LEFT_2_BIT, 223);
+
 
             UART_tx(uart_byte_send);
             uart_byte_send = 0;
