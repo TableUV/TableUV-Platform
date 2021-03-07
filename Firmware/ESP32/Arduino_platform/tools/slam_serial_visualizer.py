@@ -121,7 +121,7 @@ def main():
     ax.set_ylabel("y")
 
     data2d = np.zeros(map_dim)
-    im = ax.imshow(data2d, cmap='tab20', vmin = -127, vmax = 127)
+    im = ax.imshow(data2d, cmap='terrain', vmin = -50, vmax = 120)
     cbar = fig.colorbar(im, ax=ax)
     
     def animate(i):
