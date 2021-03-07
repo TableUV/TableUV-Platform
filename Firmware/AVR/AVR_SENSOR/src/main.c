@@ -17,7 +17,7 @@
 #include "ir_sensor.h"
 
 #define BUFFER_SIZE                     (10U)
-#define COLLISION_FILTER_THRESHOLD      (0.5F)
+#define COLLISION_FILTER_THRESHOLD      (0.8F)
 #define SENSOR_READ_FREQ                (200U) // Max 7kHz otherwise change the timer prescaler
 #define FILTER_FREQ                     (20U)
 #define SENSOR_FILTER_RATIO             (SENSOR_READ_FREQ/FILTER_FREQ)
@@ -128,17 +128,19 @@ int main()
             if(ir_index >= BUFFER_SIZE) ir_index = 0;
 
             sensor_read_stage = false;
+
+            
         }
 
         if(filter_stage)
         {
             // Filter stage
-            if (left_collision_count < COLLISION_FILTER_THRESHOLD * BUFFER_SIZE)
+            if (left_collision_count > COLLISION_FILTER_THRESHOLD * BUFFER_SIZE)
             {
                 uart_byte_send |= _BV(LEFT_COLLISION_BIT);
                 left_collision_count = 0;
             }
-            if (right_collision_count < COLLISION_FILTER_THRESHOLD * BUFFER_SIZE)
+            if (right_collision_count > COLLISION_FILTER_THRESHOLD * BUFFER_SIZE)
             {
                 uart_byte_send |= _BV(RIGHT_COLLISION_BIT);
                 right_collision_count = 0;

@@ -142,12 +142,12 @@ collision_data_S collision_status_retrieve(void)
             col_data.left_col_pressed = true;
             break;
         case (_BV(LEFT_COLLISION) | _BV(RIGHT_COLLISION)) : // Both switches open
-            col_data.right_col_pressed = true;
-            col_data.left_col_pressed = true;
+            col_data.right_col_pressed = false;
+            col_data.left_col_pressed = false;
             break;
         case 0 :                                            // Both switches pressed
-            col_data.right_col_pressed = false;
-            col_data.left_col_pressed = false;            
+            col_data.right_col_pressed = true;
+            col_data.left_col_pressed = true;            
             break;
     }
     return col_data;
