@@ -7,13 +7,14 @@ import collections
 import matplotlib.pyplot as plt
 import matplotlib.animation as animation
 import matplotlib.collections as mcoll
-import struct
 import pandas as pd
 import numpy as np
-
+from datetime import datetime
+import os
+import cv2
 
 class serialPlot:
-    def __init__(self, serialPort = '/dev/cu.usbserial-14630', serialBaud = 115200, map_dim = [101, 101]):
+    def __init__(self, serialPort = '/dev/cu.usbserial-141210', serialBaud = 115200, map_dim = [101, 101]):
         self.port = serialPort
         self.baud = serialBaud
         self.map_data = []
@@ -24,9 +25,11 @@ class serialPlot:
         self.isReceiving = False
         self.readyToFetch = False
         self.startCaptureMap = False
+        self.frame_counter = -1
         self.thread = None
         self.plotTimer = 0
         self.previousTimer = 0
+        self.map_type = ""
         # self.csvData = []
 
         print('Trying to connect to: ' + str(serialPort) + ' at ' + str(serialBaud) + ' BAUD.')
@@ -51,14 +54,25 @@ class serialPlot:
             self.rawData = self.serialConnection.readline()
             str_data = self.rawData.decode('utf-8')
             if (self.readyToFetch == False):
-                if ("MAP" in str_data):
+                if ("[GMAP] Size:" in str_data):
+                    print(str_data)
+                elif ("MAP-Memory" in str_data) or ("MAP-Centered" in str_data):
+                    self.map_type = str_data.split(":")[0]
                     self.startCaptureMap = True
                     self.map_data = []
+                    data = str_data.split(",")
+                    self.frame_counter = int(data[1])
+                    print("> Frame: {}".format(self.frame_counter))
                 elif self.startCaptureMap:
-                    data = [int(s) for s in str_data.split(',')]
-                    self.map_data.append(data[0:self.map_dim[0]])
-            if (len(self.map_data) >= self.map_dim[1]):
-                self.readyToFetch = True
+                    data_str = str_data.split(',')[0:self.map_dim[0]]
+                    data = [int(s) for s in data_str]
+                    self.map_data.append(data)
+                else:
+                    self.map_data = []
+
+                if (len(self.map_data) >= self.map_dim[1]):
+                    self.readyToFetch = True
+                    self.startCaptureMap = False
                 
             # self.serialConnection.readinto(self.map_data)
             self.isReceiving = True
@@ -73,6 +87,17 @@ class serialPlot:
 
 
 def main():
+    get_files = lambda DIR: [ os.path.join(DIR, f) for f in os.listdir(DIR) if f.endswith(".png") ]
+    # log folder
+    def create_folder(DIR, clean=False):
+        if not os.path.exists(DIR):
+            os.mkdir(DIR)
+        elif clean:
+            filelist = get_files(DIR)
+            for f in filelist:
+                os.remove(f)
+    create_folder(DIR="log", clean=True)
+
     # initializes all required variables
     map_dim_mm = [1000, 1000]
     map_res_mm = 10
@@ -89,7 +114,7 @@ def main():
     ymin = 0
     ymax = map_dim[1]
     # plot
-    fig = plt.figure()
+    fig = plt.figure(figsize=(10,10))
     ax = plt.axes(xlim=(xmin, xmax), ylim=(ymin, ymax))
     ax.set_title('Global Map')
     ax.set_xlabel("x")
@@ -102,15 +127,41 @@ def main():
     def animate(i):
         if (s.readyToFetch):
             im.set_data(s.map_data)
+            s.readyToFetch = False
+            ax.set_title('Global Map ({}) [{}]'.format(s.map_type, s.frame_counter))
+            plt.savefig("log/gmap_{}.png".format(s.frame_counter), bbox_inches='tight')
+            
         # return a list of the artists that need to be redrawn
         return [im]
 
     anim = animation.FuncAnimation(
         fig, animate, interval=pltInterval, blit=True, repeat=True)
-    plt.show()
 
+    plt.show()
     s.close()
 
+    ######## convert log images to video: Upon Closing ###
+    fps = 5
+    frame_array = []
+    pathOut = "log/gmap_{}.mp4".format(datetime.now().strftime("%Y-%m-%dT-%H-%M-%SZ"))
+    filelist = get_files(DIR="log")
+    filelist.sort(key = lambda x: int(x.split('_')[1].split('.')[0]))
+    size = ()
+    if len(filelist):
+        for f in filelist:
+            #reading each files
+            print(f)
+            img = cv2.imread(f)
+            height, width, layers = img.shape
+            size = (width,height)
+            #inserting the frames into an image array
+            frame_array.append(img)
+        
+        out = cv2.VideoWriter(pathOut,cv2.VideoWriter_fourcc(*'DIVX'), fps, size)
+        for i in range(len(frame_array)):
+            # writing to a image array
+            out.write(frame_array[i])
+        out.release()
 
 if __name__ == '__main__':
     main()

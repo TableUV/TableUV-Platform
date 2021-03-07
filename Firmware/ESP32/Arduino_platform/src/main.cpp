@@ -32,6 +32,7 @@
 #include <stdio.h>
 
 // TableUV Lib
+#include "common.h"
 #include "dev_config.h"
 #include "io_ping_map.h"
 #include "APP/app_slam.h"
@@ -202,7 +203,7 @@ static void esp32_task_init()
         "core1_task_runSupervisor",  /* Name of the task */
         10000,                  /* Stack size in words */
         NULL,                   /* Task input parameter */
-        1,                      /* Priority of the task */
+        2,                      /* Priority of the task */
         NULL,                   /* Task handle. */
         ESP32_CORE_HIGH_LEVEL   /* Core where the task should run */
     );  

@@ -65,8 +65,8 @@ typedef int8_t map_pixel_data_t; // [-128, 127]
 
 /*** (Macro Functions) ***/
 #define GMAP_MM_TO_UNIT_PIXEL(x_mm)             (int32_t)((x_mm)/(GMAP_UNIT_GRID_STEP_SIZE_MM)) // -ve Ceiling => -1, +ve Flooring => 1
-#define GMAP_UNIT_PIXEL_TO_MM(x_pixel)          ((x_pixel) * (GMAP_UNIT_GRID_STEP_SIZE_MM))
-#define ARG_RANGE_INCLUSIVE(x_val, min, max)    (uint8_t)(((x_val) >= (min)) + ((x_val) >= (max))) // 0: (-inf, min), 1: [min, max], 2: [max, inf)
+#define GMAP_UNIT_PIXEL_TO_MM(x_pixel)          (float)((x_pixel) * (float)(GMAP_UNIT_GRID_STEP_SIZE_MM))
+#define ARG_RANGE_INCLUSIVE(x_val, min, max)    (uint8_t)(((int32_t)(x_val) >= (int32_t)(min)) + ((int32_t)(x_val) >= (int32_t)(max))) // 0: (-inf, min), 1: [min, max], 2: [max, inf)
 // Assumptions:
 #if !(GMAP_WN_PIXEL == GMAP_HN_PIXEL)
     #error "GMAP_WN_PIXEL != GMAP_HN_PIXEL"
@@ -164,51 +164,62 @@ static INLINE void app_slam_private_resetGlobalMap(void)
  */
 static void app_slam_private_translateGlobalMap(int32_t dx_pixel, int32_t dy_pixel)
 {
+    // FIXME: BUG!!!!!
     map_pixel_data_t* mdata = (slam_data.gMap.data);
     math_cart_coord_int32_S* mc_pixel = &(slam_data.gMap.map_center_pixel);
     int32_t start;
     int32_t end;
-    int32_t index;
+    int32_t y_index, x_index;
 
+    // \in [-GMAP_DEFAULT_CENTRAL_X_INDEX_PIXEL, GMAP_DEFAULT_CENTRAL_X_INDEX_PIXEL]
+    const int32_t x00 = mc_pixel->x - GMAP_DEFAULT_CENTRAL_X_INDEX_PIXEL;
+    const int32_t y00 = mc_pixel->y - GMAP_DEFAULT_CENTRAL_Y_INDEX_PIXEL;
     // reset Vertical Columns
-    if (dx_pixel >= 0)
+    if (dx_pixel != 0)
     {
-        start = 0;
-        end = dx_pixel;
-    }
-    else
-    {
-        start = GMAP_WN_PIXEL + dx_pixel; // >= 0
-        end = GMAP_WN_PIXEL;
-    }
-    index = 0;
-    for (int32_t j = 0; j < GMAP_HN_PIXEL; j ++)
-    {
-        for (int32_t i = start; i < end; i ++)
+        start = x00;
+        end = x00;
+        if (dx_pixel >= 0)
         {
-            mdata[index + i] = GRID_CELL_NEUTRAL;
+            end += dx_pixel;
         }
-        index += GMAP_WN_PIXEL;
+        else
+        {
+            start += dx_pixel;
+        }
+        y_index = 0;
+        for (int32_t j = 0; j < GMAP_HN_PIXEL; j ++)
+        {
+            for (int32_t i = start; i < end; i ++)
+            {
+                x_index = i + MAP_OFFSET[ARG_RANGE_INCLUSIVE((int32_t)(i), 0, GMAP_WN_PIXEL)];
+                mdata[y_index + x_index] = GRID_CELL_NEUTRAL;
+            }
+            y_index += GMAP_WN_PIXEL;
+        }
     }
     // reset Horizontal Columns
-    if (dy_pixel >= 0)
+    if (dy_pixel != 0)
     {
-        start = 0;
-        end = dy_pixel;
-    }
-    else
-    {
-        start = GMAP_HN_PIXEL + dy_pixel; // >= 0
-        end = GMAP_HN_PIXEL;
-    }
-    index = start * GMAP_WN_PIXEL;
-    for (int32_t j = start; j < end; j ++)
-    {
-        for (int32_t i = 0; i < GMAP_WN_PIXEL; i ++)
+        start = y00;
+        end = y00;
+        if (dy_pixel >= 0)
         {
-            mdata[index + i] = GRID_CELL_NEUTRAL;
+            end += dy_pixel;
         }
-        index += GMAP_WN_PIXEL;
+        else
+        {
+            start += dy_pixel;
+        }
+        for (int32_t j = start; j < end; j ++)
+        {
+            y_index = j + MAP_OFFSET[ARG_RANGE_INCLUSIVE((int32_t)(j), 0, GMAP_HN_PIXEL)];
+            y_index *= GMAP_WN_PIXEL;
+            for (int32_t i = 0; i < GMAP_WN_PIXEL; i ++)
+            {
+                mdata[y_index + i] = GRID_CELL_NEUTRAL;
+            }
+        }
     }
 
     // translate dynamic map central indexer
@@ -227,8 +238,9 @@ static void app_slam_private_translateGlobalMap(int32_t dx_pixel, int32_t dy_pix
 static void app_slam_private_clearVehicleRegion(void)
 {
     // [0, W | H )
-    const int32_t cx_offsetted = slam_data.gMap.map_center_pixel.x - (ROBOT_SIZE_R_PIXEL);
-    const int32_t cy_offsetted = slam_data.gMap.map_center_pixel.y - (ROBOT_SIZE_R_PIXEL);
+    const math_cart_coord_int32_S* mc_pixel = &(slam_data.gMap.map_center_pixel);
+    const int32_t cx_offsetted = mc_pixel->x - (ROBOT_SIZE_R_PIXEL);
+    const int32_t cy_offsetted = mc_pixel->y - (ROBOT_SIZE_R_PIXEL);
     const int8_t PADDING[ROBOT_SIZE_D_PIXEL + 1U] = {4, 2, 1, 1, 0, 0, 0, 1, 1, 2, 4}; // space skip
     int32_t x,y,dx_pad;
 
@@ -244,8 +256,7 @@ static void app_slam_private_clearVehicleRegion(void)
         for (int32_t i = dx_pad; i <= (ROBOT_SIZE_D_PIXEL - dx_pad); i ++)
         {
             x = cx_offsetted + i;
-            x += MAP_OFFSET[ARG_RANGE_INCLUSIVE((int32_t)(x), 0, GMAP_HN_PIXEL)];
-
+            x += MAP_OFFSET[ARG_RANGE_INCLUSIVE((int32_t)(x), 0, GMAP_WN_PIXEL)];
             // set cell visited
             mdata[y + x] = GRID_CELL_VISITED;
         }
@@ -256,8 +267,8 @@ static void app_slam_private_globalMapUpdate(void)
 {
     //// Fetch Data ====== ====== ======
     // TODO: Assume we get (dx, dy) from localization (@Alex)
-    float mock_dx_mm = 0.0f;
-    float mock_dy_mm = 0.0f;
+    float mock_dx_mm = -10.0f; // 1mm / 0.1s => 10mm / s
+    float mock_dy_mm = -10.0f;
 
     //// Update Dynamic Map ===== ======
     // accumulate leftover float bits from previous update
@@ -266,15 +277,16 @@ static void app_slam_private_globalMapUpdate(void)
     // translate translation to pixel space:
     const int32_t dx_pixel = GMAP_MM_TO_UNIT_PIXEL(dx_mm);
     const int32_t dy_pixel = GMAP_MM_TO_UNIT_PIXEL(dy_mm);
+    // translate dynamic map
+    app_slam_private_translateGlobalMap(dx_pixel, dy_pixel);
     // compute leftover float bits (-10, 10) mm
     dx_mm -= (GMAP_UNIT_PIXEL_TO_MM(dx_pixel));
     dy_mm -= (GMAP_UNIT_PIXEL_TO_MM(dy_pixel));
-    // translate dynamic map
-    app_slam_private_translateGlobalMap(dx_pixel, dy_pixel);
     // store leftover bit
     slam_data.gMap.map_offset_mm.x = dx_mm;
     slam_data.gMap.map_offset_mm.y = dy_mm;
-
+    // printf("mm: [%f, %f] \n", dx_mm, dy_mm);
+    
     //// Update Map Content ===== ======
     // Clear Vehicle Region
     app_slam_private_clearVehicleRegion();
@@ -304,16 +316,16 @@ static void app_slam_private_motionPlanning(void)
 }
 
 #if (DEBUG_FPRINT_FEATURE_MAP)
-static void app_slam_private_debugPrintMap(bool central)
+static void app_slam_private_debugPrintMap(bool central, int32_t count)
 {
     // [0, W | H )
-    const int32_t cx= slam_data.gMap.map_center_pixel.x;
-    const int32_t cy= slam_data.gMap.map_center_pixel.y;
+    const int32_t cx= slam_data.gMap.map_center_pixel.x - GMAP_DEFAULT_CENTRAL_X_INDEX_PIXEL;
+    const int32_t cy= slam_data.gMap.map_center_pixel.y - GMAP_DEFAULT_CENTRAL_Y_INDEX_PIXEL;
     map_pixel_data_t* mdata = (slam_data.gMap.data);
     int32_t x,y;
-    printf("MAP: \n");
     if (central)
     {
+        PRINTF("MAP-Centered: , %d, \n", count);
         for (int32_t j = 0; j < GMAP_WN_PIXEL; j ++)
         {
             y = cy + j;
@@ -330,6 +342,7 @@ static void app_slam_private_debugPrintMap(bool central)
     }
     else // raw gmap
     {
+        PRINTF("MAP-Memory: , %d, \n", count);
         for (int32_t j = 0; j < GMAP_WN_PIXEL; j ++)
         {
             y = j;
@@ -364,9 +377,14 @@ void app_slam_run100ms(void)
     app_slam_private_obstacleDetection();
     app_slam_private_pathPlanning();
     app_slam_private_motionPlanning();
-
+    
 #if (DEBUG_FPRINT_FEATURE_MAP)
-    app_slam_private_debugPrintMap(FALSE);
+    static int count = 0;
+    count ++;
+    if (count % 10 == 0)
+    {
+        app_slam_private_debugPrintMap(DEBUG_FPRINT_FEATURE_MAP_CENTERED, count);
+    }
 #endif
 }
 
