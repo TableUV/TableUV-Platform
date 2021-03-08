@@ -18,8 +18,13 @@
 #include "dev_ToF_Lidar.h"
 #include "slam_math.h"
 
-// External Library
+// SDK config 
+#include "sdkconfig.h"
 
+// FreeRTOS
+#include "freertos/FreeRTOS.h"
+#include "freertos/task.h"
+#include "freertos/semphr.h"
 
 //////////////////////////////
 ///////   TYPEDEF     ////////
@@ -86,30 +91,25 @@ typedef enum {
     IR_LR,
     IR_COUNT,
     IR_UNKNOWN
-} vehicle_IR_map_E;
+} vehicle_IR_channel_E;
 
 typedef enum {
     COLLISION_R,
     COLLISION_L,
     COLLISION_COUNT,
     COLLISION_UNKNOWN
-} vehicle_Collision_map_E;
-
-typedef struct{
-    const int8_t    edge_node_x_pixel[VEHICLE_EDGE_NODE_COUNT];
-    const int8_t    edge_node_y_pixel[VEHICLE_EDGE_NODE_COUNT];
-    const vehicle_edge_node_E edge_node_ir[IR_COUNT];
-} edge_sensor_config_S;
+} vehicle_collision_channel_E;
 
 /////////////////////////////////
 ///////   DEFINITION     ////////
 /////////////////////////////////
 // Edge node mapping:
 #define VEHICLE_EDGE_NODE_PI                (VEHICLE_EDGE_NODE_14)
-#define VEHICLE_EDGE_NODE_FOV               (0.2243994753F)//(float)((M_PI) / (int32_t)(VEHICLE_EDGE_NODE_PI))
+#define VEHICLE_EDGE_NODE_FOV               (0.2243994753F)//(float)((CONST_M_PI) / (int32_t)(VEHICLE_EDGE_NODE_PI))
 #define VEHICLE_EDGE_NODE_FOV_2             (0.1121997376F)//(float)(VEHICLE_EDGE_NODE_FOV/2)
 #define VEHICLE_COLLISION_START_NODE        (VEHICLE_EDGE_NODE_0)
 #define VEHICLE_COLLISION_NUM_NODES         (5)
+#define VEHICLE_AVOIDANCE_R_PIXEL           (4)
 
 /*** (parameterization) ***/
 // Robot Characteristics 
@@ -143,6 +143,16 @@ typedef struct{
 #define GRID_CELL_ALPHA_DECAY_BASE          (100)
 #define GRID_CELL_BETA_DECAY                (-3) // additive decay
 
+// Obstacle avoidance
+#define OBSTACLE_TOLERANCE                  (0U) // 0 tolerance
+#define VELOCITY_BUFFER_SIZE                (4U)
+#define VELOCITY_ZERO_MM_S                   (0) // 0 mm/s
+#define VELOCITY_MIN_MM_S                   (10) // 10 mm/s
+#define VELOCITY_SOFT_MM_S                  (30) // 30 mm/s
+#define VELOCITY_MAX_MM_S                   (60) // 60 mm/s
+
+#define MP_MUTEX_BLOCK_TIME_MS              ((1U)/portTICK_PERIOD_MS)
+
 /*** (Pre-compile const.) ***/
 // Robot Characteristics 
 #define ROBOT_SIZE_D_PIXEL                  ((ROBOT_SIZE_D_MM)/(GMAP_UNIT_GRID_STEP_SIZE_MM))
@@ -155,13 +165,14 @@ typedef struct{
 #define GMAP_DEFAULT_CENTRAL_Y_INDEX_PIXEL  ((GMAP_GRID_EDGE_SIZE_PIXEL) / (2U))
 #define GMAP_VISIBILITY_RANGE_MAX           ((GMAP_SQUARE_EDGE_SIZE_MM)  / (2U))
 // Others
-#define M_2PI                               (6.283185307179586F)
+#define CONST_M_2PI                         (6.283185307179586F)
+#define CONST_M_PI		                    (3.14159265358979323846F)
 
 /*** (Macro Functions) ***/
 // Unit Conversion
 #define GMAP_MM_TO_UNIT_PIXEL(x_mm)             (int32_t)((x_mm)/(GMAP_UNIT_GRID_STEP_SIZE_MM)) // -ve Ceiling => -1, +ve Flooring => 1
 #define GMAP_UNIT_PIXEL_TO_MM(x_pixel)          (float)((x_pixel) * (float)(GMAP_UNIT_GRID_STEP_SIZE_MM))
-#define ANGLE_WRAP_NPI_TO_PI(ang_rad)           (((ang_rad) < (- M_PI)?((M_2PI) + (ang_rad)):(((ang_rad) > (M_PI))?((ang_rad) - (M_2PI)):(ang_rad))))
+#define ANGLE_WRAP_NPI_TO_PI(ang_rad)           (((ang_rad) < (- CONST_M_PI)?((CONST_M_2PI) + (ang_rad)):(((ang_rad) > (CONST_M_PI))?((ang_rad) - (CONST_M_2PI)):(ang_rad))))
 
 // GMap dynamic accessor compensator
 #define ARG_RANGE_INCLUSIVE(x_val, min, max)    (uint8_t)(((int32_t)(x_val) >= (int32_t)(min)) + ((int32_t)(x_val) >= (int32_t)(max))) // 0: (-inf, min), 1: [min, max], 2: [max, inf)
@@ -171,7 +182,7 @@ typedef struct{
 #define GRID_CELL_MAX_SATURATION(value)         (map_pixel_data_t)(((value) <= (GRID_CELL_EDGE_MAX_PROB))?(value):(GRID_CELL_EDGE_MAX_PROB))
 #define GRID_CELL_DECAY(value)                  (map_pixel_data_t)(((value) <= (GRID_CELL_NEUTRAL))?(value):((value) + (GRID_CELL_BETA_DECAY)))
 
-#define EDGE_NODE_MAPPING(theta_rad)            (vehicle_edge_node_E)(((theta_rad) + (M_PI) + (VEHICLE_EDGE_NODE_FOV_2)) / (VEHICLE_EDGE_NODE_FOV)) // Assume; [-pi, pi]
+#define EDGE_NODE_MAPPING(theta_rad)            (vehicle_edge_node_E)(((theta_rad) + (CONST_M_PI) + (VEHICLE_EDGE_NODE_FOV_2)) / (VEHICLE_EDGE_NODE_FOV)) // Assume: theta \in [-pi, pi]
 #define EDGE_NODE_WRAPPING(node_integer)        (vehicle_edge_node_E)( ((node_integer) < 0) ? ((node_integer) + VEHICLE_EDGE_NODE_COUNT) : ( ((node_integer) >= (int8_t)(VEHICLE_EDGE_NODE_COUNT))?((node_integer) - VEHICLE_EDGE_NODE_COUNT):(node_integer) ) )
 
 // Assumptions:
@@ -194,17 +205,35 @@ typedef struct{
  *      +------+-------------------------+
  */
 typedef struct{
-    map_pixel_data_t                  data[GMAP_WN_PIXEL * GMAP_HN_PIXEL];
-    math_cart_coord_int32_S           map_center_pixel;     // \in [0, GMAP_GRID_EDGE_SIZE_PIXEL]
-    math_cart_coord_float_S           map_offset_mm;        // \in [-GMAP_UNIT_GRID_STEP_SIZE_MM, GMAP_UNIT_GRID_STEP_SIZE_MM]
-    float                             vehicle_orientation_rad;
+    map_pixel_data_t             data[GMAP_WN_PIXEL * GMAP_HN_PIXEL];
+    math_cart_coord_int32_S      map_center_pixel;     // \in [0, GMAP_GRID_EDGE_SIZE_PIXEL]
+    math_cart_coord_float_S      map_offset_mm;        // \in [-GMAP_UNIT_GRID_STEP_SIZE_MM, GMAP_UNIT_GRID_STEP_SIZE_MM]
+    float                        vehicle_orientation_rad;
+    vehicle_edge_node_E          orientation_node;
 } dynamic_map_S;
+
+typedef struct{
+    const int8_t                edge_node_x_pixel[VEHICLE_EDGE_NODE_COUNT];
+    const int8_t                edge_node_y_pixel[VEHICLE_EDGE_NODE_COUNT];
+    const vehicle_edge_node_E   edge_node_ir[IR_COUNT];
+} edge_sensor_config_S;
+
+typedef struct {
+    int8_t                      left_motor_velocity_mm_s_per_50ms[VELOCITY_BUFFER_SIZE];
+    int8_t                      right_motor_velocity_mm_s_per_50ms[VELOCITY_BUFFER_SIZE];
+    uint8_t                     update_stamp_100ms;
+    uint8_t                     read_index;
+} motion_profile_S;
 
 typedef struct{
     // data:
     dev_tof_lidar_sensor_data_S lidar_data;
     bool                        ir_node[IR_COUNT];
     bool                        collision_end_node[COLLISION_COUNT];
+    uint8_t                     obstacle_count; // store obstacle result
+
+    SemaphoreHandle_t           motion_profile_mutex;
+    motion_profile_S            motion_profile;
 
     // global map info.
     dynamic_map_S               gMap;
@@ -326,10 +355,12 @@ static void app_slam_private_localization(void)
 static void app_slam_private_localMapUpdate(void)
 {
     // 1. Grab data from Lidar
+#if (FEATURE_LIDAR)
     dev_ToF_Lidar_dampDataBuffer(& (slam_data.lidar_data));
+#endif //(FEATURE_LIDAR)
 
     // TODO: 2. Grab IR + Collision Data
-
+    
     // TODO: 3. Process data?
     bool* ir_node = slam_data.ir_node;
     bool* cn_node = slam_data.collision_end_node;
@@ -340,7 +371,7 @@ static void app_slam_private_localMapUpdate(void)
     ir_node[IR_LF] = FALSE;
     ir_node[IR_LR] = FALSE;
     cn_node[COLLISION_R] = FALSE;
-    cn_node[COLLISION_L] = FALSE;
+    cn_node[COLLISION_L] = FALSE;    
 }
 
 static INLINE void app_slam_private_resetGlobalMap(void)
@@ -462,26 +493,24 @@ static void app_slam_private_clearVehicleRegion(void)
  */
 static void app_slam_private_updateEdgeRegion(void)
 {
-    // Cache data
-    const bool* ir_node = slam_data.ir_node;
-    const bool* cn_node = slam_data.collision_end_node;
+    // Cache data pointers
+    const bool *                    ir_node = slam_data.ir_node;
+    const bool *                    cn_node = slam_data.collision_end_node;
+    const edge_sensor_config_S *    s_config = slam_data.sensor_config;
+    const int8_t *                  config_node_x_pixel = s_config->edge_node_x_pixel;
+    const int8_t *                  config_node_y_pixel = s_config->edge_node_y_pixel;
+    const vehicle_edge_node_E *     config_node_ir = s_config->edge_node_ir;
+    map_pixel_data_t *              mdata = (slam_data.gMap.data);
+
+    // const data
     const int32_t cx_pixel = slam_data.gMap.map_center_pixel.x;
     const int32_t cy_pixel = slam_data.gMap.map_center_pixel.y;
-    const float orientation_rad = slam_data.gMap.vehicle_orientation_rad;
-
-    const edge_sensor_config_S* s_config = slam_data.sensor_config;
-    const int8_t *  config_node_x_pixel = s_config->edge_node_x_pixel;
-    const int8_t *  config_node_y_pixel = s_config->edge_node_y_pixel;
-    const vehicle_edge_node_E* config_node_ir = s_config->edge_node_ir;
-    map_pixel_data_t* mdata = (slam_data.gMap.data);
+    const int8_t node_offset = slam_data.gMap.orientation_node;
 
     // intermediate storage
     map_pixel_data_t old_val, new_val;
     int8_t node;
     int32_t x, y, index;
-
-    // Convert orientation to one of the 28 edge nodes:
-    const int8_t node_offset = EDGE_NODE_MAPPING(orientation_rad);
     
     // Update Collision: 
     new_val = (cn_node[COLLISION_L]) ? GRID_CELL_OCCUPANCY_MAX_PROB : GRID_CELL_VISITED_SENSOR;
@@ -515,7 +544,7 @@ static void app_slam_private_updateEdgeRegion(void)
     }
 
     // Update IR:
-    for (vehicle_IR_map_E i = (vehicle_IR_map_E)0U; i < IR_COUNT; i ++)
+    for (vehicle_IR_channel_E i = (vehicle_IR_channel_E)0U; i < IR_COUNT; i ++)
     {
         new_val = (ir_node[i]) ? GRID_CELL_EDGE_DEFAULT_PROB : GRID_CELL_VISITED_SENSOR;
         node = node_offset + config_node_ir[i];
@@ -535,9 +564,11 @@ static void app_slam_private_globalMapUpdate(void)
 {
     //// Fetch Data ====== ====== ======
     // TODO: Assume we get (dx, dy) from localization (@Alex)
+#if (MOCK)
     float mock_dx_mm = 0.0f; // 1mm / 0.1s => 10mm / s
     float mock_dy_mm = 1.0f;
     float mock_dtheta_rad = 0.0f; // Assume: < pi
+#endif // (MOCK)
 
     //// Update Dynamic Map ===== ======
     // accumulate leftover float bits from previous update
@@ -554,11 +585,13 @@ static void app_slam_private_globalMapUpdate(void)
     dy_mm -= (GMAP_UNIT_PIXEL_TO_MM(dy_pixel));
     // saturate theta to [-pi, pi]
     theta = ANGLE_WRAP_NPI_TO_PI(theta);
+    // map robot pose theta => one of the 28 edge nodes:
+    const vehicle_edge_node_E orientation_node = EDGE_NODE_MAPPING(theta);
     // store leftover bit
     slam_data.gMap.map_offset_mm.x = dx_mm;
     slam_data.gMap.map_offset_mm.y = dy_mm;
     slam_data.gMap.vehicle_orientation_rad = theta;
-
+    slam_data.gMap.orientation_node = orientation_node;
     // printf("mm: [%f, %f] \n", dx_mm, dy_mm);
     
     //// Update Map Content ===== ======
@@ -568,15 +601,48 @@ static void app_slam_private_globalMapUpdate(void)
     // Map edge IR sensors + collision sensors to map
     app_slam_private_updateEdgeRegion();
 
-    // TODO: Map tof obstacles to map
-    {
-
-    }
+    // Map tof obstacles to map
+#if (FEATURE_LIDAR)
+    // TODO: app_slam_private_updateGmapFromToF();
+#endif //(FEATURE_LIDAR)
 }
 
 static void app_slam_private_obstacleDetection(void)
 {
-    // TODO: in gMap: 
+    // Cache data pointers
+    map_pixel_data_t *              mdata = (slam_data.gMap.data);
+
+    // const data
+    const int32_t cx_pixel = slam_data.gMap.map_center_pixel.x;
+    const int32_t cy_pixel = slam_data.gMap.map_center_pixel.y;
+
+    // intermediate storage
+    int32_t x, y, index;
+    
+    // collision detection
+    uint8_t obstacle_count = 0;
+
+    for (int32_t j = - VEHICLE_AVOIDANCE_R_PIXEL; j <= VEHICLE_AVOIDANCE_R_PIXEL; j ++)
+    {
+        y = cy_pixel + j;
+        y += MAP_OFFSET[ARG_RANGE_INCLUSIVE((int32_t)(y), 0, GMAP_HN_PIXEL)];
+        index = y * GMAP_WN_PIXEL;
+
+        for (int32_t i = - VEHICLE_AVOIDANCE_R_PIXEL; i <= VEHICLE_AVOIDANCE_R_PIXEL; i ++)
+        {
+            x = cx_pixel + i;
+            x += MAP_OFFSET[ARG_RANGE_INCLUSIVE((int32_t)(x), 0, GMAP_WN_PIXEL)];
+            
+            // check
+            if (mdata[index + x] > GRID_CELL_WALKABLE_THRESHOLD_MAX)
+            {
+                obstacle_count ++;
+            }
+        }
+    }
+
+    // Store solution:
+    slam_data.obstacle_count = obstacle_count;
 }
 
 static void app_slam_private_pathPlanning(void)
@@ -586,7 +652,67 @@ static void app_slam_private_pathPlanning(void)
 
 static void app_slam_private_motionPlanning(void)
 {
-    // TODO: plan the motions (velocity arrays for the next 50ms)
+    // TODO: improve motion planning from path planning
+    // TODO: motion feedback:
+#if (MOCK)
+    bool mock_robot_was_stationary_previously = FALSE;
+#endif // (MOCK)
+    // Currently: simple obstacle avoidance logic
+    const uint8_t obstacle_count = slam_data.obstacle_count;
+    int8_t * Vl_motor_mm_s_50ms = slam_data.motion_profile.left_motor_velocity_mm_s_per_50ms;
+    int8_t * Vr_motor_mm_s_50ms = slam_data.motion_profile.right_motor_velocity_mm_s_per_50ms;
+
+    if (obstacle_count > OBSTACLE_TOLERANCE)
+    {
+#if DEBUG_FPRINT_FEATURE_OBSTACLES
+        PRINTF("[INFO] Collision Detected (# %d)\n", obstacle_count);
+#endif
+        // update velocity to rotation
+        if (xSemaphoreTake(slam_data.motion_profile_mutex, MP_MUTEX_BLOCK_TIME_MS) == pdTRUE) {            
+            // rotate:
+            Vl_motor_mm_s_50ms[0U] = - VELOCITY_MIN_MM_S;
+            Vr_motor_mm_s_50ms[0U] =   VELOCITY_MIN_MM_S;
+            Vl_motor_mm_s_50ms[1U] = - VELOCITY_SOFT_MM_S;
+            Vr_motor_mm_s_50ms[1U] =   VELOCITY_SOFT_MM_S;
+            // in case class update incomplete => keep spinning
+            Vl_motor_mm_s_50ms[2U] = - VELOCITY_SOFT_MM_S;
+            Vr_motor_mm_s_50ms[2U] =   VELOCITY_SOFT_MM_S;
+            Vl_motor_mm_s_50ms[3U] = - VELOCITY_SOFT_MM_S;
+            Vr_motor_mm_s_50ms[3U] =   VELOCITY_SOFT_MM_S;
+            slam_data.motion_profile.update_stamp_100ms += 1;
+            xSemaphoreGive(slam_data.motion_profile_mutex); // release lock
+        }
+    }
+    else
+    {
+        // update velocity to rotation
+        if (xSemaphoreTake(slam_data.motion_profile_mutex, MP_MUTEX_BLOCK_TIME_MS) == pdTRUE) {
+            if (mock_robot_was_stationary_previously)
+            {
+                // Soft-start
+                Vl_motor_mm_s_50ms[0U] = VELOCITY_MIN_MM_S;
+                Vr_motor_mm_s_50ms[0U] = VELOCITY_MIN_MM_S;
+                Vl_motor_mm_s_50ms[1U] = VELOCITY_SOFT_MM_S;
+                Vr_motor_mm_s_50ms[1U] = VELOCITY_SOFT_MM_S;
+            }
+            else
+            {
+                // Forward
+                Vl_motor_mm_s_50ms[0U] = VELOCITY_MAX_MM_S;
+                Vr_motor_mm_s_50ms[0U] = VELOCITY_MAX_MM_S;
+                Vl_motor_mm_s_50ms[1U] = VELOCITY_MAX_MM_S;
+                Vr_motor_mm_s_50ms[1U] = VELOCITY_MAX_MM_S;
+
+            }
+            // in case class update incomplete, stop motor:
+            Vl_motor_mm_s_50ms[2U] = VELOCITY_ZERO_MM_S;
+            Vr_motor_mm_s_50ms[2U] = VELOCITY_ZERO_MM_S;
+            Vl_motor_mm_s_50ms[3U] = VELOCITY_ZERO_MM_S;
+            Vr_motor_mm_s_50ms[3U] = VELOCITY_ZERO_MM_S;
+            slam_data.motion_profile.update_stamp_100ms += 1;
+            xSemaphoreGive(slam_data.motion_profile_mutex); // release lock
+        }
+    }
 }
 
 #if (DEBUG_FPRINT_FEATURE_MAP)
@@ -637,9 +763,15 @@ static void app_slam_private_debugPrintMap(bool central, int32_t count)
 ///////////////////////////////////////
 void app_slam_init(void)
 {
+    // reset
     memset(&slam_data, 0x00, sizeof(app_slam_data_S));
     app_slam_private_resetGlobalMap();
+
+    // init
     slam_data.sensor_config = & edge_sensor_config;
+    vSemaphoreCreateBinary(slam_data.motion_profile_mutex);
+
+    // status resport
     PRINTF("[GMAP] Size: (%d x %d)\n", GMAP_WN_PIXEL, GMAP_HN_PIXEL);
 }
 
@@ -660,6 +792,27 @@ void app_slam_run100ms(void)
         app_slam_private_debugPrintMap(DEBUG_FPRINT_FEATURE_MAP_CENTERED, count);
     }
 #endif
+}
+
+uint8_t app_slam_getMotionVelocity(int8_t * left_motor_mm_s_50ms, int8_t * right_motor_mm_s_50ms, uint8_t frame_stamp)
+{
+    motion_profile_S * motion_profile = & slam_data.motion_profile;
+    int8_t * Vl_motor_mm_s_50ms = slam_data.motion_profile.left_motor_velocity_mm_s_per_50ms;
+    int8_t * Vr_motor_mm_s_50ms = slam_data.motion_profile.right_motor_velocity_mm_s_per_50ms;
+    if (xSemaphoreTake(slam_data.motion_profile_mutex, MP_MUTEX_BLOCK_TIME_MS) == pdTRUE) {            
+        if (motion_profile->update_stamp_100ms != frame_stamp)
+        {
+            frame_stamp = motion_profile->update_stamp_100ms;
+            motion_profile->read_index = 0U;
+        }
+        uint8_t index = motion_profile->read_index;
+        * left_motor_mm_s_50ms  = Vl_motor_mm_s_50ms[index];
+        * right_motor_mm_s_50ms = Vr_motor_mm_s_50ms[index];
+        index ++;
+        motion_profile->read_index = (index >= VELOCITY_BUFFER_SIZE)?(VELOCITY_BUFFER_SIZE - 1):index;
+        xSemaphoreGive(slam_data.motion_profile_mutex); // release lock
+    }
+    return frame_stamp;
 }
 
 

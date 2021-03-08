@@ -13,8 +13,29 @@
 extern "C"{
 # endif 
 
+#include <stdint.h>
+#include <stdbool.h>
+/////////////////////////////////
+///////   DEFINITION     ////////
+/////////////////////////////////
+
+///////////////////////////////////////
+///////   PUBLIC PROTOTYPE    /////////
+///////////////////////////////////////
 void app_slam_init(void);
 void app_slam_run100ms(void);
+
+
+/**
+ * @brief get motion velocity
+ * 
+ * It would return the velocity inside the motion profile buffer.
+ * 
+ * If the out of buffer size, return the last velocity.
+ * 
+ * return frame_stamp
+ */
+uint8_t app_slam_getMotionVelocity(int8_t * left_motor_mm_s_50ms, int8_t * right_motor_mm_s_50ms, uint8_t frame_stamp);
 
 # ifdef __cplusplus  
 }
