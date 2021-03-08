@@ -16,6 +16,8 @@
 #include "encoder.h"
 #include "waterLevel.h"
 #include "mistActuator.h"
+#include "left_driver_peripherals.h"
+#include "decodeI2C.h"
 
 
 static uint8_t getDriverMode(){
@@ -68,6 +70,7 @@ int main(void)
 
     while(1)
     { 
+        DATA_TO_MASTER_STATUS_REGISTER = 0;
         //if data received from master
         if(usiTwiDataInReceiveBuffer()){
 
@@ -152,13 +155,14 @@ int main(void)
                 if (DATA_TO_MASTER_STATUS_REGISTER){
                     cli();
 
-                    if (DATA_TO_MASTER_STATUS_REGISTER | _BV(SEND_ENCODER_DATA)){
+                    if (DATA_TO_MASTER_STATUS_REGISTER & _BV(SEND_ENCODER_DATA)){
                         usiTwiTransmitByte(getEncoderCount16_first_8bit());
                         usiTwiTransmitByte(getEncoderCount16_second_8bit());
+                        setEncoderCount(0);
                     }
 
-                    if (DATA_TO_MASTER_STATUS_REGISTER | _BV(SEND_WATER_LEVEL_DATA)){
-                        usiTwiTransmitByte(getWaterLevelSignal());
+                    if (DATA_TO_MASTER_STATUS_REGISTER & _BV(SEND_WATER_LEVEL_DATA)){
+                         usiTwiTransmitByte(getWaterLevelSignal());
                     }
 
                     sei();
