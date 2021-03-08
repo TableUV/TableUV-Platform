@@ -223,6 +223,10 @@ void setup() {
 
     // esp32 task initialization
     esp32_task_init();
+
+    // report status:
+    PRINTF("[SYS] %s", (PROJECT_MODE_SELECTION==PROJECT_MODE_PRODUCTION) ? ("PRODUCTION"):\
+        ((PROJECT_MODE_SELECTION==PROJECT_MODE_DEVELOPMENT) ? ("DEVELOPMENT"):("UNKNOWN")));
 }
 
 void loop() {

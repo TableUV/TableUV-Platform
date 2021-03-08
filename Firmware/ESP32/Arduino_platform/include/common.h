@@ -90,24 +90,24 @@ extern "C"{
  *****  => UNKNOWN SETTINGS  *******
  ***********************************/
 #else
-    E("Mode does not exist!")
+#   error ("Mode does not exist!")
 #endif
 
 ///////////////////////////////////////////
 ///////   MACRO FUNC DEFINITION     ///////
 ///////////////////////////////////////////
 #if (DEBUG_FPRINT)
-# define PRINTF(f_, ...) printf((f_), __VA_ARGS__)
+#   define PRINTF(f_, ...) printf((f_), __VA_ARGS__)
 #else
-# define PRINTF(f_, ...) (void)((f_), __VA_ARGS__)
+#   define PRINTF(f_, ...) // Do Nothing
 #endif
 
 #ifndef INLINE
-# if __GNUC__ && !__GNUC_STDC_INLINE__
-#  define INLINE extern inline
-# else
-#  define INLINE inline
-# endif
+#   if __GNUC__ && !__GNUC_STDC_INLINE__
+#       define INLINE extern inline
+#   else
+#       define INLINE inline
+#   endif
 #endif
 
 #ifdef __cplusplus  
