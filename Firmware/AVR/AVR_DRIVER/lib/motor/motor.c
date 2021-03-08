@@ -8,6 +8,7 @@
 
 #include <avr/io.h>
 #include "motor.h"
+#include <util/delay.h>
 
 void setupMotorConfig(pwm_mode_E pwm_mode){
     DDRA |= _BV(MOTOR_OUT_B);
@@ -85,15 +86,15 @@ void eStopMotor(){
 
 void testMotorAll(){
     setMotor(MOTOR_MODE_COAST, MOTOR_PWM_DUTY_50_PERCENT);
-    _delay_ms(500);
+    _delay_ms(10);
     setMotor(MOTOR_MODE_CW_COAST, MOTOR_PWM_DUTY_50_PERCENT);
-    _delay_ms(5000);
-    setMotor(MOTOR_MODE_CCW_COAST, MOTOR_PWM_DUTY_50_PERCENT);
-    _delay_ms(500);
-    setMotor(MOTOR_MODE_CW_BREAK, MOTOR_PWM_DUTY_50_PERCENT);
-    _delay_ms(500);
-    setMotor(MOTOR_MODE_CCW_BREAK, MOTOR_PWM_DUTY_50_PERCENT);
-    _delay_ms(500);
+    _delay_ms(10);
     setMotor(MOTOR_MODE_BREAK, MOTOR_PWM_DUTY_50_PERCENT);
-    _delay_ms(500);
+    _delay_ms(10);
+    setMotor(MOTOR_MODE_CCW_COAST, MOTOR_PWM_DUTY_50_PERCENT);
+    _delay_ms(10);
+    setMotor(MOTOR_MODE_CW_BREAK, MOTOR_PWM_DUTY_50_PERCENT);
+    _delay_ms(10);
+    setMotor(MOTOR_MODE_CCW_BREAK, MOTOR_PWM_DUTY_50_PERCENT);
+    _delay_ms(10);
 }

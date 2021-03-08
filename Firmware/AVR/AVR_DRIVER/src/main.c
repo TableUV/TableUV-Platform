@@ -66,7 +66,6 @@ int main(void)
     //initialize the USI communicatin
     usiTwiSlaveInit(slave_address);
 
-    DDRB |= _BV(PB0);
 
     while(1)
     { 
@@ -82,7 +81,7 @@ int main(void)
                 
                 // check if eStop bit is enabled 
                 if (message_first_byte & ESTOP_COMMAND_REQ_MASK){
-                    eStopMotor();
+                    eStopMotor(); 
                 }
                 //resume if eStop bit is not enabled 
                 else{
@@ -121,52 +120,52 @@ int main(void)
                         if (message_first_byte & WATERLEVEL_DATA_REQ_MASK)  DATA_TO_MASTER_STATUS_REGISTER |= _BV(SEND_WATER_LEVEL_DATA); 
 
                     }
-                }
 
-                char message_second_byte = usiTwiReceiveByte();
-                motor_command_mode_E motor_command_mode;
-                motor_command_direction_E motor_command_direction;
-                motor_pwm_duty_E motor_pwm_duty; 
+                    char message_second_byte = usiTwiReceiveByte();
+                    motor_command_mode_E motor_command_mode;
+                    motor_command_direction_E motor_command_direction;
+                    motor_pwm_duty_E motor_pwm_duty; 
 
-                // check if data is indeed the second data byte of message 
-                if (checkDataHeader(message_second_byte, DATA_FRAME_HEADER_SECOND)){
-                    
-                    // check motor command mode  
-                    if (message_second_byte & MOTOR_MODE_REQ_MASK)      motor_command_mode = MOTOR_COMMAND_MODE_BRAKE;
-                    else                                                motor_command_mode = MOTOR_COMMAND_MODE_COAST; 
-
-                    // check motor command direction 
-                    if (message_second_byte & MOTOR_DIRECTION_REQ_MASK) motor_command_direction = MOTOR_COMMAND_DIRECTION_CW; 
-                    else                                                motor_command_direction = MOTOR_COMMAND_DIRECTION_CCW; 
+                    // check if data is indeed the second data byte of message 
+                    if (checkDataHeader(message_second_byte, DATA_FRAME_HEADER_SECOND)){
                         
-                    motor_pwm_duty = (message_second_byte & MOTOR_PWM_DUTY_REQ_MASK);
+                        // check motor command mode  
+                        if (message_second_byte & MOTOR_MODE_REQ_MASK)      motor_command_mode = MOTOR_COMMAND_MODE_BRAKE;
+                        else                                                motor_command_mode = MOTOR_COMMAND_MODE_COAST; 
 
-                    if (motor_command_direction == MOTOR_COMMAND_DIRECTION_CW){
-                        if (motor_command_mode == MOTOR_COMMAND_MODE_COAST)           setMotor(MOTOR_MODE_CW_COAST, motor_pwm_duty);
-                        else if (motor_command_mode == MOTOR_COMMAND_MODE_BRAKE)      setMotor(MOTOR_MODE_CW_BREAK, motor_pwm_duty);
+                        // check motor command direction 
+                        if (message_second_byte & MOTOR_DIRECTION_REQ_MASK) motor_command_direction = MOTOR_COMMAND_DIRECTION_CW; 
+                        else                                                motor_command_direction = MOTOR_COMMAND_DIRECTION_CCW; 
+                            
+                        motor_pwm_duty = (message_second_byte & MOTOR_PWM_DUTY_REQ_MASK);
+
+                        if (motor_command_direction == MOTOR_COMMAND_DIRECTION_CW){
+                            if (motor_command_mode == MOTOR_COMMAND_MODE_COAST)           setMotor(MOTOR_MODE_CW_COAST, motor_pwm_duty);
+                            else if (motor_command_mode == MOTOR_COMMAND_MODE_BRAKE)      setMotor(MOTOR_MODE_CW_BREAK, motor_pwm_duty);
+                        }
+                        else if (motor_command_direction == MOTOR_COMMAND_DIRECTION_CCW){
+                            if (motor_command_mode == MOTOR_COMMAND_MODE_COAST)           setMotor(MOTOR_MODE_CCW_COAST, motor_pwm_duty);
+                            else if (motor_command_mode == MOTOR_COMMAND_MODE_BRAKE)      setMotor(MOTOR_MODE_CCW_BREAK, motor_pwm_duty);
+                        }
                     }
-                    else if (motor_command_direction == MOTOR_COMMAND_DIRECTION_CCW){
-                        if (motor_command_mode == MOTOR_COMMAND_MODE_COAST)           setMotor(MOTOR_MODE_CCW_COAST, motor_pwm_duty);
-                        else if (motor_command_mode == MOTOR_COMMAND_MODE_BRAKE)      setMotor(MOTOR_MODE_CCW_BREAK, motor_pwm_duty);
-                    }
+
+                    // send data back to master if needed
+                    if (DATA_TO_MASTER_STATUS_REGISTER){
+                        cli();
+
+                        if (DATA_TO_MASTER_STATUS_REGISTER & _BV(SEND_ENCODER_DATA)){
+                            usiTwiTransmitByte(getEncoderCount16_first_8bit());
+                            usiTwiTransmitByte(getEncoderCount16_second_8bit());
+                            setEncoderCount(0);
+                        }
+
+                        if (DATA_TO_MASTER_STATUS_REGISTER & _BV(SEND_WATER_LEVEL_DATA)){
+                            usiTwiTransmitByte(getWaterLevelSignal());
+                        }
+
+                        sei();
+                    } 
                 }
-
-                // send data back to master if needed
-                if (DATA_TO_MASTER_STATUS_REGISTER){
-                    cli();
-
-                    if (DATA_TO_MASTER_STATUS_REGISTER & _BV(SEND_ENCODER_DATA)){
-                        usiTwiTransmitByte(getEncoderCount16_first_8bit());
-                        usiTwiTransmitByte(getEncoderCount16_second_8bit());
-                        setEncoderCount(0);
-                    }
-
-                    if (DATA_TO_MASTER_STATUS_REGISTER & _BV(SEND_WATER_LEVEL_DATA)){
-                         usiTwiTransmitByte(getWaterLevelSignal());
-                    }
-
-                    sei();
-                } 
             }     
         }
         
