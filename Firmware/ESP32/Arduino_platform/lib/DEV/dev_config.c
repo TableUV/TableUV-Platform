@@ -10,7 +10,7 @@
 #include "dev_config.h"
 
 // TableUV Lib
-#include "dev_avr_actuator.h"
+#include "dev_avr_driver.h"
 #include "dev_avr_sensor.h"
 #include "dev_battery.h"
 #include "dev_config.h"
@@ -19,6 +19,7 @@
 #include "dev_uv.h"
 #include "dev_imu.h"
 #include "../../include/common.h"
+
 
 /////////////////////////////////
 ///////   DEFINITION     ////////
@@ -46,7 +47,7 @@
 void dev_init(void)
 {
     // sub-device  initialization
-    dev_avr_actuator_init();
+    dev_avr_driver_init();
     dev_avr_sensor_init();
     dev_battery_init();
     dev_led_init();
@@ -63,14 +64,27 @@ void dev_run20ms(void)
 #if (FEATURE_LIDAR)
     dev_ToF_Lidar_update20ms();
 #endif
+ 
+
 }
 
 void dev_run100ms(void)
 {
+    dev_avr_driver_set_req_Encoder();
+    // dev_avr_driver_reset_req_Water_level(); 
+    //dev_avr_driver_set_req_Haptic();  
+    dev_avr_driver_set_req_Robot_motion(ROBOT_MOTION_FW_COAST, MOTOR_PWM_DUTY_40_PERCENT, MOTOR_PWM_DUTY_40_PERCENT);
     // Do  nothing
+    #ifdef FEATURE_AVR_DRIVER_ALL
+        dev_driver_avr_update100ms(); 
+    #endif
+
+    printf("left_encod_count %d \n", dev_avr_driver_get_EncoderCount(LEFT_AVR_DRIVER));
+    printf("right_encod_count %d \n", dev_avr_driver_get_EncoderCount(RIGHT_AVR_DRIVER));
+
+
 }
 
 void dev_run1000ms(void)
 {
 }
-

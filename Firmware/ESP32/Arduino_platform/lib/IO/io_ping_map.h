@@ -51,9 +51,9 @@ extern "C"{
 
 //SPI 
 #define CS_3V3               4
-#define MOSI_3V3             16
+#define MOSI_3V3             16        //SDO: SPI out 
 #define SCLK_3V3             17
-#define MISO_3V3             5
+#define MISO_3V3             5         //SDI: SPI in 
 
 
 #ifdef __cplusplus  

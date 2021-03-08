@@ -222,6 +222,8 @@ void setup() {
     // app level init
     app_slam_init();
     app_supervisor_init();
+    
+
 }
 
 void loop() {

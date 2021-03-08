@@ -35,6 +35,7 @@
 #define TOF_SENSOR_COUNT                    (1U) // (DEV_TOF_LIDAR_COUNT)
 
 typedef struct{
+    TwoWire             I2C;
     SFEVL53L1X          tofs[DEV_TOF_LIDAR_COUNT];
     const uint8_t       address[DEV_TOF_LIDAR_COUNT];
     const uint8_t       firing_sequence[DEV_TOF_FIRING_KEYFRAME_COUNT];
@@ -54,10 +55,11 @@ void dev_ToF_reset_all_sensors(void);
 ///////   DATA     ////////
 ///////////////////////////
 static dev_tof_lidar_data_S lidar_data = {
+    .I2C = TwoWire(1),
     .tofs = {
-        SFEVL53L1X(Wire, 21, TOF_INT_1),//TOF_SHUT, TOF_INT_1),
-        SFEVL53L1X(Wire, 22, TOF_INT_2),//TOF_SHUT, TOF_INT_2),
-        SFEVL53L1X(Wire, 23, TOF_INT_3),//TOF_SHUT, TOF_INT_3)
+        SFEVL53L1X(lidar_data.I2C, 21, TOF_INT_1),//TOF_SHUT, TOF_INT_1),
+        SFEVL53L1X(lidar_data.I2C, 22, TOF_INT_2),//TOF_SHUT, TOF_INT_2),
+        SFEVL53L1X(lidar_data.I2C, 23, TOF_INT_3),//TOF_SHUT, TOF_INT_3)
     },
     .address = { 
         0x62, 
@@ -195,7 +197,7 @@ void dev_ToF_reset_all_sensors(void)
 void dev_ToF_Lidar_init(void)
 {
     // start tof I2C
-    Wire.begin(TOF_I2C_SDA, TOF_I2C_SCL);
+    lidar_data.I2C.begin(TOF_I2C_SDA, TOF_I2C_SCL);
 
     // reset ToF
     dev_ToF_reset_all_sensors();
