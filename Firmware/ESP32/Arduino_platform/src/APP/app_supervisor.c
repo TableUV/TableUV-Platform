@@ -14,6 +14,8 @@
 #include <string.h>
 
 // TableUV Lib
+#include "common.h"
+#include "app_slam.h"
 
 // External Library
 
@@ -49,6 +51,12 @@ void app_supervisor_init(void)
 void app_supervisor_run20ms(void)
 {
     // TODO: to be implemented
+#if (FEATURE_SUPER_USE_PROFILED_MOTIONS | MOCK)
+    uint8_t frame=0U;
+    int8_t rmotor, lmotor;
+    frame = app_slam_getMotionVelocity(& lmotor, & rmotor, frame);
+    PRINTF("[MOTOR] R:%3d, L:%3d (f:%3d) \n", lmotor, rmotor, frame);
+#endif
 }
 
 

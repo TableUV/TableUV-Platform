@@ -236,7 +236,9 @@ void dev_ToF_Lidar_update20ms(void)
                 firing_frame_new = DEV_TOF_FIRING_KEYFRAME_0;
             }
 
+# if (DEBUG_FPRINT_FEATURE_LIDAR)
             PRINTF("%d Sensor: %3d [mm] F:[%d] Label:(%2d) Status:(%d) \n", sensor_id, dist_mm, firing_frame, lidar_data.firing_sequence_label[sensor_id][firing_frame], error);
+# endif
             // update new firing pattern
             if (sensor->setCenter(lidar_data.firing_sequence[firing_frame_new]) == VL53L1_ERROR_NONE)
             {
