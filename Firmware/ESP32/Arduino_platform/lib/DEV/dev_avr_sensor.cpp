@@ -10,7 +10,7 @@
 #include "dev_avr_sensor.h"
 
 #include "io_ping_map.h"
-#include "HardwareSerial.h"
+#include <HardwareSerial.h>
 
 #include "../../include/common.h"
 
@@ -36,6 +36,7 @@ dev_tof_lidar_data_S sensor_avr_data = {
     0
 };
 
+HardwareSerial MySerial(1);
 
 
 ////////////////////////////////////////
@@ -43,7 +44,7 @@ dev_tof_lidar_data_S sensor_avr_data = {
 ////////////////////////////////////////
 static inline void dev_avr_sensor_private_gpio_config(void)
 {
-    Serial2.begin(SENSOR_AVR_BAUD, SERIAL_8N1, SENSOR_AVR_UART_RX, SENSOR_AVR_UART_TX);
+    MySerial.begin(SENSOR_AVR_BAUD, SERIAL_8N1, SENSOR_AVR_UART_RX, SENSOR_AVR_UART_TX);
 }
 
 ///////////////////////////////////////
@@ -56,9 +57,9 @@ void dev_avr_sensor_init(void)
 
 void dev_avr_sensor_uart_update(void)
 {
-    while (Serial2.available() > 0) 
+    while (MySerial.available() > 0) 
     {
-        sensor_avr_data.sensor_rx_data = Serial2.read();
+        sensor_avr_data.sensor_rx_data = MySerial.read();
         sensor_avr_data.newData = true;
     }
 }

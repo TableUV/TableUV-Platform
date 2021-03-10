@@ -47,8 +47,12 @@
 void dev_init(void)
 {
     // sub-device  initialization
+#if (FEATURE_AVR_DRIVER_ALL)    
     dev_avr_driver_init();
+#endif    
+#if (FEATURE_SENSOR_AVR)       
     dev_avr_sensor_init();
+#endif    
     dev_battery_init();
     dev_led_init();
 #if (FEATURE_LIDAR)
@@ -73,8 +77,7 @@ void dev_run100ms(void)
 {
 #if (FEATURE_AVR_DRIVER_ALL)
     dev_driver_avr_update100ms(); 
-    PRINTF("HELLO%d\n", 0);
-#endif
+#endif       
 }
 
 void dev_run1000ms(void)

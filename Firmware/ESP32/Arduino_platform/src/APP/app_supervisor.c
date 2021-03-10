@@ -63,13 +63,14 @@ void app_supervisor_init(void)
 }
 
 void app_supervisor_run50ms(void)
-{
+{ 
+
     // TODO: to be implemented
 #if (FEATURE_SUPER_USE_PROFILED_MOTIONS | MOCK)
-    uint8_t frame=0U;
-    int8_t rmotor, lmotor;
-    frame = app_slam_getMotionVelocity(& lmotor, & rmotor, frame);
-    PRINTF("[MOTOR] R:%3d, L:%3d (f:%3d) \n", lmotor, rmotor, frame);
+    // uint8_t frame=0U;
+    // int8_t rmotor, lmotor;
+    // frame = app_slam_getMotionVelocity(& lmotor, & rmotor, frame);
+    // PRINTF("[MOTOR] R:%3d, L:%3d (f:%3d) \n", lmotor, rmotor, frame);
 #endif
 #if (FEATURE_SENSOR_AVR)    
     supervisor_data.avr_sensor_data = dev_avr_sensor_uart_get();
@@ -77,20 +78,23 @@ void app_supervisor_run50ms(void)
     if (supervisor_data.avr_sensor_data)
     {
         supervisor_data.avr_driver_cmd = ROBOT_MOTION_BREAK;
-        PRINTF("YAY%d\n", 0);
     }
     else
     {
         supervisor_data.avr_driver_cmd = ROBOT_MOTION_FW_COAST;
-        PRINTF("NAY%d\n", 0);
     }
 #endif    
+
 #if (FEATURE_AVR_DRIVER_ALL)
-    dev_avr_driver_set_req_Encoder();
     // dev_avr_driver_reset_req_Water_level(); 
     //dev_avr_driver_set_req_Haptic();  
-    dev_avr_driver_set_req_Robot_motion(supervisor_data.avr_driver_cmd, MOTOR_PWM_DUTY_40_PERCENT, MOTOR_PWM_DUTY_40_PERCENT);
-#endif    
+    dev_avr_driver_set_req_Robot_motion(ROBOT_MOTION_FW_COAST, MOTOR_PWM_DUTY_40_PERCENT, MOTOR_PWM_DUTY_40_PERCENT);
+    dev_avr_driver_set_req_Encoder();
+    PRINTF("Left encoder: %d\n", dev_avr_driver_get_EncoderCount(LEFT_AVR_DRIVER));
+    PRINTF("Right encoder: %d\n", dev_avr_driver_get_EncoderCount(RIGHT_AVR_DRIVER));
+#endif   
+
+ 
 }
 
 
