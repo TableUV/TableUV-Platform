@@ -17,7 +17,7 @@ extern "C"{
 
 
 // GPIO 
-#define SWITCH               36
+#define BUTTON               36
 #define TOF_SHUT             25
 #define STATUS_GREEN_LED     12
 #define STATUS_RED_LED       13
