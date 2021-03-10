@@ -73,6 +73,7 @@ void dev_run100ms(void)
 {
 #if (FEATURE_AVR_DRIVER_ALL)
     dev_driver_avr_update100ms(); 
+    PRINTF("HELLO%d\n", 0);
 #endif
 }
 

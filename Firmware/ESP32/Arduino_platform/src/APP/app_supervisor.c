@@ -77,10 +77,12 @@ void app_supervisor_run50ms(void)
     if (supervisor_data.avr_sensor_data)
     {
         supervisor_data.avr_driver_cmd = ROBOT_MOTION_BREAK;
+        PRINTF("YAY%d\n", 0);
     }
     else
     {
         supervisor_data.avr_driver_cmd = ROBOT_MOTION_FW_COAST;
+        PRINTF("NAY%d\n", 0);
     }
 #endif    
 #if (FEATURE_AVR_DRIVER_ALL)

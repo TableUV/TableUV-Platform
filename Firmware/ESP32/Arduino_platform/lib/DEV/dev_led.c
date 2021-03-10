@@ -37,12 +37,14 @@ static inline void dev_led_private_gpio_config(void)
 {
     gpio_pad_select_gpio(STATUS_RED_LED);
     gpio_pad_select_gpio(STATUS_GREEN_LED);
+    gpio_pad_select_gpio(FW_SHUTDOWN);
+    gpio_pad_select_gpio(SWITCH);
 
     //gpio config for output mode 
     gpio_config_t io_conf;
     io_conf.intr_type = GPIO_INTR_DISABLE;
     io_conf.mode = GPIO_MODE_OUTPUT;
-    io_conf.pin_bit_mask =  ((1ULL<< STATUS_RED_LED) | (1ULL<<STATUS_GREEN_LED) | (1ULL<<FW_SHUTDOWN));
+    io_conf.pin_bit_mask =  ((1ULL<< STATUS_RED_LED) | (1ULL<<STATUS_GREEN_LED) | (1ULL<<FW_SHUTDOWN) | (1ULL << SWITCH));
     io_conf.pull_down_en = 0;
     io_conf.pull_up_en = 0;
     gpio_config(&io_conf);
