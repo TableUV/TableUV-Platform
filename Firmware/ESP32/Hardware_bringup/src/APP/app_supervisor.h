@@ -11,6 +11,6 @@
 #define APP_SUPERVISOR_H
 
 void app_supervisor_init(void);
-void app_supervisor_run20ms(void);
+void app_supervisor_run50ms(void);
 
 #endif //APP_SUPERVISOR_H

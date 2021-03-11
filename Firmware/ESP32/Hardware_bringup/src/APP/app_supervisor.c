@@ -46,7 +46,7 @@ void app_supervisor_init(void)
     memset(&supervisor_data, 0x00, sizeof(app_supervisor_data_S));
 }
 
-void app_supervisor_run20ms(void)
+void app_supervisor_run50ms(void)
 {
     // TODO: to be implemented
 }

@@ -42,8 +42,8 @@ extern "C"{
 #define MOTOR_I2C_SDA        23
 
 //UART 
-#define TOF_UART_ESP_RX      27
-#define TOF_UART_ESP_TX      14
+#define SENSOR_AVR_UART_RX      GPIO_NUM_27
+#define SENSOR_AVR_UART_TX      GPIO_NUM_14
 
 //PWM 
 #define LED_ROW_MODULATE     19

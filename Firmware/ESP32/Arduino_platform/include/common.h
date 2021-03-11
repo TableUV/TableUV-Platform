@@ -13,6 +13,8 @@
 extern "C"{
 #endif 
 
+#include <stdio.h>
+
 /////////////////////////////////
 ///////   DEFINITION     ////////
 /////////////////////////////////
@@ -39,8 +41,11 @@ extern "C"{
 #   define MOCK                                   (DISABLE)
 
 /*****   FEATURE ENABLES  ****/
-#   define FEATURE_LIDAR                          ( ENABLE)
+#   define FEATURE_LIDAR                   (ENABLE) // (WIP)
+#   define FEATURE_LIDAR_CALIBRATION_MODE  (DISABLE) // TODO: implement calibration strategy
+#   define FEATURE_SENSOR_AVR              (ENABLE)
 
+#   define FEATURE_SENSOR_AVR                     ( ENABLE)
 #   define FEATURE_AVR_DRIVER_ALL                 ( ENABLE) //
 #   ifndef FEATURE_AVR_DRIVER_ALL
 #       define FEATURE_AVR_MOTOR                  ( ENABLE) //
@@ -69,6 +74,7 @@ extern "C"{
 #   define FEATURE_LIDAR_CALIBRATION_MODE         (   TODO) // TODO: implement calibration strategy
 #   define FEATURE_SUPER_USE_PROFILED_MOTIONS     (   TODO) // TODO: implement calibration strategy
 
+#   define FEATURE_SENSOR_AVR                     ( ENABLE)
 #   define FEATURE_AVR_DRIVER_ALL                 ( ENABLE) //
 #   ifndef FEATURE_AVR_DRIVER_ALL
 #       define FEATURE_AVR_MOTOR                  ( ENABLE) //
