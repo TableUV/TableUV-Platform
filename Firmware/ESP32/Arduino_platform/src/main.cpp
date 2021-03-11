@@ -201,6 +201,6 @@ void loop() {
     // forever loop
     // while (true){};
     dev_battery_test_code();
-    delay(100);
+    delay(1000);
 }
 

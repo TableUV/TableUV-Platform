@@ -138,5 +138,5 @@ void dev_battery_test_code(void)
     dev_charger_status_update();
 
     printf("Battery voltage: %f\n", dev_battery_get());
-    printf("Charger status: %d\n", (uint8_t) dev_charger_status_get()); 
+    // printf("Charger status: %d\n", (uint8_t) dev_charger_status_get()); 
 }
