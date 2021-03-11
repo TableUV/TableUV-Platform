@@ -78,7 +78,6 @@ int main(void)
     while(1)
     { 
         
-
         // increment count when data not received
         time_out_count ++; 
         if (time_out_count > 50000){
@@ -88,11 +87,6 @@ int main(void)
 
         //if data received from master
         if(usiTwiDataInReceiveBuffer()){
-
-            // initialize message to 0 
-            message_first_byte  = 0x00;
-            message_second_byte = 0x00;
-            time_out_count = 0; 
 
             // initialize message to 0 
             message_first_byte  = 0x00;
