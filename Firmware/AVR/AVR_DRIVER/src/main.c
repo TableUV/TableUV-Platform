@@ -64,15 +64,21 @@ int main(void)
 
     //initialize the USI communicatin
     usiTwiSlaveInit(slave_address);
+    char message_first_byte  = 0x00;
+    char message_second_byte = 0x00;
 
 
     while(1)
     { 
+        // initialize message to 0 
+        message_first_byte  = 0x00;
+        message_second_byte = 0x00;
+
         //if data received from master
         if(usiTwiDataInReceiveBuffer()){
 
             // store the first byte of data 
-            char message_first_byte = usiTwiReceiveByte();
+            message_first_byte = usiTwiReceiveByte();
 
             // check if data is indeed the first data byte of message 
             if (checkDataHeader(message_first_byte, DATA_FRAME_HEADER_FIRST)){
@@ -113,7 +119,7 @@ int main(void)
 
                     }
 
-                    char message_second_byte = usiTwiReceiveByte();
+                    message_second_byte = usiTwiReceiveByte();
                     motor_command_mode_E motor_command_mode;
                     motor_command_direction_E motor_command_direction;
                     motor_pwm_duty_E motor_pwm_duty; 
