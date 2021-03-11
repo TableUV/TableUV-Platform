@@ -77,10 +77,9 @@ void app_supervisor_run50ms(void)
     }
 #endif    
 #if (FEATURE_AVR_DRIVER_ALL)
-    dev_avr_driver_set_req_Encoder();
-    // dev_avr_driver_reset_req_Water_level(); 
     //dev_avr_driver_set_req_Haptic();  
-    dev_avr_driver_set_req_Robot_motion(supervisor_data.avr_driver_cmd, MOTOR_PWM_DUTY_40_PERCENT, MOTOR_PWM_DUTY_40_PERCENT);
+    //dev_avr_driver_set_req_Robot_motion(supervisor_data.avr_driver_cmd, MOTOR_PWM_DUTY_40_PERCENT, MOTOR_PWM_DUTY_40_PERCENT);
+    dev_avr_driver_set_req_Robot_motion(ROBOT_MOTION_FW_COAST, MOTOR_PWM_DUTY_40_PERCENT, MOTOR_PWM_DUTY_40_PERCENT);
 #endif    
 }
 

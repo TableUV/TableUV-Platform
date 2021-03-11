@@ -7,6 +7,7 @@
  * This document will contains device configure content
  */
 
+#include <Arduino.h>
 #include "dev_avr_driver.h"
 #include <Wire.h>
 #include "../../include/avr_driver_common.h"
@@ -35,6 +36,7 @@ typedef struct{
     motor_pwm_duty_E            pwm_duty[NUM_AVR_DRIVER];
     uint16_t                    encoderCount[NUM_AVR_DRIVER];
     uint8_t                     waterLevelSig; 
+    SemaphoreHandle_t           mp_mutex;
 } dev_avr_driver_data_S;
 
 ///////////////////////////
@@ -69,7 +71,8 @@ static dev_avr_driver_data_S dev_avr_driver_data = {
         0,
         0
     },
-    .waterLevelSig = 0
+    .waterLevelSig = 0,
+    .mp_mutex = xSemaphoreCreateBinary()
 };
 
 
@@ -105,91 +108,94 @@ static uint16_t dev_avr_driver_receive_two_byte(uint8_t address){
 
 // initialize I2C message
 static void dev_avr_driver_init_message_two_byte(){
-    dev_avr_driver_set_timeout(I2C_RECIEVE_TIMEOUT_MILLI_SEC); 
     dev_avr_driver_data.i2c_message[LEFT_AVR_DRIVER]   = 0b0000000001000000;
     dev_avr_driver_data.i2c_message[RIGHT_AVR_DRIVER]  = 0b0000000001000000;
 }
 
-static void avr_driver_update_i2c_message_two_byte(){
+static void avr_driver_update_i2c_message_two_byte(){  
 
-    // req estop 
-    if( dev_avr_driver_data.reqEstop){
-        dev_avr_driver_data.i2c_message[LEFT_AVR_DRIVER]  |= SET_MESSAGE_ESTOP_EN();
-        dev_avr_driver_data.i2c_message[RIGHT_AVR_DRIVER] |= SET_MESSAGE_ESTOP_EN();
-    }
-    else{
-        dev_avr_driver_data.i2c_message[LEFT_AVR_DRIVER]  &= RESET_MESSAGE_ESTOP_EN();
-        dev_avr_driver_data.i2c_message[RIGHT_AVR_DRIVER] &= RESET_MESSAGE_ESTOP_EN();
-    }
+    //if (xSemaphoreTake(dev_avr_driver_data.mp_mutex)){
+        // req estop 
+        if( dev_avr_driver_data.reqEstop){
+            dev_avr_driver_data.i2c_message[LEFT_AVR_DRIVER]  |= SET_MESSAGE_ESTOP_EN();
+            dev_avr_driver_data.i2c_message[RIGHT_AVR_DRIVER] |= SET_MESSAGE_ESTOP_EN();
+        }
+        else{
+            dev_avr_driver_data.i2c_message[LEFT_AVR_DRIVER]  &= RESET_MESSAGE_ESTOP_EN();
+            dev_avr_driver_data.i2c_message[RIGHT_AVR_DRIVER] &= RESET_MESSAGE_ESTOP_EN();
+        }
 
-    // req haptic 
-    if( dev_avr_driver_data.reqHaptic){
-        dev_avr_driver_data.i2c_message[RIGHT_AVR_DRIVER] |= SET_MESSAGE_HAPTIC_EN();
-    }
-    else{
-        dev_avr_driver_data.i2c_message[RIGHT_AVR_DRIVER] &= RESET_MESSAGE_HAPTIC_EN();
-    }
+        // req haptic 
+        if( dev_avr_driver_data.reqHaptic){
+            dev_avr_driver_data.i2c_message[RIGHT_AVR_DRIVER] |= SET_MESSAGE_HAPTIC_EN();
+        }
+        else{
+            dev_avr_driver_data.i2c_message[RIGHT_AVR_DRIVER] &= RESET_MESSAGE_HAPTIC_EN();
+        }
 
-    // req ConfigTof
-    if( dev_avr_driver_data.reqConfigTof ){
-        dev_avr_driver_data.i2c_message[LEFT_AVR_DRIVER] |= SET_MESSAGE_TOF_CONFIG_EN(dev_avr_driver_data.reqConfigTof);
-    }
-    else{
-        dev_avr_driver_data.i2c_message[LEFT_AVR_DRIVER] &= (~(1 << 9) & ~(1 << 8)) ;
-    }
+        // req ConfigTof
+        if( dev_avr_driver_data.reqConfigTof ){
+            dev_avr_driver_data.i2c_message[LEFT_AVR_DRIVER] |= SET_MESSAGE_TOF_CONFIG_EN(dev_avr_driver_data.reqConfigTof);
+        }
+        else{
+            dev_avr_driver_data.i2c_message[LEFT_AVR_DRIVER] &= (~(1 << 9) & ~(1 << 8)) ;
+        }
 
-    // req RobotMotion
-    if (dev_avr_driver_data.reqRobotMotion){
-        switch(dev_avr_driver_data.reqRobotMotion){
+        // req RobotMotion
+        if (dev_avr_driver_data.reqRobotMotion){
+            switch(dev_avr_driver_data.reqRobotMotion){
 
-            case(ROBOT_MOTION_FW_COAST):
-                dev_avr_driver_data.i2c_message[LEFT_AVR_DRIVER]  |= (MOTOR_COMMAND_MODE_COAST << 5) | (MOTOR_COMMAND_DIRECTION_CCW << 4) | (dev_avr_driver_data.pwm_duty[LEFT_AVR_DRIVER] << 0);
-                dev_avr_driver_data.i2c_message[RIGHT_AVR_DRIVER] |= (MOTOR_COMMAND_MODE_COAST << 5) | (MOTOR_COMMAND_DIRECTION_CW  << 4) | (dev_avr_driver_data.pwm_duty[RIGHT_AVR_DRIVER] << 0);
-            break;
-
-            case(ROBOT_MOTION_REV_COAST):
-                dev_avr_driver_data.i2c_message[LEFT_AVR_DRIVER]  |= (MOTOR_COMMAND_MODE_COAST << 5) | (MOTOR_COMMAND_DIRECTION_CW  << 4) | (dev_avr_driver_data.pwm_duty[LEFT_AVR_DRIVER] << 0);
-                dev_avr_driver_data.i2c_message[RIGHT_AVR_DRIVER] |= (MOTOR_COMMAND_MODE_COAST << 5) | (MOTOR_COMMAND_DIRECTION_CCW << 4) | (dev_avr_driver_data.pwm_duty[RIGHT_AVR_DRIVER] << 0);
-            break;
-
-            case(ROBOT_MOTION_FW_BREAK):
-                dev_avr_driver_data.i2c_message[LEFT_AVR_DRIVER]  |= (MOTOR_COMMAND_MODE_BRAKE << 5) | (MOTOR_COMMAND_DIRECTION_CCW << 4) | (dev_avr_driver_data.pwm_duty[LEFT_AVR_DRIVER] << 0);
-                dev_avr_driver_data.i2c_message[RIGHT_AVR_DRIVER] |= (MOTOR_COMMAND_MODE_BRAKE << 5) | (MOTOR_COMMAND_DIRECTION_CW  << 4) | (dev_avr_driver_data.pwm_duty[RIGHT_AVR_DRIVER] << 0);
-            break;
-
-            case(ROBOT_MOTION_REV_BREAK):
-                dev_avr_driver_data.i2c_message[LEFT_AVR_DRIVER]  |= (MOTOR_COMMAND_MODE_BRAKE << 5) | (MOTOR_COMMAND_DIRECTION_CCW << 4) | (dev_avr_driver_data.pwm_duty[LEFT_AVR_DRIVER] << 0);
-                dev_avr_driver_data.i2c_message[RIGHT_AVR_DRIVER] |= (MOTOR_COMMAND_MODE_BRAKE << 5) | (MOTOR_COMMAND_DIRECTION_CW  << 4) | (dev_avr_driver_data.pwm_duty[RIGHT_AVR_DRIVER] << 0);
+                case(ROBOT_MOTION_FW_COAST):
+                    dev_avr_driver_data.i2c_message[LEFT_AVR_DRIVER]  |= (MOTOR_COMMAND_MODE_COAST << 5) | (MOTOR_COMMAND_DIRECTION_CCW << 4) | (dev_avr_driver_data.pwm_duty[LEFT_AVR_DRIVER] << 0);
+                    dev_avr_driver_data.i2c_message[RIGHT_AVR_DRIVER] |= (MOTOR_COMMAND_MODE_COAST << 5) | (MOTOR_COMMAND_DIRECTION_CW  << 4) | (dev_avr_driver_data.pwm_duty[RIGHT_AVR_DRIVER] << 0);
                 break;
 
-            case(ROBOT_MOTION_CW_ROTATION):
-                dev_avr_driver_data.i2c_message[LEFT_AVR_DRIVER]   |= (MOTOR_COMMAND_MODE_COAST << 5) | (MOTOR_COMMAND_DIRECTION_CW << 4)  | (dev_avr_driver_data.pwm_duty[LEFT_AVR_DRIVER] << 0);
-                dev_avr_driver_data.i2c_message[RIGHT_AVR_DRIVER]  |= (MOTOR_COMMAND_MODE_COAST << 5) | (MOTOR_COMMAND_DIRECTION_CW  << 4) | (dev_avr_driver_data.pwm_duty[RIGHT_AVR_DRIVER] << 0);
-            break;
+                case(ROBOT_MOTION_REV_COAST):
+                    dev_avr_driver_data.i2c_message[LEFT_AVR_DRIVER]  |= (MOTOR_COMMAND_MODE_COAST << 5) | (MOTOR_COMMAND_DIRECTION_CW  << 4) | (dev_avr_driver_data.pwm_duty[LEFT_AVR_DRIVER] << 0);
+                    dev_avr_driver_data.i2c_message[RIGHT_AVR_DRIVER] |= (MOTOR_COMMAND_MODE_COAST << 5) | (MOTOR_COMMAND_DIRECTION_CCW << 4) | (dev_avr_driver_data.pwm_duty[RIGHT_AVR_DRIVER] << 0);
+                break;
 
-            case(ROBOT_MOTION_CCW_ROTATION):
-                dev_avr_driver_data.i2c_message[LEFT_AVR_DRIVER]   |= (MOTOR_COMMAND_MODE_COAST << 5) | (MOTOR_COMMAND_DIRECTION_CCW  << 4) | (dev_avr_driver_data.pwm_duty[LEFT_AVR_DRIVER] << 0);
-                dev_avr_driver_data.i2c_message[RIGHT_AVR_DRIVER]  |= (MOTOR_COMMAND_MODE_COAST << 5) | (MOTOR_COMMAND_DIRECTION_CCW  << 4) | (dev_avr_driver_data.pwm_duty[RIGHT_AVR_DRIVER] << 0);
-            break;
+                case(ROBOT_MOTION_FW_BREAK):
+                    dev_avr_driver_data.i2c_message[LEFT_AVR_DRIVER]  |= (MOTOR_COMMAND_MODE_BRAKE << 5) | (MOTOR_COMMAND_DIRECTION_CCW << 4) | (dev_avr_driver_data.pwm_duty[LEFT_AVR_DRIVER] << 0);
+                    dev_avr_driver_data.i2c_message[RIGHT_AVR_DRIVER] |= (MOTOR_COMMAND_MODE_BRAKE << 5) | (MOTOR_COMMAND_DIRECTION_CW  << 4) | (dev_avr_driver_data.pwm_duty[RIGHT_AVR_DRIVER] << 0);
+                break;
 
-            case(ROBOT_MOTION_FW_DIFF_ROTATION):
-                dev_avr_driver_data.i2c_message[LEFT_AVR_DRIVER]  |= (MOTOR_COMMAND_MODE_COAST << 5) | (MOTOR_COMMAND_DIRECTION_CCW << 4) | (dev_avr_driver_data.pwm_duty[LEFT_AVR_DRIVER] << 0);
-                dev_avr_driver_data.i2c_message[RIGHT_AVR_DRIVER] |= (MOTOR_COMMAND_MODE_COAST << 5) | (MOTOR_COMMAND_DIRECTION_CW  << 4) | (dev_avr_driver_data.pwm_duty[RIGHT_AVR_DRIVER] << 0);
-            break;
+                case(ROBOT_MOTION_REV_BREAK):
+                    dev_avr_driver_data.i2c_message[LEFT_AVR_DRIVER]  |= (MOTOR_COMMAND_MODE_BRAKE << 5) | (MOTOR_COMMAND_DIRECTION_CCW << 4) | (dev_avr_driver_data.pwm_duty[LEFT_AVR_DRIVER] << 0);
+                    dev_avr_driver_data.i2c_message[RIGHT_AVR_DRIVER] |= (MOTOR_COMMAND_MODE_BRAKE << 5) | (MOTOR_COMMAND_DIRECTION_CW  << 4) | (dev_avr_driver_data.pwm_duty[RIGHT_AVR_DRIVER] << 0);
+                    break;
 
-            case(ROBOT_MOTION_REV_DIFF_ROTATION):
-                dev_avr_driver_data.i2c_message[LEFT_AVR_DRIVER]  |= (MOTOR_COMMAND_MODE_COAST << 5) | (MOTOR_COMMAND_DIRECTION_CW   << 4) | (dev_avr_driver_data.pwm_duty[LEFT_AVR_DRIVER] << 0);
-                dev_avr_driver_data.i2c_message[RIGHT_AVR_DRIVER] |= (MOTOR_COMMAND_MODE_COAST << 5) | (MOTOR_COMMAND_DIRECTION_CCW  << 4) | (dev_avr_driver_data.pwm_duty[RIGHT_AVR_DRIVER] << 0);
-            break;
+                case(ROBOT_MOTION_CW_ROTATION):
+                    dev_avr_driver_data.i2c_message[LEFT_AVR_DRIVER]   |= (MOTOR_COMMAND_MODE_COAST << 5) | (MOTOR_COMMAND_DIRECTION_CW << 4)  | (dev_avr_driver_data.pwm_duty[LEFT_AVR_DRIVER] << 0);
+                    dev_avr_driver_data.i2c_message[RIGHT_AVR_DRIVER]  |= (MOTOR_COMMAND_MODE_COAST << 5) | (MOTOR_COMMAND_DIRECTION_CW  << 4) | (dev_avr_driver_data.pwm_duty[RIGHT_AVR_DRIVER] << 0);
+                break;
 
-            default:
-            break; 
-        }     
-    }
-    else{
-        dev_avr_driver_data.i2c_message[LEFT_AVR_DRIVER]  |= SET_MESSAGE_ESTOP_EN();
-        dev_avr_driver_data.i2c_message[RIGHT_AVR_DRIVER] |= SET_MESSAGE_ESTOP_EN();
-    }
+                case(ROBOT_MOTION_CCW_ROTATION):
+                    dev_avr_driver_data.i2c_message[LEFT_AVR_DRIVER]   |= (MOTOR_COMMAND_MODE_COAST << 5) | (MOTOR_COMMAND_DIRECTION_CCW  << 4) | (dev_avr_driver_data.pwm_duty[LEFT_AVR_DRIVER] << 0);
+                    dev_avr_driver_data.i2c_message[RIGHT_AVR_DRIVER]  |= (MOTOR_COMMAND_MODE_COAST << 5) | (MOTOR_COMMAND_DIRECTION_CCW  << 4) | (dev_avr_driver_data.pwm_duty[RIGHT_AVR_DRIVER] << 0);
+                break;
+
+                case(ROBOT_MOTION_FW_DIFF_ROTATION):
+                    dev_avr_driver_data.i2c_message[LEFT_AVR_DRIVER]  |= (MOTOR_COMMAND_MODE_COAST << 5) | (MOTOR_COMMAND_DIRECTION_CCW << 4) | (dev_avr_driver_data.pwm_duty[LEFT_AVR_DRIVER] << 0);
+                    dev_avr_driver_data.i2c_message[RIGHT_AVR_DRIVER] |= (MOTOR_COMMAND_MODE_COAST << 5) | (MOTOR_COMMAND_DIRECTION_CW  << 4) | (dev_avr_driver_data.pwm_duty[RIGHT_AVR_DRIVER] << 0);
+                break;
+
+                case(ROBOT_MOTION_REV_DIFF_ROTATION):
+                    dev_avr_driver_data.i2c_message[LEFT_AVR_DRIVER]  |= (MOTOR_COMMAND_MODE_COAST << 5) | (MOTOR_COMMAND_DIRECTION_CW   << 4) | (dev_avr_driver_data.pwm_duty[LEFT_AVR_DRIVER] << 0);
+                    dev_avr_driver_data.i2c_message[RIGHT_AVR_DRIVER] |= (MOTOR_COMMAND_MODE_COAST << 5) | (MOTOR_COMMAND_DIRECTION_CCW  << 4) | (dev_avr_driver_data.pwm_duty[RIGHT_AVR_DRIVER] << 0);
+                break;
+
+                default:
+                break; 
+            }     
+        }
+        else{
+            dev_avr_driver_data.i2c_message[LEFT_AVR_DRIVER]  |= SET_MESSAGE_ESTOP_EN();
+            dev_avr_driver_data.i2c_message[RIGHT_AVR_DRIVER] |= SET_MESSAGE_ESTOP_EN();
+        }
+
+        //xSemaphoreGive(dev_avr_driver_data.mp_mutex); // release lock
+    //}
 }
 
 ///////////////////////////////////////
@@ -201,6 +207,7 @@ void dev_avr_driver_init()
 {
     dev_avr_driver_data.I2C.begin(MOTOR_I2C_SDA, MOTOR_I2C_SCL); 
     dev_avr_driver_init_message_two_byte(); 
+    dev_avr_driver_set_timeout(I2C_RECIEVE_TIMEOUT_MILLI_SEC); 
 }
 
 void dev_driver_avr_update100ms(){
@@ -210,7 +217,7 @@ void dev_driver_avr_update100ms(){
 
     dev_avr_driver_transmit_two_byte( dev_avr_driver_data.address[RIGHT_AVR_DRIVER] , dev_avr_driver_data.i2c_message[RIGHT_AVR_DRIVER] );
     dev_avr_driver_data.encoderCount[RIGHT_AVR_DRIVER] = dev_avr_driver_receive_two_byte(dev_avr_driver_data.address[RIGHT_AVR_DRIVER]);
-    dev_avr_driver_data.waterLevelSig = dev_avr_driver_receive_one_byte(dev_avr_driver_data.address[RIGHT_AVR_DRIVER]);
+    //dev_avr_driver_data.waterLevelSig = dev_avr_driver_receive_one_byte(dev_avr_driver_data.address[RIGHT_AVR_DRIVER]);
 
 }
 

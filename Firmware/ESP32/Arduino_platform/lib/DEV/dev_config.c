@@ -54,8 +54,8 @@ void dev_init(void)
 #if (FEATURE_LIDAR)
     dev_ToF_Lidar_init();
 #endif
-    dev_uv_init();
-    dev_imu_init();
+    //dev_uv_init();
+    //dev_imu_init();
 }
 
 void dev_run20ms(void)
