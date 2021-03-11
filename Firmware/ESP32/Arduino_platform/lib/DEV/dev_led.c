@@ -162,6 +162,13 @@ void dev_led_orange_set(bool led_on)
     peripheral_data.orange_led_on = led_on;
 }
 
+void dev_led_clear_leds(void)
+{
+    peripheral_data.green_led_on = false;
+    peripheral_data.red_led_on = false;
+    peripheral_data.orange_led_on = false;
+}
+
 
 
 // Test Code:

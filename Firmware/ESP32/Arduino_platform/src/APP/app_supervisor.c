@@ -59,6 +59,7 @@ typedef struct{
     app_state_E current_state;
     uint32_t fault_flag; // Ex: (APP_FAULTS_TOF_INIT | APP_FAULTS_IMU_INIT);
     bool button_pressed;
+    uint8_t avr_sensor_data;
 } app_supervisor_data_S;
 
 /////////////////////////////////////////
@@ -102,13 +103,21 @@ app_state_E getNextState(app_state_E state)
             {
                 nextState =  APP_STATE_IDLE;
             }
+            else if (supervisor_data.avr_sensor_data & DEV_AVR_ALL_SENSORS)
+            {
+                nextState = APP_STATE_AUTONOMY_ESTOPPED;
+            }
             break;
 
         case (APP_STATE_AUTONOMY_ESTOPPED):
             if (supervisor_data.button_pressed)
             {
                 nextState =  APP_STATE_IDLE;
-            }        
+            }
+            else if ((supervisor_data.avr_sensor_data & DEV_AVR_ALL_SENSORS) == 0)
+            {
+                nextState = APP_STATE_AUTONOMY;
+            }
             break;
 
         case (APP_STATE_COUNT):
@@ -116,34 +125,34 @@ app_state_E getNextState(app_state_E state)
 
         case (APP_STATE_UNKNOWN):
             break;
-            
         default:
             // Do nothing
             supervisor_data.fault_flag |= APP_FAULTS_INVALID_STATE;
             break;
     }
+    return nextState;
 }
 
 bool transitToNewState(app_state_E state)
 {
-    // What to do
     switch (state)
     {
         case (APP_STATE_IDLE):
-            // turn off motor 
             break;
 
         case (APP_STATE_AUTONOMY):
-        //
+            dev_led_clear_leds();
+            dev_led_green_set(true);
             break;
 
         case (APP_STATE_AUTONOMY_ESTOPPED):
+            dev_led_clear_leds();
+            dev_led_red_set(true);
             break;
 
         case (APP_STATE_COUNT):            
         case (APP_STATE_UNKNOWN):
         default:
-            // Do nothing
             supervisor_data.fault_flag |= APP_FAULTS_INVALID_STATE;
             break;
     }
@@ -159,6 +168,9 @@ void fetchState(void)
     // TODO: to be implemented
 #if (FEATURE_PERIPHERALS)
     supervisor_data.button_pressed = dev_button_update_50ms();
+#endif
+#if (FEATURE_SENSOR_AVR)
+    supervisor_data.avr_sensor_data = dev_avr_sensor_uart_get();
 #endif
 
 #if (FEATURE_SUPER_USE_PROFILED_MOTIONS | MOCK)
@@ -177,16 +189,15 @@ void app_supervisor_run20ms(void)
 {
     const app_state_E current_state = supervisor_data.current_state;
 
-    fetchState(void)
+    fetchState();
 
     app_state_E next_state = getNextState(current_state);
 
     if (next_state != current_state)
     {
         transitToNewState(current_state);
+        supervisor_data.current_state = current_state;
     }
-
-    supervisor_data.current_state = current_state;
 
     stateAction(current_state);
 

@@ -79,7 +79,10 @@ void dev_run100ms(void)
 {
 #if (FEATURE_AVR_DRIVER_ALL)
     dev_driver_avr_update100ms(); 
-#endif       
+#endif
+#if (FEATURE_PERIPHERALS)
+    dev_led_update();
+#endif
 }
 
 void dev_run1000ms(void)

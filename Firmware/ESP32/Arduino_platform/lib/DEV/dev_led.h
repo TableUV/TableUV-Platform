@@ -24,6 +24,7 @@ void dev_led_update(void);
 void dev_led_green_set(bool led_on);
 void dev_led_red_set(bool led_on);
 void dev_led_orange_set(bool led_on);
+void dev_led_clear_leds(void);
 
 # ifdef __cplusplus  
 }
