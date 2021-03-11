@@ -19,11 +19,17 @@
 #include "left_driver_peripherals.h"
 #include "decodeI2C.h"
 
+#define RESET_TIMEOUT_COUNT     1000
 
 static uint8_t getDriverMode(){
     // check which driver avr it is 
     DDRB &= ~_BV(MODE_SELECT); 
     return (PINB & _BV(MODE_SELECT));
+}
+
+static void resetState(){
+    eStopMotor(); 
+    disableMistActuator();  
 }
 
 int main(void)
@@ -67,6 +73,7 @@ int main(void)
     char message_first_byte  = 0x00;
     char message_second_byte = 0x00;
 
+    uint16_t time_out_count = 0; 
 
     while(1)
     { 
@@ -74,8 +81,17 @@ int main(void)
         message_first_byte  = 0x00;
         message_second_byte = 0x00;
 
+        // increment count when data not received
+        time_out_count ++; 
+        if (time_out_count > 50000){
+            resetState(); 
+            time_out_count = 0; 
+        }
+
         //if data received from master
         if(usiTwiDataInReceiveBuffer()){
+            //PORTB ^= _BV(PB0);
+            time_out_count = 0; 
 
             // store the first byte of data 
             message_first_byte = usiTwiReceiveByte();
@@ -156,7 +172,7 @@ int main(void)
                 setEncoderCount(0);
 
                 //send water level signal 
-                usiTwiTransmitByte(getWaterLevelSignal());
+                //usiTwiTransmitByte(getWaterLevelSignal());
                 sei();
             }     
         }
