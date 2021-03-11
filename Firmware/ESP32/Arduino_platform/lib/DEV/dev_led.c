@@ -18,8 +18,13 @@
 /////////////////////////////////
 ///////   DEFINITION     ////////
 /////////////////////////////////
+#define CHECK_MSEC          50   // Read hardware every 5 msec
+#define PRESS_MSEC          100  // Stable time before registering pressed
+#define RELEASE_MSEC        100 // Stable time before registering released
+
 typedef struct{
-    bool button_pressed;
+    volatile bool button_pressed;
+    volatile uint32_t button_count;
     bool green_led_on;
     bool red_led_on;
     bool orange_led_on;
@@ -35,6 +40,7 @@ static inline void dev_led_private_gpio_config(void);
 ///////////////////////////
 static dev_led_peripherals_data_S peripheral_data = {
     .button_pressed = false,
+    .button_count = 0,
     .green_led_on = false,
     .red_led_on = false,
     .orange_led_on = false
@@ -65,6 +71,13 @@ static inline void dev_led_private_gpio_config(void)
     gpio_config(&io_conf);
 }
 
+static void IRAM_ATTR button_isr_handler(void)
+{
+    // DebounceSwitch1();
+    peripheral_data.button_count++;
+}
+
+
 ///////////////////////////////////////
 ///////   PUBLIC FUNCTION     /////////
 ///////////////////////////////////////
@@ -78,9 +91,30 @@ void dev_button_update(void)
     peripheral_data.button_pressed = !(gpio_get_level(BUTTON));
 }
 
+bool dev_led_update_50ms(void)
+{
+    uint32_t temp_count = peripheral_data.button_count;
+    if (temp_count >= 1 && temp_count <= 2)
+    {
+        peripheral_data.button_count = 0;
+        return true;
+    }
+    else
+    {
+        return false;
+    }
+}
+
 bool dev_button_get(void)
 {
-    return peripheral_data.button_pressed;
+    bool temp_button_pressed = peripheral_data.button_pressed;
+    peripheral_data.button_pressed = false;
+    return temp_button_pressed;
+}
+
+bool dev_button_read(void)
+{
+    return !(gpio_get_level(BUTTON));
 }
 
 void dev_led_update(void)
@@ -125,6 +159,7 @@ void dev_led_orange_set(bool led_on)
 {
     peripheral_data.orange_led_on = led_on;
 }
+
 
 
 // Test Code:

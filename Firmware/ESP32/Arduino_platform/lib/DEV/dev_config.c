@@ -50,7 +50,9 @@ void dev_init(void)
     dev_avr_driver_init();
     dev_avr_sensor_init();
     dev_battery_init();
+#if (FEATURE_PERIPHERALS)    
     dev_led_init();
+#endif    
 #if (FEATURE_LIDAR)
     dev_ToF_Lidar_init();
 #endif
@@ -81,7 +83,7 @@ void dev_run100ms(void)
 
     // printf("left_encod_count %d \n", dev_avr_driver_get_EncoderCount(LEFT_AVR_DRIVER));
     // printf("right_encod_count %d \n", dev_avr_driver_get_EncoderCount(RIGHT_AVR_DRIVER));
-
+    
 
 }
 
