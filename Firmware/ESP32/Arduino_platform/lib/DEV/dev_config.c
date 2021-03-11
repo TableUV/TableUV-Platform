@@ -58,8 +58,13 @@ void dev_init(void)
 #if (FEATURE_LIDAR)
     dev_ToF_Lidar_init();
 #endif
+<<<<<<< HEAD
     // dev_uv_init();
     // dev_imu_init();
+=======
+    //dev_uv_init();
+    //dev_imu_init();
+>>>>>>> add timeout and delete encod and waterlevel request
 }
 
 void dev_run20ms(void)

@@ -47,17 +47,14 @@ void dev_driver_avr_update100ms();
 uint16_t dev_avr_driver_get_EncoderCount(uint8_t driver_side);
 uint8_t  dev_avr_driver_get_WaterLevelSig();
 
+void dev_avr_driver_set_timeout(uint8_t milliSec);
 void dev_avr_driver_set_req_Estop();
-void dev_avr_driver_set_req_Encoder();
 void dev_avr_driver_set_req_Haptic();
-void dev_avr_driver_set_req_Water_level();
 void dev_avr_driver_set_req_Tof_config(tof_sensor_config_E tof_sensor_config);
 void dev_avr_driver_set_req_Robot_motion(robot_motion_mode_E robot_motion_mode, motor_pwm_duty_E motor_pwm_duty_left, motor_pwm_duty_E motor_pwm_duty_right);
 
 void dev_avr_driver_reset_req_Estop();
-void dev_avr_driver_reset_req_Encoder();
 void dev_avr_driver_reset_req_Haptic();
-void dev_avr_driver_reset_req_Water_level();
 void dev_avr_driver_reset_req_Tof_config();
 void dev_avr_driver_reset_req_Robot_motion();
 
