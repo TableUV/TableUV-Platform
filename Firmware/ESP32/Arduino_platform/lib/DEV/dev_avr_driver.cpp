@@ -7,22 +7,22 @@
  * This document will contains device configure content
  */
 
+#include <Arduino.h>
 #include "dev_avr_driver.h"
 #include <Wire.h>
 #include "../../include/avr_driver_common.h"
 #include <stdbool.h>
 
+#define I2C_RECIEVE_TIMEOUT_MILLI_SEC                                       10
+#define MP_MUTEX_BLOCK_TIME_MS                                              ((1U)/portTICK_PERIOD_MS)
+
 #define SET_MESSAGE_ESTOP_EN()                                              (1 << 13)
-#define SET_MESSAGE_ENCODER_EN()                                            (1 << 12)
 #define SET_MESSAGE_HAPTIC_EN()                                             (1 << 11)
-#define SET_MESSAGE_WATERLEVEL_EN()                                         (1 << 10)
 #define SET_MESSAGE_TOF_CONFIG_EN(tof_sensor_config)                        (tof_sensor_config << 8)
 
 
 #define RESET_MESSAGE_ESTOP_EN()                                            ~(1 << 13)
-#define RESET_MESSAGE_ENCODER_EN()                                          ~(1 << 12)
 #define RESET_MESSAGE_HAPTIC_EN()                                           ~(1 << 11)
-#define RESET_MESSAGE_WATERLEVEL_EN()                                       ~(1 << 10)
 #define RESET_MESSAGE_TOF_CONFIG_EN(tof_sensor_config)                      ~(tof_sensor_config << 8)
 
 typedef struct{
@@ -31,14 +31,13 @@ typedef struct{
     const data_frame_header_E   dataFrameHeader[DATA_FRAME_HEADER_COUNT];
     uint16_t                    i2c_message[NUM_AVR_DRIVER];
     uint8_t                     reqEstop;
-    uint8_t                     reqEncoder;
     uint8_t                     reqHaptic;
-    uint8_t                     reqWaterLevel;
     tof_sensor_config_E         reqConfigTof;
     robot_motion_mode_E         reqRobotMotion;
     motor_pwm_duty_E            pwm_duty[NUM_AVR_DRIVER];
     uint16_t                    encoderCount[NUM_AVR_DRIVER];
     uint8_t                     waterLevelSig; 
+    SemaphoreHandle_t           mp_mutex;
 } dev_avr_driver_data_S;
 
 ///////////////////////////
@@ -61,10 +60,8 @@ static dev_avr_driver_data_S dev_avr_driver_data = {
         0x0000,
         0x0000
     },
-    .reqEstop   = 0,
-    .reqEncoder = 0,
+    .reqEstop   = 1,
     .reqHaptic  = 0,
-    .reqWaterLevel = 0,
     .reqConfigTof = TOF_SENSOR_CONFIG_DISABLE_ALL,
     .reqRobotMotion = ROBOT_MOTION_BREAK,
     .pwm_duty  = {
@@ -75,7 +72,8 @@ static dev_avr_driver_data_S dev_avr_driver_data = {
         0,
         0
     },
-    .waterLevelSig = 0
+    .waterLevelSig = 0,
+    .mp_mutex = xSemaphoreCreateBinary()
 };
 
 
@@ -115,94 +113,93 @@ static void dev_avr_driver_init_message_two_byte(){
     dev_avr_driver_data.i2c_message[RIGHT_AVR_DRIVER]  = 0b0000000001000000;
 }
 
-static void avr_driver_update_i2c_message_two_byte(){
+static void avr_driver_update_i2c_message_two_byte(){  
+    dev_avr_driver_init_message_two_byte();
+    uint16_t temp_message_left = 0b0000000001000000, temp_message_right = 0b0000000001000000; 
+    uint8_t temp_reqEstop = 0, temp_reqHaptic = 0; 
+    tof_sensor_config_E temp_reqConfigTof    = TOF_SENSOR_CONFIG_DISABLE_ALL;
+    robot_motion_mode_E temp_reqRobotMotion  = ROBOT_MOTION_BREAK; 
+    motor_pwm_duty_E temp_left_motor_speed = MOTOR_PWM_DUTY_0_PERCENT, temp_right_motor_speed = MOTOR_PWM_DUTY_0_PERCENT; 
+
+    // take the mutex 
+    if (xSemaphoreTake(dev_avr_driver_data.mp_mutex, MP_MUTEX_BLOCK_TIME_MS) == pdTRUE) {
+        temp_reqEstop  = dev_avr_driver_data.reqEstop ;
+        temp_reqHaptic = dev_avr_driver_data.reqHaptic;
+        temp_reqConfigTof = dev_avr_driver_data.reqConfigTof;
+        temp_reqRobotMotion = dev_avr_driver_data.reqRobotMotion; 
+        temp_left_motor_speed =  dev_avr_driver_data.pwm_duty[LEFT_AVR_DRIVER] ;
+        temp_right_motor_speed = dev_avr_driver_data.pwm_duty[RIGHT_AVR_DRIVER];
+        xSemaphoreGive(dev_avr_driver_data.mp_mutex); 
+    }
 
     // req estop 
-    if( dev_avr_driver_data.reqEstop){
-        dev_avr_driver_data.i2c_message[LEFT_AVR_DRIVER]  |= SET_MESSAGE_ESTOP_EN();
-        dev_avr_driver_data.i2c_message[RIGHT_AVR_DRIVER] |= SET_MESSAGE_ESTOP_EN();
+    if(temp_reqEstop){
+        temp_message_left  |= SET_MESSAGE_ESTOP_EN();
+        temp_message_right |= SET_MESSAGE_ESTOP_EN();
     }
     else{
-        dev_avr_driver_data.i2c_message[LEFT_AVR_DRIVER]  &= RESET_MESSAGE_ESTOP_EN();
-        dev_avr_driver_data.i2c_message[RIGHT_AVR_DRIVER] &= RESET_MESSAGE_ESTOP_EN();
-    }
-
-    // req encoder 
-    if( dev_avr_driver_data.reqEncoder){
-        dev_avr_driver_data.i2c_message[LEFT_AVR_DRIVER]  |= SET_MESSAGE_ENCODER_EN();
-        dev_avr_driver_data.i2c_message[RIGHT_AVR_DRIVER] |= SET_MESSAGE_ENCODER_EN();
-    }
-    else{
-        dev_avr_driver_data.i2c_message[LEFT_AVR_DRIVER]  &= RESET_MESSAGE_ENCODER_EN();
-        dev_avr_driver_data.i2c_message[RIGHT_AVR_DRIVER] &= RESET_MESSAGE_ENCODER_EN();
+        temp_message_left  &= RESET_MESSAGE_ESTOP_EN();
+        temp_message_right &= RESET_MESSAGE_ESTOP_EN();
     }
 
     // req haptic 
-    if( dev_avr_driver_data.reqHaptic){
-        dev_avr_driver_data.i2c_message[RIGHT_AVR_DRIVER] |= SET_MESSAGE_HAPTIC_EN();
+    if(temp_reqHaptic){
+        temp_message_right |= SET_MESSAGE_HAPTIC_EN();
     }
     else{
-        dev_avr_driver_data.i2c_message[RIGHT_AVR_DRIVER] &= RESET_MESSAGE_HAPTIC_EN();
-    }
-
-    // req WaterLevel 
-    if( dev_avr_driver_data.reqWaterLevel ){
-        dev_avr_driver_data.i2c_message[RIGHT_AVR_DRIVER] |= SET_MESSAGE_WATERLEVEL_EN();
-    }
-    else{
-        dev_avr_driver_data.i2c_message[RIGHT_AVR_DRIVER] &= RESET_MESSAGE_WATERLEVEL_EN();
+        temp_message_right &= RESET_MESSAGE_HAPTIC_EN();
     }
 
     // req ConfigTof
-    if( dev_avr_driver_data.reqConfigTof ){
-        dev_avr_driver_data.i2c_message[LEFT_AVR_DRIVER] |= SET_MESSAGE_TOF_CONFIG_EN(dev_avr_driver_data.reqConfigTof);
+    if( temp_reqConfigTof ){
+        temp_message_left |= SET_MESSAGE_TOF_CONFIG_EN(temp_reqConfigTof);
     }
     else{
-        dev_avr_driver_data.i2c_message[LEFT_AVR_DRIVER] &= (~(1 << 9) & ~(1 << 8)) ;
+        temp_message_left &= (~(1 << 9) & ~(1 << 8)) ;
     }
 
     // req RobotMotion
-    if (dev_avr_driver_data.reqRobotMotion){
-        switch(dev_avr_driver_data.reqRobotMotion){
+    if (temp_reqRobotMotion){
+        switch(temp_reqRobotMotion){
 
             case(ROBOT_MOTION_FW_COAST):
-                dev_avr_driver_data.i2c_message[LEFT_AVR_DRIVER]  |= (MOTOR_COMMAND_MODE_COAST << 5) | (MOTOR_COMMAND_DIRECTION_CCW << 4) | (dev_avr_driver_data.pwm_duty[LEFT_AVR_DRIVER] << 0);
-                dev_avr_driver_data.i2c_message[RIGHT_AVR_DRIVER] |= (MOTOR_COMMAND_MODE_COAST << 5) | (MOTOR_COMMAND_DIRECTION_CW  << 4) | (dev_avr_driver_data.pwm_duty[RIGHT_AVR_DRIVER] << 0);
+                temp_message_left  |= (MOTOR_COMMAND_MODE_COAST << 5) | (MOTOR_COMMAND_DIRECTION_CCW << 4) | (temp_left_motor_speed << 0);
+                temp_message_right |= (MOTOR_COMMAND_MODE_COAST << 5) | (MOTOR_COMMAND_DIRECTION_CW  << 4) | (temp_right_motor_speed << 0);
             break;
 
             case(ROBOT_MOTION_REV_COAST):
-                dev_avr_driver_data.i2c_message[LEFT_AVR_DRIVER]  |= (MOTOR_COMMAND_MODE_COAST << 5) | (MOTOR_COMMAND_DIRECTION_CW  << 4) | (dev_avr_driver_data.pwm_duty[LEFT_AVR_DRIVER] << 0);
-                dev_avr_driver_data.i2c_message[RIGHT_AVR_DRIVER] |= (MOTOR_COMMAND_MODE_COAST << 5) | (MOTOR_COMMAND_DIRECTION_CCW << 4) | (dev_avr_driver_data.pwm_duty[RIGHT_AVR_DRIVER] << 0);
+                temp_message_left  |= (MOTOR_COMMAND_MODE_COAST << 5) | (MOTOR_COMMAND_DIRECTION_CW  << 4) | (temp_left_motor_speed << 0);
+                temp_message_right |= (MOTOR_COMMAND_MODE_COAST << 5) | (MOTOR_COMMAND_DIRECTION_CCW << 4) | (temp_right_motor_speed << 0);
             break;
 
             case(ROBOT_MOTION_FW_BREAK):
-                dev_avr_driver_data.i2c_message[LEFT_AVR_DRIVER]  |= (MOTOR_COMMAND_MODE_BRAKE << 5) | (MOTOR_COMMAND_DIRECTION_CCW << 4) | (dev_avr_driver_data.pwm_duty[LEFT_AVR_DRIVER] << 0);
-                dev_avr_driver_data.i2c_message[RIGHT_AVR_DRIVER] |= (MOTOR_COMMAND_MODE_BRAKE << 5) | (MOTOR_COMMAND_DIRECTION_CW  << 4) | (dev_avr_driver_data.pwm_duty[RIGHT_AVR_DRIVER] << 0);
+                temp_message_left  |= (MOTOR_COMMAND_MODE_BRAKE << 5) | (MOTOR_COMMAND_DIRECTION_CCW << 4) | (temp_left_motor_speed << 0);
+                temp_message_right |= (MOTOR_COMMAND_MODE_BRAKE << 5) | (MOTOR_COMMAND_DIRECTION_CW  << 4) | (temp_right_motor_speed << 0);
             break;
 
             case(ROBOT_MOTION_REV_BREAK):
-                dev_avr_driver_data.i2c_message[LEFT_AVR_DRIVER]  |= (MOTOR_COMMAND_MODE_BRAKE << 5) | (MOTOR_COMMAND_DIRECTION_CCW << 4) | (dev_avr_driver_data.pwm_duty[LEFT_AVR_DRIVER] << 0);
-                dev_avr_driver_data.i2c_message[RIGHT_AVR_DRIVER] |= (MOTOR_COMMAND_MODE_BRAKE << 5) | (MOTOR_COMMAND_DIRECTION_CW  << 4) | (dev_avr_driver_data.pwm_duty[RIGHT_AVR_DRIVER] << 0);
+                temp_message_left  |= (MOTOR_COMMAND_MODE_BRAKE << 5) | (MOTOR_COMMAND_DIRECTION_CCW << 4) | (temp_left_motor_speed << 0);
+                temp_message_right |= (MOTOR_COMMAND_MODE_BRAKE << 5) | (MOTOR_COMMAND_DIRECTION_CW  << 4) | (temp_right_motor_speed << 0);
                 break;
 
             case(ROBOT_MOTION_CW_ROTATION):
-                dev_avr_driver_data.i2c_message[LEFT_AVR_DRIVER]   |= (MOTOR_COMMAND_MODE_COAST << 5) | (MOTOR_COMMAND_DIRECTION_CW << 4)  | (dev_avr_driver_data.pwm_duty[LEFT_AVR_DRIVER] << 0);
-                dev_avr_driver_data.i2c_message[RIGHT_AVR_DRIVER]  |= (MOTOR_COMMAND_MODE_COAST << 5) | (MOTOR_COMMAND_DIRECTION_CW  << 4) | (dev_avr_driver_data.pwm_duty[RIGHT_AVR_DRIVER] << 0);
+                temp_message_left   |= (MOTOR_COMMAND_MODE_COAST << 5) | (MOTOR_COMMAND_DIRECTION_CW << 4)  | (temp_left_motor_speed << 0);
+                temp_message_right  |= (MOTOR_COMMAND_MODE_COAST << 5) | (MOTOR_COMMAND_DIRECTION_CW  << 4) | (temp_right_motor_speed << 0);
             break;
 
             case(ROBOT_MOTION_CCW_ROTATION):
-                dev_avr_driver_data.i2c_message[LEFT_AVR_DRIVER]   |= (MOTOR_COMMAND_MODE_COAST << 5) | (MOTOR_COMMAND_DIRECTION_CCW  << 4) | (dev_avr_driver_data.pwm_duty[LEFT_AVR_DRIVER] << 0);
-                dev_avr_driver_data.i2c_message[RIGHT_AVR_DRIVER]  |= (MOTOR_COMMAND_MODE_COAST << 5) | (MOTOR_COMMAND_DIRECTION_CCW  << 4) | (dev_avr_driver_data.pwm_duty[RIGHT_AVR_DRIVER] << 0);
+                temp_message_left   |= (MOTOR_COMMAND_MODE_COAST << 5) | (MOTOR_COMMAND_DIRECTION_CCW  << 4) | (temp_left_motor_speed << 0);
+                temp_message_right  |= (MOTOR_COMMAND_MODE_COAST << 5) | (MOTOR_COMMAND_DIRECTION_CCW  << 4) | (temp_right_motor_speed << 0);
             break;
 
             case(ROBOT_MOTION_FW_DIFF_ROTATION):
-                dev_avr_driver_data.i2c_message[LEFT_AVR_DRIVER]  |= (MOTOR_COMMAND_MODE_COAST << 5) | (MOTOR_COMMAND_DIRECTION_CCW << 4) | (dev_avr_driver_data.pwm_duty[LEFT_AVR_DRIVER] << 0);
-                dev_avr_driver_data.i2c_message[RIGHT_AVR_DRIVER] |= (MOTOR_COMMAND_MODE_COAST << 5) | (MOTOR_COMMAND_DIRECTION_CW  << 4) | (dev_avr_driver_data.pwm_duty[RIGHT_AVR_DRIVER] << 0);
+                temp_message_left  |= (MOTOR_COMMAND_MODE_COAST << 5) | (MOTOR_COMMAND_DIRECTION_CCW << 4) | (temp_left_motor_speed << 0);
+                temp_message_right |= (MOTOR_COMMAND_MODE_COAST << 5) | (MOTOR_COMMAND_DIRECTION_CW  << 4) | (temp_right_motor_speed << 0);
             break;
 
             case(ROBOT_MOTION_REV_DIFF_ROTATION):
-                dev_avr_driver_data.i2c_message[LEFT_AVR_DRIVER]  |= (MOTOR_COMMAND_MODE_COAST << 5) | (MOTOR_COMMAND_DIRECTION_CW   << 4) | (dev_avr_driver_data.pwm_duty[LEFT_AVR_DRIVER] << 0);
-                dev_avr_driver_data.i2c_message[RIGHT_AVR_DRIVER] |= (MOTOR_COMMAND_MODE_COAST << 5) | (MOTOR_COMMAND_DIRECTION_CCW  << 4) | (dev_avr_driver_data.pwm_duty[RIGHT_AVR_DRIVER] << 0);
+                temp_message_left  |= (MOTOR_COMMAND_MODE_COAST << 5) | (MOTOR_COMMAND_DIRECTION_CW   << 4) | (temp_left_motor_speed << 0);
+                temp_message_right |= (MOTOR_COMMAND_MODE_COAST << 5) | (MOTOR_COMMAND_DIRECTION_CCW  << 4) | (temp_right_motor_speed << 0);
             break;
 
             default:
@@ -210,8 +207,15 @@ static void avr_driver_update_i2c_message_two_byte(){
         }     
     }
     else{
-        dev_avr_driver_data.i2c_message[LEFT_AVR_DRIVER]  |= SET_MESSAGE_ESTOP_EN();
-        dev_avr_driver_data.i2c_message[RIGHT_AVR_DRIVER] |= SET_MESSAGE_ESTOP_EN();
+        temp_message_left  |= SET_MESSAGE_ESTOP_EN();
+        temp_message_right |= SET_MESSAGE_ESTOP_EN();
+    }
+
+    // take the mutex 
+    if (xSemaphoreTake(dev_avr_driver_data.mp_mutex, MP_MUTEX_BLOCK_TIME_MS) == pdTRUE) {
+        dev_avr_driver_data.i2c_message[LEFT_AVR_DRIVER]  = temp_message_left ;
+        dev_avr_driver_data.i2c_message[RIGHT_AVR_DRIVER] = temp_message_right;
+        xSemaphoreGive(dev_avr_driver_data.mp_mutex); 
     }
 }
 
@@ -224,37 +228,42 @@ void dev_avr_driver_init()
 {
     dev_avr_driver_data.I2C.begin(MOTOR_I2C_SDA, MOTOR_I2C_SCL); 
     dev_avr_driver_init_message_two_byte(); 
+    dev_avr_driver_set_timeout(I2C_RECIEVE_TIMEOUT_MILLI_SEC); 
+    xSemaphoreGive(dev_avr_driver_data.mp_mutex);
 }
 
-void dev_driver_avr_update100ms(){
+void dev_driver_avr_update100ms()
+{
+    uint16_t temp_left_encoder = 0, temp_right_encoder = 0;
     avr_driver_update_i2c_message_two_byte(); 
     dev_avr_driver_transmit_two_byte( dev_avr_driver_data.address[LEFT_AVR_DRIVER] , dev_avr_driver_data.i2c_message[LEFT_AVR_DRIVER] );
-    if (dev_avr_driver_data.reqEncoder){
-        dev_avr_driver_data.encoderCount[LEFT_AVR_DRIVER] = dev_avr_driver_receive_two_byte(dev_avr_driver_data.address[LEFT_AVR_DRIVER]);
-    }
+    temp_left_encoder = dev_avr_driver_receive_two_byte(dev_avr_driver_data.address[LEFT_AVR_DRIVER]);
 
     dev_avr_driver_transmit_two_byte( dev_avr_driver_data.address[RIGHT_AVR_DRIVER] , dev_avr_driver_data.i2c_message[RIGHT_AVR_DRIVER] );
-    if (dev_avr_driver_data.reqEncoder){
-        dev_avr_driver_data.encoderCount[RIGHT_AVR_DRIVER] = dev_avr_driver_receive_two_byte(dev_avr_driver_data.address[RIGHT_AVR_DRIVER]);
+    temp_right_encoder = dev_avr_driver_receive_two_byte(dev_avr_driver_data.address[RIGHT_AVR_DRIVER]);
+    //dev_avr_driver_data.waterLevelSig = dev_avr_driver_receive_one_byte(dev_avr_driver_data.address[RIGHT_AVR_DRIVER]);
+    
+    if (xSemaphoreTake(dev_avr_driver_data.mp_mutex, MP_MUTEX_BLOCK_TIME_MS) == pdTRUE) {
+        dev_avr_driver_data.encoderCount[LEFT_AVR_DRIVER]  = temp_left_encoder; 
+        dev_avr_driver_data.encoderCount[RIGHT_AVR_DRIVER] = temp_right_encoder;
+        //release the mutex 
+        xSemaphoreGive(dev_avr_driver_data.mp_mutex); 
     }
-    if (dev_avr_driver_data.reqWaterLevel){
-        dev_avr_driver_data.waterLevelSig = dev_avr_driver_receive_one_byte(dev_avr_driver_data.address[RIGHT_AVR_DRIVER]);
-    }
+
+}
+
+void dev_avr_driver_set_timeout(uint8_t milliSec){
+    dev_avr_driver_data.I2C.setTimeout(milliSec); 
 }
 
 void dev_avr_driver_set_req_Estop(){
     dev_avr_driver_data.reqEstop = 1;
 }
 
-void dev_avr_driver_set_req_Encoder(){
-    dev_avr_driver_data.reqEncoder = 1;
-}
 void dev_avr_driver_set_req_Haptic(){
     dev_avr_driver_data.reqHaptic = 1;
 }
-void dev_avr_driver_set_req_Water_level(){
-    dev_avr_driver_data.reqWaterLevel = 1; 
-}
+
 void dev_avr_driver_set_req_Tof_config(tof_sensor_config_E tof_sensor_config){
     dev_avr_driver_data.reqConfigTof = tof_sensor_config; 
 }
@@ -269,15 +278,10 @@ void dev_avr_driver_reset_req_Estop(){
     dev_avr_driver_data.reqEstop = 0;
 }
 
-void dev_avr_driver_reset_req_Encoder(){
-    dev_avr_driver_data.reqEncoder = 0;
-}
 void dev_avr_driver_reset_req_Haptic(){
     dev_avr_driver_data.reqHaptic = 0;
 }
-void dev_avr_driver_reset_req_Water_level(){
-    dev_avr_driver_data.reqWaterLevel = 0; 
-}
+
 void dev_avr_driver_reset_req_Tof_config(){
     dev_avr_driver_data.reqConfigTof = TOF_SENSOR_CONFIG_DISABLE_ALL; 
 }
@@ -290,9 +294,23 @@ void dev_avr_driver_reset_req_Robot_motion(){
 }
 
 uint16_t dev_avr_driver_get_EncoderCount(uint8_t driver_side){
-    return dev_avr_driver_data.encoderCount[driver_side];
+    // take the mutex
+    uint16_t data = 0; 
+    if (xSemaphoreTake(dev_avr_driver_data.mp_mutex, MP_MUTEX_BLOCK_TIME_MS) == pdTRUE) {
+        data = dev_avr_driver_data.encoderCount[driver_side];
+        //release the mutex 
+        xSemaphoreGive(dev_avr_driver_data.mp_mutex); 
+    }
+    return data;
 }
 
 uint8_t  dev_avr_driver_get_WaterLevelSig(){
-    return dev_avr_driver_data.waterLevelSig;
+    // take the mutex
+    uint8_t data = 0; 
+    if (xSemaphoreTake(dev_avr_driver_data.mp_mutex, MP_MUTEX_BLOCK_TIME_MS) == pdTRUE) {
+        data = dev_avr_driver_data.waterLevelSig;
+        //release the mutex 
+        xSemaphoreGive(dev_avr_driver_data.mp_mutex); 
+    }
+    return data;
 }
