@@ -40,6 +40,7 @@ typedef enum {
     APP_STATE_IDLE,
     APP_STATE_AUTONOMY,
     APP_STATE_AUTONOMY_ESTOPPED,
+    APP_STATE_FAULT,
     //
     APP_STATE_COUNT,
     APP_STATE_UNKNOWN,
@@ -60,6 +61,7 @@ typedef struct{
     uint32_t fault_flag; // Ex: (APP_FAULTS_TOF_INIT | APP_FAULTS_IMU_INIT);
     bool button_pressed;
     uint8_t avr_sensor_data;
+    float battery_voltage;
 } app_supervisor_data_S;
 
 /////////////////////////////////////////
@@ -69,7 +71,13 @@ typedef struct{
 ///////////////////////////
 ///////   DATA     ////////
 ///////////////////////////
-static app_supervisor_data_S supervisor_data;
+static app_supervisor_data_S supervisor_data = {
+    APP_STATE_IDLE,
+    0,
+    false,
+    0,
+    12.6
+};
 
 ////////////////////////////////////////
 ///////   PRIVATE FUNCTION     /////////
@@ -99,7 +107,12 @@ app_state_E getNextState(app_state_E state)
             break;
 
         case (APP_STATE_AUTONOMY):
-            if (supervisor_data.button_pressed)
+            if (supervisor_data.battery_voltage < 10.5)
+            {
+                supervisor_data.fault_flag |= APP_FAULTS_LOW_BATTERY;
+                nextState = APP_STATE_IDLE;
+            }
+            else if (supervisor_data.button_pressed)
             {
                 nextState =  APP_STATE_IDLE;
             }
@@ -110,7 +123,12 @@ app_state_E getNextState(app_state_E state)
             break;
 
         case (APP_STATE_AUTONOMY_ESTOPPED):
-            if (supervisor_data.button_pressed)
+            if (supervisor_data.battery_voltage < 10.5)
+            {
+                supervisor_data.fault_flag |= APP_FAULTS_LOW_BATTERY;
+                nextState = APP_STATE_IDLE;
+            }        
+            else if (supervisor_data.button_pressed)
             {
                 nextState =  APP_STATE_IDLE;
             }
@@ -120,11 +138,19 @@ app_state_E getNextState(app_state_E state)
             }
             break;
 
+        case (APP_STATE_FAULT):
+            if (supervisor_data.battery_voltage >= 10.5)
+            {
+                supervisor_data.fault_flag &= ~APP_FAULTS_LOW_BATTERY;
+                nextState = APP_STATE_IDLE;
+            }            
+            break;
         case (APP_STATE_COUNT):
             break;
 
         case (APP_STATE_UNKNOWN):
             break;
+
         default:
             // Do nothing
             supervisor_data.fault_flag |= APP_FAULTS_INVALID_STATE;
@@ -185,6 +211,9 @@ void fetchState(void)
     // PRINTF("[MOTOR] R:%3d, L:%3d (f:%3d) \n", lmotor, rmotor, frame);
 #endif
     // TODO: battery status
+#if (FEATURE_BATTERY)
+    supervisor_data.battery_voltage = dev_battery_get();
+#endif    
     // TODO: IMU
     
 }

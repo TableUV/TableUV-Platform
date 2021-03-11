@@ -53,7 +53,9 @@ void dev_init(void)
 #if (FEATURE_SENSOR_AVR)       
     dev_avr_sensor_init();
 #endif    
+#if (FEATURE_BATTERY)    
     dev_battery_init();
+#endif    
 #if (FEATURE_PERIPHERALS)    
     dev_led_init();
 #endif    
@@ -91,4 +93,7 @@ void dev_run100ms(void)
 
 void dev_run1000ms(void)
 {
+#if (FEATURE_BATTERY)    
+    dev_battery_update();
+#endif    
 }

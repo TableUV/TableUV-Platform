@@ -86,6 +86,7 @@ extern "C"{
 #       define FEATURE_AVR_HAPTIC                 ( ENABLE) //
 #       define FEATURE_AVR_ENCODER                ( ENABLE) //
 #   endif // (FEATURE_AVR_DRIVER_ALL)
+#   define FEATURE_BATTERY                        ( ENABLE)
 
 /*****   DEBUG PRINT FLAGS  ****/
 #   define DEBUG_FPRINT                           ( ENABLE)
