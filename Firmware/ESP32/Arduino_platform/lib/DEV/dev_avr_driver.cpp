@@ -14,6 +14,7 @@
 #include <stdbool.h>
 
 #define I2C_RECIEVE_TIMEOUT_MILLI_SEC                                       10
+#define MP_MUTEX_BLOCK_TIME_MS                                              ((1U)/portTICK_PERIOD_MS)
 
 #define SET_MESSAGE_ESTOP_EN()                                              (1 << 13)
 #define SET_MESSAGE_HAPTIC_EN()                                             (1 << 11)
@@ -113,8 +114,13 @@ static void dev_avr_driver_init_message_two_byte(){
 }
 
 static void avr_driver_update_i2c_message_two_byte(){  
-
-    //if (xSemaphoreTake(dev_avr_driver_data.mp_mutex)){
+    dev_avr_driver_init_message_two_byte();
+    dev_avr_driver_data_S * temp_dev_avr_driver_data; 
+    if (xSemaphoreTake(dev_avr_driver_data.mp_mutex, MP_MUTEX_BLOCK_TIME_MS) == pdTRUE){
+        // memcpy data
+        memcpy(temp_dev_avr_driver_data, &(dev_avr_driver_data), sizeof(dev_avr_driver_data_S));
+        xSemaphoreGive(dev_avr_driver_data.mp_mutex); // release lock
+    }
         // req estop 
         if( dev_avr_driver_data.reqEstop){
             dev_avr_driver_data.i2c_message[LEFT_AVR_DRIVER]  |= SET_MESSAGE_ESTOP_EN();
@@ -194,7 +200,7 @@ static void avr_driver_update_i2c_message_two_byte(){
             dev_avr_driver_data.i2c_message[RIGHT_AVR_DRIVER] |= SET_MESSAGE_ESTOP_EN();
         }
 
-        //xSemaphoreGive(dev_avr_driver_data.mp_mutex); // release lock
+    //    xSemaphoreGive(dev_avr_driver_data.mp_mutex); // release lock
     //}
 }
 
@@ -208,9 +214,11 @@ void dev_avr_driver_init()
     dev_avr_driver_data.I2C.begin(MOTOR_I2C_SDA, MOTOR_I2C_SCL); 
     dev_avr_driver_init_message_two_byte(); 
     dev_avr_driver_set_timeout(I2C_RECIEVE_TIMEOUT_MILLI_SEC); 
+    xSemaphoreGive(dev_avr_driver_data.mp_mutex);
 }
 
-void dev_driver_avr_update100ms(){
+void dev_driver_avr_update100ms()
+{
     avr_driver_update_i2c_message_two_byte(); 
     dev_avr_driver_transmit_two_byte( dev_avr_driver_data.address[LEFT_AVR_DRIVER] , dev_avr_driver_data.i2c_message[LEFT_AVR_DRIVER] );
     dev_avr_driver_data.encoderCount[LEFT_AVR_DRIVER] = dev_avr_driver_receive_two_byte(dev_avr_driver_data.address[LEFT_AVR_DRIVER]);
@@ -218,7 +226,12 @@ void dev_driver_avr_update100ms(){
     dev_avr_driver_transmit_two_byte( dev_avr_driver_data.address[RIGHT_AVR_DRIVER] , dev_avr_driver_data.i2c_message[RIGHT_AVR_DRIVER] );
     dev_avr_driver_data.encoderCount[RIGHT_AVR_DRIVER] = dev_avr_driver_receive_two_byte(dev_avr_driver_data.address[RIGHT_AVR_DRIVER]);
     //dev_avr_driver_data.waterLevelSig = dev_avr_driver_receive_one_byte(dev_avr_driver_data.address[RIGHT_AVR_DRIVER]);
-
+    
+    // take the mutex
+    // if (xSemaphoreTake(dev_avr_driver_data.mp_mutex, MP_MUTEX_BLOCK_TIME_MS) == pdTRUE) 
+    // {
+    // release the mutex 
+    // xSemaphoreGive(dev_avr_driver_data.mp_mutex); 
 }
 
 void dev_avr_driver_set_timeout(uint8_t milliSec){

@@ -98,9 +98,9 @@ void app_supervisor_run50ms(void)
     else{
         count = 0; 
     }
-    printf("count: %d", count); 
-    printf("left_count: %d", dev_avr_driver_get_EncoderCount(LEFT_AVR_DRIVER)); 
-    printf("right_count: %d", dev_avr_driver_get_EncoderCount(RIGHT_AVR_DRIVER)); 
+    printf(" count: %d ", count); 
+    printf(" left_count: %d ", dev_avr_driver_get_EncoderCount(LEFT_AVR_DRIVER)); 
+    printf(" right_count: %d ", dev_avr_driver_get_EncoderCount(RIGHT_AVR_DRIVER)); 
 
 
 #endif    
