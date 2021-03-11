@@ -35,7 +35,6 @@ int main(void)
     // define local variables 
     uint8_t driver_mode = 0; 
     uint8_t slave_address = 0x00;  
-    uint8_t DATA_TO_MASTER_STATUS_REGISTER  = 0; 
 
     //check mode pin 
     driver_mode = getDriverMode(); 
@@ -69,7 +68,6 @@ int main(void)
 
     while(1)
     { 
-        DATA_TO_MASTER_STATUS_REGISTER = 0;
         //if data received from master
         if(usiTwiDataInReceiveBuffer()){
 
@@ -85,9 +83,6 @@ int main(void)
                 }
                 //resume if eStop bit is not enabled 
                 else{
-
-                    //common for both driver 
-                    if (message_first_byte & ENCODER_DATA_REQ_MASK) DATA_TO_MASTER_STATUS_REGISTER |= _BV(SEND_ENCODER_DATA); 
 
                     // decode for left driver 
                     if(driver_mode){
@@ -115,9 +110,6 @@ int main(void)
                         // #define IS_HAPTICREQUESTED(fbyte) ((fbyte)|(HAPTIC_EN_REQ_MASK))
                         if (message_first_byte & HAPTIC_EN_REQ_MASK)    enableMistActuator(); 
                         else                                            disableMistActuator(); 
-
-                        // check if water level data req bit is enabled 
-                        if (message_first_byte & WATERLEVEL_DATA_REQ_MASK)  DATA_TO_MASTER_STATUS_REGISTER |= _BV(SEND_WATER_LEVEL_DATA); 
 
                     }
 
@@ -148,28 +140,22 @@ int main(void)
                             else if (motor_command_mode == MOTOR_COMMAND_MODE_BRAKE)      setMotor(MOTOR_MODE_CCW_BREAK, motor_pwm_duty);
                         }
                     }
-
-                    // send data back to master if needed
-                    if (DATA_TO_MASTER_STATUS_REGISTER){
-                        cli();
-
-                        if (DATA_TO_MASTER_STATUS_REGISTER & _BV(SEND_ENCODER_DATA)){
-                            usiTwiTransmitByte(getEncoderCount16_first_8bit());
-                            usiTwiTransmitByte(getEncoderCount16_second_8bit());
-                            setEncoderCount(0);
-                        }
-
-                        if (DATA_TO_MASTER_STATUS_REGISTER & _BV(SEND_WATER_LEVEL_DATA)){
-                            usiTwiTransmitByte(getWaterLevelSignal());
-                        }
-
-                        sei();
-                    } 
                 }
+                // send data back to master
+                cli();
+
+                // send encoder data 
+                usiTwiTransmitByte(getEncoderCount16_first_8bit());
+                usiTwiTransmitByte(getEncoderCount16_second_8bit());
+                setEncoderCount(0);
+
+                //send water level signal 
+                usiTwiTransmitByte(getWaterLevelSignal());
+                sei();
             }     
         }
         
-        
+
     }
     return 0;   /* never reached */
 }
