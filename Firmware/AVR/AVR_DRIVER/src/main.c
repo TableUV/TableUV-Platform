@@ -75,109 +75,174 @@ int main(void)
 
     uint16_t time_out_count = 0; 
 
+    DDRB |= _BV(PB0);
+
     while(1)
     { 
         
-        // increment count when data not received
-        time_out_count ++; 
-        if (time_out_count > 50000){
-            resetState(); 
-            time_out_count = 0; 
-        }
+        // // increment count when data not received
+        // time_out_count ++; 
+        // if (time_out_count > 50000){
+        //     resetState(); 
+        //     time_out_count = 0; 
+        // }
 
-        //if data received from master
-        if(usiTwiDataInReceiveBuffer()){
+        // //if data received from master
+        // if(usiTwiDataInReceiveBuffer()){
 
-            // initialize message to 0 
-            message_first_byte  = 0x00;
-            message_second_byte = 0x00;
-            time_out_count = 0; 
+        //     // initialize message to 0 
+        //     message_first_byte  = 0x00;
+        //     message_second_byte = 0x00;
+        //     time_out_count = 0; 
 
-            // store the first byte of data 
-            message_first_byte = usiTwiReceiveByte();
+        //     // store the first byte of data 
+        //     message_first_byte = usiTwiReceiveByte();
 
-            // check if data is indeed the first data byte of message 
-            if (checkDataHeader(message_first_byte, DATA_FRAME_HEADER_FIRST)){
+        //     // check if data is indeed the first data byte of message 
+        //     if (checkDataHeader(message_first_byte, DATA_FRAME_HEADER_FIRST)){
                 
-                // check if eStop bit is enabled 
-                if (message_first_byte & ESTOP_COMMAND_REQ_MASK){
-                    eStopMotor(); 
-                }
-                //resume if eStop bit is not enabled 
-                else{
+        //         // check if eStop bit is enabled 
+        //         if (message_first_byte & ESTOP_COMMAND_REQ_MASK){
+        //             eStopMotor(); 
+        //         }
+        //         //resume if eStop bit is not enabled 
+        //         else{
 
-                    // decode for left driver 
-                    if(driver_mode){
-                        uint8_t tof_config = message_first_byte & TOF_XSHUT_EN_REQ_BIT_MASK;
-                        switch(tof_config){
-                            case(TOF_SENSOR_CONFIG_DISABLE_ALL):
-                                enable_TOF_XSHUT_All();
-                            break;
-                            case(TOF_CONFIG_1):
-                                disable_TOF_XSHUT_1();
-                            break;
-                            case(TOF_CONFIG_2):
-                                disable_TOF_XSHUT_2();
-                            break;
-                            case(TOF_CONFIG_3):
-                                disable_TOF_XSHUT_3();
-                            break;
-                            default:
-                            break;
-                        } 
-                    }
-                    // decode for right detector 
-                    else{
-                        // check if haptic req bit is enabled 
-                        // #define IS_HAPTICREQUESTED(fbyte) ((fbyte)|(HAPTIC_EN_REQ_MASK))
-                        if (message_first_byte & HAPTIC_EN_REQ_MASK)    enableMistActuator(); 
-                        else                                            disableMistActuator(); 
+        //             // decode for left driver 
+        //             if(driver_mode){
+        //                 uint8_t tof_config = message_first_byte & TOF_XSHUT_EN_REQ_BIT_MASK;
+        //                 switch(tof_config){
+        //                     case(TOF_SENSOR_CONFIG_DISABLE_ALL):
+        //                         enable_TOF_XSHUT_All();
+        //                     break;
+        //                     case(TOF_CONFIG_1):
+        //                         disable_TOF_XSHUT_1();
+        //                     break;
+        //                     case(TOF_CONFIG_2):
+        //                         disable_TOF_XSHUT_2();
+        //                     break;
+        //                     case(TOF_CONFIG_3):
+        //                         disable_TOF_XSHUT_3();
+        //                     break;
+        //                     default:
+        //                     break;
+        //                 } 
+        //             }
+        //             // decode for right detector 
+        //             else{
+        //                 // check if haptic req bit is enabled 
+        //                 // #define IS_HAPTICREQUESTED(fbyte) ((fbyte)|(HAPTIC_EN_REQ_MASK))
+        //                 if (message_first_byte & HAPTIC_EN_REQ_MASK)    enableMistActuator(); 
+        //                 else                                            disableMistActuator(); 
 
-                    }
+        //             }
 
-                    message_second_byte = usiTwiReceiveByte();
-                    motor_command_mode_E motor_command_mode;
-                    motor_command_direction_E motor_command_direction;
-                    motor_pwm_duty_E motor_pwm_duty; 
+        //             message_second_byte = usiTwiReceiveByte();
+        //             motor_command_mode_E motor_command_mode;
+        //             motor_command_direction_E motor_command_direction;
+        //             motor_pwm_duty_E motor_pwm_duty; 
 
-                    // check if data is indeed the second data byte of message 
-                    if (checkDataHeader(message_second_byte, DATA_FRAME_HEADER_SECOND)){
+        //             // check if data is indeed the second data byte of message 
+        //             if (checkDataHeader(message_second_byte, DATA_FRAME_HEADER_SECOND)){
                         
-                        // check motor command mode  
-                        if (message_second_byte & MOTOR_MODE_REQ_MASK)      motor_command_mode = MOTOR_COMMAND_MODE_BRAKE;
-                        else                                                motor_command_mode = MOTOR_COMMAND_MODE_COAST; 
+        //                 // check motor command mode  
+        //                 if (message_second_byte & MOTOR_MODE_REQ_MASK)      motor_command_mode = MOTOR_COMMAND_MODE_BRAKE;
+        //                 else                                                motor_command_mode = MOTOR_COMMAND_MODE_COAST; 
 
-                        // check motor command direction 
-                        if (message_second_byte & MOTOR_DIRECTION_REQ_MASK) motor_command_direction = MOTOR_COMMAND_DIRECTION_CW; 
-                        else                                                motor_command_direction = MOTOR_COMMAND_DIRECTION_CCW; 
+        //                 // check motor command direction 
+        //                 if (message_second_byte & MOTOR_DIRECTION_REQ_MASK) motor_command_direction = MOTOR_COMMAND_DIRECTION_CW; 
+        //                 else                                                motor_command_direction = MOTOR_COMMAND_DIRECTION_CCW; 
                             
-                        motor_pwm_duty = (message_second_byte & MOTOR_PWM_DUTY_REQ_MASK);
+        //                 motor_pwm_duty = (message_second_byte & MOTOR_PWM_DUTY_REQ_MASK);
 
-                        if (motor_command_direction == MOTOR_COMMAND_DIRECTION_CW){
-                            if (motor_command_mode == MOTOR_COMMAND_MODE_COAST)           setMotor(MOTOR_MODE_CW_COAST, motor_pwm_duty);
-                            else if (motor_command_mode == MOTOR_COMMAND_MODE_BRAKE)      setMotor(MOTOR_MODE_CW_BREAK, motor_pwm_duty);
-                        }
-                        else if (motor_command_direction == MOTOR_COMMAND_DIRECTION_CCW){
-                            if (motor_command_mode == MOTOR_COMMAND_MODE_COAST)           setMotor(MOTOR_MODE_CCW_COAST, motor_pwm_duty);
-                            else if (motor_command_mode == MOTOR_COMMAND_MODE_BRAKE)      setMotor(MOTOR_MODE_CCW_BREAK, motor_pwm_duty);
-                        }
-                    }
-                }
-                // send data back to master
-                cli();
+        //                 if (motor_command_direction == MOTOR_COMMAND_DIRECTION_CW){
+        //                     if (motor_command_mode == MOTOR_COMMAND_MODE_COAST)           setMotor(MOTOR_MODE_CW_COAST, motor_pwm_duty);
+        //                     else if (motor_command_mode == MOTOR_COMMAND_MODE_BRAKE)      setMotor(MOTOR_MODE_CW_BREAK, motor_pwm_duty);
+        //                 }
+        //                 else if (motor_command_direction == MOTOR_COMMAND_DIRECTION_CCW){
+        //                     if (motor_command_mode == MOTOR_COMMAND_MODE_COAST)           setMotor(MOTOR_MODE_CCW_COAST, motor_pwm_duty);
+        //                     else if (motor_command_mode == MOTOR_COMMAND_MODE_BRAKE)      setMotor(MOTOR_MODE_CCW_BREAK, motor_pwm_duty);
+        //                 }
+        //             }
+        //         }
+        //         // send data back to master
+        //         cli();
 
-                // send encoder data 
-                usiTwiTransmitByte(getEncoderCount16_first_8bit());
-                usiTwiTransmitByte(getEncoderCount16_second_8bit());
-                setEncoderCount(0);
+        //         // send encoder data 
+        //         usiTwiTransmitByte(getEncoderCount16_first_8bit());
+        //         usiTwiTransmitByte(getEncoderCount16_second_8bit());
+        //         setEncoderCount(0);
 
-                //send water level signal 
-                //usiTwiTransmitByte(getWaterLevelSignal());
-                sei();
-            }     
+        //         //send water level signal 
+        //         //usiTwiTransmitByte(getWaterLevelSignal());
+        //         sei();
+        //     }     
+        // }
+
+        PORTB ^= _BV(PB0);
+        _delay_ms(1000); 
+
+        usiTwiTransmitByte(0xFF);
+        usiTwiTransmitByte(0xFF);
+
+        int i = 0;
+        for(i =0; i < REG_MAX; i ++){
+            OCR0A = 0; 
+            OCR0B = i;
+
+            //send data back to master
+            cli();
+            //send encoder data 
+            usiTwiTransmitByte(getEncoderCount16_first_8bit());
+            usiTwiTransmitByte(getEncoderCount16_second_8bit());
+            setEncoderCount(0);
+            sei();
         }
-        
 
+        // if data received from master
+        // if(usiTwiDataInReceiveBuffer()){
+
+        //     PORTB ^= _BV(PB0); 
+        //     usiTwiTransmitByte(0xFF);
+        //     usiTwiTransmitByte(0xFF);
+            
+        //     for (int i =0; i < REG_MAX; i ++){
+        //         OCR0A = i;
+        //         OCR0B = 0; 
+
+        //         //send data back to master
+        //         cli();
+
+        //         // send encoder data 
+        //         usiTwiTransmitByte(getEncoderCount16_first_8bit());
+        //         usiTwiTransmitByte(getEncoderCount16_second_8bit());
+        //         setEncoderCount(0);
+
+        //         //send water level signal 
+        //         //usiTwiTransmitByte(getWaterLevelSignal());
+        //         sei();
+        //     }
+
+        //     usiTwiTransmitByte(0xF0);
+        //     usiTwiTransmitByte(0xF0);
+            
+        //     for (int i =0; i < REG_MAX; i ++){
+        //         OCR0A = 0; 
+        //         OCR0B = i;
+
+        //         //send data back to master
+        //         cli();
+
+        //         // send encoder data 
+        //         usiTwiTransmitByte(getEncoderCount16_first_8bit());
+        //         usiTwiTransmitByte(getEncoderCount16_second_8bit());
+        //         setEncoderCount(0);
+
+        //         //send water level signal 
+        //         //usiTwiTransmitByte(getWaterLevelSignal());
+        //         sei();
+        //     }
+        //}
     }
     return 0;   /* never reached */
 }

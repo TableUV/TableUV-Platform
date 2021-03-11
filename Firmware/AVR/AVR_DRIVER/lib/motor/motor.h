@@ -30,7 +30,7 @@ void setupMotorConfig(pwm_mode_E pwm_mode);
 void setMotor(motor_mode_E motor_mode, motor_pwm_duty_E percent_pwm); 
 void eStopMotor(); 
 void testMotorAll(); 
-
+void testMotor_sweep(); 
 
 #ifdef __cplusplus  
 }
