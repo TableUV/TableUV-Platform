@@ -45,9 +45,6 @@
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 
-// Test Code
-#include "dev_avr_sensor.h"
-
 /////////////////////////////////
 ///////   DEFINITION     ////////
 /////////////////////////////////
