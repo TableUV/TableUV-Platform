@@ -54,8 +54,8 @@ void dev_init(void)
 #if (FEATURE_LIDAR)
     dev_ToF_Lidar_init();
 #endif
-    dev_uv_init();
-    dev_imu_init();
+    // dev_uv_init();
+    // dev_imu_init();
 }
 
 void dev_run20ms(void)
@@ -70,7 +70,7 @@ void dev_run20ms(void)
 
 void dev_run100ms(void)
 {
-    dev_avr_driver_set_req_Encoder();
+    // dev_avr_driver_set_req_Encoder();
     // dev_avr_driver_reset_req_Water_level(); 
     //dev_avr_driver_set_req_Haptic();  
     dev_avr_driver_set_req_Robot_motion(ROBOT_MOTION_FW_COAST, MOTOR_PWM_DUTY_40_PERCENT, MOTOR_PWM_DUTY_40_PERCENT);
@@ -79,8 +79,8 @@ void dev_run100ms(void)
         dev_driver_avr_update100ms(); 
     #endif
 
-    printf("left_encod_count %d \n", dev_avr_driver_get_EncoderCount(LEFT_AVR_DRIVER));
-    printf("right_encod_count %d \n", dev_avr_driver_get_EncoderCount(RIGHT_AVR_DRIVER));
+    // printf("left_encod_count %d \n", dev_avr_driver_get_EncoderCount(LEFT_AVR_DRIVER));
+    // printf("right_encod_count %d \n", dev_avr_driver_get_EncoderCount(RIGHT_AVR_DRIVER));
 
 
 }

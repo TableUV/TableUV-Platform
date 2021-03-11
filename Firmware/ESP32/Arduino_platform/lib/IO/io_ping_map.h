@@ -17,10 +17,10 @@ extern "C"{
 
 
 // GPIO 
-#define BUTTON               36
+#define BUTTON               GPIO_NUM_36
 #define TOF_SHUT             25
-#define STATUS_GREEN_LED     12
-#define STATUS_RED_LED       13
+#define STATUS_GREEN_LED     GPIO_NUM_12
+#define STATUS_RED_LED       GPIO_NUM_13
 #define CHARGE_STATUS        15
 #define BATTERY_VOLTAGE      2
 #define FW_SHUTDOWN          18

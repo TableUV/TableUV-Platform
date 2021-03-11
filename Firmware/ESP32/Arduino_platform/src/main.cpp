@@ -45,6 +45,8 @@
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 
+#include "dev_led.h"
+
 /////////////////////////////////
 ///////   DEFINITION     ////////
 /////////////////////////////////
@@ -230,7 +232,6 @@ void setup() {
 }
 
 void loop() {
-    // forever loop
-    while (true){};
+
 }
 

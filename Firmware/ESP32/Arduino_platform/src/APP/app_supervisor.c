@@ -55,7 +55,7 @@ void app_supervisor_run20ms(void)
     uint8_t frame=0U;
     int8_t rmotor, lmotor;
     frame = app_slam_getMotionVelocity(& lmotor, & rmotor, frame);
-    PRINTF("[MOTOR] R:%3d, L:%3d (f:%3d) \n", lmotor, rmotor, frame);
+    // PRINTF("[MOTOR] R:%3d, L:%3d (f:%3d) \n", lmotor, rmotor, frame);
 #endif
 }
 

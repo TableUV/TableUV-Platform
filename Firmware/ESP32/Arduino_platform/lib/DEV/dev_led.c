@@ -62,6 +62,7 @@ static inline void dev_led_private_gpio_config(void)
 
     io_conf.mode = GPIO_MODE_INPUT;
     io_conf.pin_bit_mask = (1ULL << BUTTON);
+    gpio_config(&io_conf);
 }
 
 ///////////////////////////////////////
@@ -74,7 +75,7 @@ void dev_led_init(void)
 
 void dev_button_update(void)
 {
-    peripheral_data.button_pressed = !(GPIO_INPUT_GET(BUTTON));
+    peripheral_data.button_pressed = !(gpio_get_level(BUTTON));
 }
 
 bool dev_button_get(void)
@@ -86,19 +87,19 @@ void dev_led_update(void)
 {
     if(peripheral_data.green_led_on)
     {
-        GPIO_OUTPUT_SET(STATUS_GREEN_LED, 1);
+        gpio_set_level(STATUS_GREEN_LED, 1);
     }
     else
     {
-        GPIO_OUTPUT_SET(STATUS_GREEN_LED, 0);
+        gpio_set_level(STATUS_GREEN_LED, 0);
     }
     if(peripheral_data.red_led_on)
     {
-        GPIO_OUTPUT_SET(STATUS_RED_LED, 1);
+        gpio_set_level(STATUS_RED_LED, 1);
     }
     else
     {
-        GPIO_OUTPUT_SET(STATUS_RED_LED, 0);
+        gpio_set_level(STATUS_RED_LED, 0);
     }
     if(peripheral_data.orange_led_on)
     {
@@ -124,3 +125,26 @@ void dev_led_orange_set(bool led_on)
 {
     peripheral_data.orange_led_on = led_on;
 }
+
+
+// Test Code:
+    // // forever loop
+    // PRINTF("HI%d\n",0);
+    // while (true)
+    // {
+    //     dev_button_update();
+    //     dev_led_update();
+    //     if(dev_button_get()){
+    //         dev_led_green_set(true);
+    //         dev_led_red_set(true);
+    //         PRINTF("HELLO%d\n",0);
+    //     }
+    //     else
+    //     {
+    //         dev_led_green_set(false);
+    //         dev_led_red_set(false);
+    //         PRINTF("HELLO2%d\n",0);
+    //     }
+    //     PRINTF("Button: %d\n", gpio_get_level(BUTTON));
+    //     delay(500);
+    // }
