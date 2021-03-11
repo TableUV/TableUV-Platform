@@ -18,5 +18,5 @@ void setupWaterLevelConfig(){
 
 uint8_t getWaterLevelSignal(){
     //tbd
-    return 1;
+    return 0;
 }
