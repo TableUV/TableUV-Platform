@@ -18,6 +18,7 @@ extern "C"{
 
 void dev_led_init(void);
 void dev_button_update(void);
+bool dev_button_update_50ms(void);
 bool dev_button_get(void);
 void dev_led_update(void);
 void dev_led_green_set(bool led_on);

@@ -45,6 +45,7 @@ typedef enum {
 typedef struct{
     app_state_E current_state;
     uint32_t fault_flag; // Ex: (APP_FAULTS_TOF_INIT | APP_FAULTS_IMU_INIT);
+    bool button_pressed;
 } app_supervisor_data_S;
 
 /////////////////////////////////////////
@@ -77,20 +78,32 @@ app_state_E getNextState(app_state_E state)
     switch (state)
     {
         case (APP_STATE_IDLE):
-            if ( button is  clicked)
+            if (supervisor_data.button_pressed)
             {
                 nextState =  APP_STATE_AUTONOMY;
             }
             break;
 
         case (APP_STATE_AUTONOMY):
+            if (supervisor_data.button_pressed)
+            {
+                nextState =  APP_STATE_IDLE;
+            }
             break;
 
         case (APP_STATE_AUTONOMY_ESTOPPED):
+            if (supervisor_data.button_pressed)
+            {
+                nextState =  APP_STATE_IDLE;
+            }        
             break;
 
-        case (APP_STATE_COUNT):            
+        case (APP_STATE_COUNT):
+            break;
+
         case (APP_STATE_UNKNOWN):
+            break;
+            
         default:
             // Do nothing
             supervisor_data.fault_flag |= APP_FAULTS_INVALID_STATE;
@@ -130,8 +143,11 @@ bool stateAction(app_state_E state)
 
 void fetchState(void)
 {
-    // 
     // TODO: to be implemented
+#if (FEATURE_PERIPHERALS)
+    supervisor_data.button_pressed = dev_button_update_50ms();
+#endif
+
 #if (FEATURE_SUPER_USE_PROFILED_MOTIONS | MOCK)
     uint8_t frame=0U;
     int8_t rmotor, lmotor;

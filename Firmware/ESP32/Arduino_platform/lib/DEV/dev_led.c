@@ -73,8 +73,7 @@ static inline void dev_led_private_gpio_config(void)
 
 static void IRAM_ATTR button_isr_handler(void)
 {
-    // DebounceSwitch1();
-    peripheral_data.button_count++;
+    peripheral_data.button_count++;    
 }
 
 
@@ -91,16 +90,19 @@ void dev_button_update(void)
     peripheral_data.button_pressed = !(gpio_get_level(BUTTON));
 }
 
-bool dev_led_update_50ms(void)
+bool dev_button_update_50ms(void)
 {
     uint32_t temp_count = peripheral_data.button_count;
-    if (temp_count >= 1 && temp_count <= 2)
+    if (temp_count >= 1 && temp_count <= 3)
     {
         peripheral_data.button_count = 0;
+        peripheral_data.button_pressed = true;
         return true;
     }
     else
     {
+        peripheral_data.button_count = 0;
+        peripheral_data.button_pressed = false;
         return false;
     }
 }
