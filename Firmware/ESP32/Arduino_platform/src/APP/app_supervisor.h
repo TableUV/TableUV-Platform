@@ -14,7 +14,7 @@ extern "C"{
 # endif 
 
 void app_supervisor_init(void);
-void app_supervisor_run20ms(void);
+void app_supervisor_run50ms(void);
 
 
 # ifdef __cplusplus  

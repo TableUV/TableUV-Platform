@@ -61,7 +61,7 @@ static dev_avr_driver_data_S dev_avr_driver_data = {
         0x0000,
         0x0000
     },
-    .reqEstop   = 1,
+    .reqEstop   = 0,
     .reqEncoder = 0,
     .reqHaptic  = 0,
     .reqWaterLevel = 0,

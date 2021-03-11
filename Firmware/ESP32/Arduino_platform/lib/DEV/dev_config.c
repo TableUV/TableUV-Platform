@@ -1,6 +1,6 @@
 /**
  * @file dev_config.c
- * @author Jianxiang (Jack) Xu
+	 * @author Jianxiang (Jack) Xu
  * @date 15 Feb 2021
  * @brief Device configure files
  *
@@ -47,8 +47,12 @@
 void dev_init(void)
 {
     // sub-device  initialization
+#if (FEATURE_AVR_DRIVER_ALL)    
     dev_avr_driver_init();
+#endif    
+#if (FEATURE_SENSOR_AVR)       
     dev_avr_sensor_init();
+#endif    
     dev_battery_init();
     dev_led_init();
 #if (FEATURE_LIDAR)
@@ -64,25 +68,16 @@ void dev_run20ms(void)
 #if (FEATURE_LIDAR)
     dev_ToF_Lidar_update20ms();
 #endif
- 
-
+#if (FEATURE_SENSOR_AVR)
+    dev_avr_sensor_uart_update();
+#endif
 }
 
 void dev_run100ms(void)
 {
-    // dev_avr_driver_set_req_Encoder();
-    // dev_avr_driver_reset_req_Water_level(); 
-    //dev_avr_driver_set_req_Haptic();  
-    dev_avr_driver_set_req_Robot_motion(ROBOT_MOTION_FW_COAST, MOTOR_PWM_DUTY_40_PERCENT, MOTOR_PWM_DUTY_40_PERCENT);
-    // Do  nothing
-    #ifdef FEATURE_AVR_DRIVER_ALL
-        dev_driver_avr_update100ms(); 
-    #endif
-
-    // printf("left_encod_count %d \n", dev_avr_driver_get_EncoderCount(LEFT_AVR_DRIVER));
-    // printf("right_encod_count %d \n", dev_avr_driver_get_EncoderCount(RIGHT_AVR_DRIVER));
-
-
+#if (FEATURE_AVR_DRIVER_ALL)
+    dev_driver_avr_update100ms(); 
+#endif       
 }
 
 void dev_run1000ms(void)
