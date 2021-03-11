@@ -75,35 +75,5 @@ void app_supervisor_run50ms(void)
     {
         supervisor_data.avr_driver_cmd = ROBOT_MOTION_FW_COAST;
     }
-#endif    
-
-#if (FEATURE_AVR_DRIVER_ALL)
-    static int count = 0; 
-    count ++;
-    if (count < 200){
-        dev_avr_driver_set_req_Robot_motion(ROBOT_MOTION_FW_COAST, MOTOR_PWM_DUTY_40_PERCENT, MOTOR_PWM_DUTY_40_PERCENT);
-    }
-    else if (count < 400){
-        dev_avr_driver_set_req_Robot_motion(ROBOT_MOTION_REV_COAST, MOTOR_PWM_DUTY_40_PERCENT, MOTOR_PWM_DUTY_40_PERCENT);
-    }
-    else if (count < 600){
-        dev_avr_driver_set_req_Robot_motion(ROBOT_MOTION_CW_ROTATION, MOTOR_PWM_DUTY_40_PERCENT, MOTOR_PWM_DUTY_40_PERCENT);
-    }
-    else if (count < 800){
-        dev_avr_driver_set_req_Robot_motion(ROBOT_MOTION_CCW_ROTATION, MOTOR_PWM_DUTY_40_PERCENT, MOTOR_PWM_DUTY_40_PERCENT);
-    }
-    else if (count < 1000){
-        dev_avr_driver_set_req_Robot_motion(ROBOT_MOTION_BREAK, MOTOR_PWM_DUTY_40_PERCENT, MOTOR_PWM_DUTY_40_PERCENT);
-    }
-    else{
-        count = 0; 
-    }
-    printf(" count: %d ", count); 
-    printf(" left_count: %d ", dev_avr_driver_get_EncoderCount(LEFT_AVR_DRIVER)); 
-    printf(" right_count: %d ", dev_avr_driver_get_EncoderCount(RIGHT_AVR_DRIVER)); 
-
-
-#endif    
+#endif       
 }
-
-
