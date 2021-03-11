@@ -56,7 +56,7 @@
 
 #define TASK_SLAM_TASK_TICK         (TASK_HZ_TO_TASK_TICK(  10/*[Hz]*/))
 #define TASK_SUPERVISOR_TASK_TICK   (TASK_HZ_TO_TASK_TICK(  20/*[Hz]*/))
-#define TASK_50HZ_TASK_TICK         (TASK_HZ_TO_TASK_TICK(  50/*[Hz]*/)) // TODO: we may not need 100 Hz, 50Hz shall be enough?
+#define TASK_50HZ_TASK_TICK         (TASK_HZ_TO_TASK_TICK(  50/*[Hz]*/)) 
 #define TASK_10HZ_TASK_TICK         (TASK_HZ_TO_TASK_TICK(  10/*[Hz]*/))
 #define TASK_1HZ_TASK_TICK          (TASK_HZ_TO_TASK_TICK(   1/*[Hz]*/))
 #define T_500MS_TASK_TICK           (MS_TO_TASK_TICK(      500/*[ms]*/))

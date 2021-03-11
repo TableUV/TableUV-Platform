@@ -172,24 +172,21 @@ bool stateAction(app_state_E state)
 
 void fetchState(void)
 {
-    // TODO: to be implemented
 #if (FEATURE_PERIPHERALS)
     supervisor_data.button_pressed = dev_button_update_50ms();
 #endif
 #if (FEATURE_SENSOR_AVR)
     supervisor_data.avr_sensor_data = dev_avr_sensor_uart_get();
 #endif
-
 #if (FEATURE_SUPER_USE_PROFILED_MOTIONS | MOCK)
     // uint8_t frame=0U;
     // int8_t rmotor, lmotor;
     // frame = app_slam_getMotionVelocity(& lmotor, & rmotor, frame);
     // PRINTF("[MOTOR] R:%3d, L:%3d (f:%3d) \n", lmotor, rmotor, frame);
 #endif
-
-    // IR status
-    // battery status
-    // all the feeedbback
+    // TODO: battery status
+    // TODO: IMU
+    
 }
 
 void app_supervisor_run50ms(void)
