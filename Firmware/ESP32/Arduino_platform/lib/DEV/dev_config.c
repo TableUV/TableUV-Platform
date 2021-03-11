@@ -79,13 +79,15 @@ void dev_run20ms(void)
 #if (FEATURE_SENSOR_AVR)
     dev_avr_sensor_uart_update();
 #endif
-}
-
-void dev_run100ms(void)
-{
 #if (FEATURE_AVR_DRIVER_ALL)
     dev_driver_avr_update100ms(); 
-#endif
+#endif   
+
+}
+
+void dev_run50ms(void)
+{
+ 
 #if (FEATURE_PERIPHERALS)
     dev_led_update();
 #endif

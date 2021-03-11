@@ -50,6 +50,11 @@ static dev_led_peripherals_data_S peripheral_data = {
 ////////////////////////////////////////
 ///////   PRIVATE FUNCTION     /////////
 ////////////////////////////////////////
+static void IRAM_ATTR button_isr_handler(void)
+{
+    peripheral_data.button_count++;    
+}
+
 static inline void dev_led_private_gpio_config(void)
 {
     gpio_pad_select_gpio(STATUS_RED_LED);
@@ -67,13 +72,14 @@ static inline void dev_led_private_gpio_config(void)
     gpio_config(&io_conf);
 
     io_conf.mode = GPIO_MODE_INPUT;
+    io_conf.intr_type = GPIO_PIN_INTR_NEGEDGE;
     io_conf.pin_bit_mask = (1ULL << BUTTON);
     gpio_config(&io_conf);
-}
 
-static void IRAM_ATTR button_isr_handler(void)
-{
-    peripheral_data.button_count++;    
+    //install gpio isr service
+    gpio_install_isr_service(0);
+    //hook isr handler for specific gpio pin
+    gpio_isr_handler_add(BUTTON, button_isr_handler, (void*) BUTTON);    
 }
 
 
@@ -93,7 +99,7 @@ void dev_button_update(void)
 bool dev_button_update_50ms(void)
 {
     uint32_t temp_count = peripheral_data.button_count;
-    if (temp_count >= 1 && temp_count <= 3)
+    if (temp_count >= 1 && temp_count <= 2)
     {
         peripheral_data.button_count = 0;
         peripheral_data.button_pressed = true;

@@ -20,6 +20,7 @@
 #include "dev_avr_sensor.h"
 #include "dev_avr_driver.h"
 #include "dev_led.h"
+#include "dev_battery.h"
 
 // External Library
 
@@ -95,13 +96,14 @@ void app_supervisor_init(void)
 
 app_state_E getNextState(app_state_E state)
 {
-    app_state_E nextState = APP_STATE_UNKNOWN;
+    app_state_E nextState = state;
     // check all conditions, return the next state
     switch (state)
     {
         case (APP_STATE_IDLE):
             if (supervisor_data.button_pressed)
             {
+                // TODO: Starting on powerup problem
                 nextState =  APP_STATE_AUTONOMY;
             }
             break;
@@ -110,7 +112,7 @@ app_state_E getNextState(app_state_E state)
             if (supervisor_data.battery_voltage < 10.5)
             {
                 supervisor_data.fault_flag |= APP_FAULTS_LOW_BATTERY;
-                nextState = APP_STATE_IDLE;
+                nextState = APP_STATE_FAULT;
             }
             else if (supervisor_data.button_pressed)
             {
@@ -126,7 +128,7 @@ app_state_E getNextState(app_state_E state)
             if (supervisor_data.battery_voltage < 10.5)
             {
                 supervisor_data.fault_flag |= APP_FAULTS_LOW_BATTERY;
-                nextState = APP_STATE_IDLE;
+                nextState = APP_STATE_FAULT;
             }        
             else if (supervisor_data.button_pressed)
             {
@@ -167,13 +169,16 @@ bool transitToNewState(app_state_E state)
 #if (FEATURE_PERIPHERALS)       
             dev_led_clear_leds();
 #endif                        
+            dev_avr_driver_set_req_Robot_motion(ROBOT_MOTION_BREAK, MOTOR_PWM_DUTY_40_PERCENT, MOTOR_PWM_DUTY_40_PERCENT);
             break;
 
         case (APP_STATE_AUTONOMY):
 #if (FEATURE_PERIPHERALS)       
+            // TODO: Debug why led not being set
             dev_led_clear_leds();
             dev_led_green_set(true);
 #endif            
+            dev_avr_driver_set_req_Robot_motion(ROBOT_MOTION_FW_COAST, MOTOR_PWM_DUTY_40_PERCENT, MOTOR_PWM_DUTY_40_PERCENT);
             break;
 
         case (APP_STATE_AUTONOMY_ESTOPPED):
@@ -181,6 +186,7 @@ bool transitToNewState(app_state_E state)
             dev_led_clear_leds();
             dev_led_red_set(true);
 #endif            
+            dev_avr_driver_set_req_Robot_motion(ROBOT_MOTION_BREAK, MOTOR_PWM_DUTY_40_PERCENT, MOTOR_PWM_DUTY_40_PERCENT);
             break;
 
         case (APP_STATE_COUNT):            
@@ -189,11 +195,13 @@ bool transitToNewState(app_state_E state)
             supervisor_data.fault_flag |= APP_FAULTS_INVALID_STATE;
             break;
     }
+    return true;
 }
 
 bool stateAction(app_state_E state)
 {
-    // whatever you should do in this state
+    //dev_avr_driver_set_req_Robot_motion(ROBOT_MOTION_FW_COAST, MOTOR_PWM_DUTY_40_PERCENT, MOTOR_PWM_DUTY_40_PERCENT);
+    return true;
 }
 
 void fetchState(void)
@@ -203,6 +211,7 @@ void fetchState(void)
 #endif
 #if (FEATURE_SENSOR_AVR)
     supervisor_data.avr_sensor_data = dev_avr_sensor_uart_get();
+    // PRINTF("AVR SENSOR DATE: %c%c%c%c%c%c%c%c\n", BYTE_TO_BINARY(supervisor_data.avr_sensor_data));
 #endif
 #if (FEATURE_SUPER_USE_PROFILED_MOTIONS | MOCK)
     // uint8_t frame=0U;
@@ -218,9 +227,10 @@ void fetchState(void)
     
 }
 
+// TODO: Rename to 20ms
 void app_supervisor_run50ms(void)
 {
-    const app_state_E current_state = supervisor_data.current_state;
+    app_state_E current_state = supervisor_data.current_state;
 
     fetchState();
 
@@ -228,8 +238,9 @@ void app_supervisor_run50ms(void)
 
     if (next_state != current_state)
     {
-        transitToNewState(current_state);
-        supervisor_data.current_state = current_state;
+        PRINTF("STATE TRANSITION from %d to %d\n", current_state, next_state);
+        transitToNewState(next_state);
+        supervisor_data.current_state = next_state;
     }
 
     stateAction(current_state);

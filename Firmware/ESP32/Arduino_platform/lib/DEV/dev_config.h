@@ -16,7 +16,7 @@ extern "C"{
 
 void dev_init(void);
 void dev_run20ms(void);
-void dev_run100ms(void);
+void dev_run50ms(void);
 void dev_run1000ms(void);
 
 # ifdef __cplusplus  
