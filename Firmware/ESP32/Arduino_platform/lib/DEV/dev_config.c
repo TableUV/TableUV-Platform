@@ -54,7 +54,9 @@ void dev_init(void)
     dev_avr_sensor_init();
 #endif    
     dev_battery_init();
+#if (FEATURE_PERIPHERALS)    
     dev_led_init();
+#endif    
 #if (FEATURE_LIDAR)
     dev_ToF_Lidar_init();
 #endif

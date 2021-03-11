@@ -19,6 +19,7 @@
 #include "app_slam.h"
 #include "dev_avr_sensor.h"
 #include "dev_avr_driver.h"
+#include "dev_led.h"
 
 // External Library
 
@@ -35,9 +36,29 @@
 /////////////////////////////////
 ///////   DEFINITION     ////////
 /////////////////////////////////
+typedef enum {
+    APP_STATE_IDLE,
+    APP_STATE_AUTONOMY,
+    APP_STATE_AUTONOMY_ESTOPPED,
+    //
+    APP_STATE_COUNT,
+    APP_STATE_UNKNOWN,
+} app_state_E;
+
+typedef enum {
+    APP_FAULTS_CLEAR                = (0U),
+    APP_FAULTS_LOW_BATTERY          = (1<<0U),
+    APP_FAULTS_TOF_INIT             = (1<<1U),
+    APP_FAULTS_IMU_INIT             = (1<<2U),
+    // ...
+    APP_FAULTS_MAX                  = (1<<20U),
+    APP_FAULTS_INVALID_STATE        = (1<<30U),
+} app_faults_E;
+
 typedef struct{
-    uint8_t avr_sensor_data;
-    robot_motion_mode_E avr_driver_cmd;
+    app_state_E current_state;
+    uint32_t fault_flag; // Ex: (APP_FAULTS_TOF_INIT | APP_FAULTS_IMU_INIT);
+    bool button_pressed;
 } app_supervisor_data_S;
 
 /////////////////////////////////////////
@@ -62,38 +83,113 @@ void app_supervisor_init(void)
     memset(&supervisor_data, 0x00, sizeof(app_supervisor_data_S));
 }
 
-void app_supervisor_run50ms(void)
-{ 
+
+app_state_E getNextState(app_state_E state)
+{
+    app_state_E nextState = APP_STATE_UNKNOWN;
+    // check all conditions, return the next state
+    switch (state)
+    {
+        case (APP_STATE_IDLE):
+            if (supervisor_data.button_pressed)
+            {
+                nextState =  APP_STATE_AUTONOMY;
+            }
+            break;
+
+        case (APP_STATE_AUTONOMY):
+            if (supervisor_data.button_pressed)
+            {
+                nextState =  APP_STATE_IDLE;
+            }
+            break;
+
+        case (APP_STATE_AUTONOMY_ESTOPPED):
+            if (supervisor_data.button_pressed)
+            {
+                nextState =  APP_STATE_IDLE;
+            }        
+            break;
+
+        case (APP_STATE_COUNT):
+            break;
+
+        case (APP_STATE_UNKNOWN):
+            break;
+            
+        default:
+            // Do nothing
+            supervisor_data.fault_flag |= APP_FAULTS_INVALID_STATE;
+            break;
+    }
+}
+
+bool transitToNewState(app_state_E state)
+{
+    // What to do
+    switch (state)
+    {
+        case (APP_STATE_IDLE):
+            // turn off motor 
+            break;
+
+        case (APP_STATE_AUTONOMY):
+        //
+            break;
+
+        case (APP_STATE_AUTONOMY_ESTOPPED):
+            break;
+
+        case (APP_STATE_COUNT):            
+        case (APP_STATE_UNKNOWN):
+        default:
+            // Do nothing
+            supervisor_data.fault_flag |= APP_FAULTS_INVALID_STATE;
+            break;
+    }
+}
+
+bool stateAction(app_state_E state)
+{
+    // whatever you should do in this state
+}
+
+void fetchState(void)
+{
     // TODO: to be implemented
+#if (FEATURE_PERIPHERALS)
+    supervisor_data.button_pressed = dev_button_update_50ms();
+#endif
+
 #if (FEATURE_SUPER_USE_PROFILED_MOTIONS | MOCK)
     // uint8_t frame=0U;
     // int8_t rmotor, lmotor;
     // frame = app_slam_getMotionVelocity(& lmotor, & rmotor, frame);
     // PRINTF("[MOTOR] R:%3d, L:%3d (f:%3d) \n", lmotor, rmotor, frame);
 #endif
-#if (FEATURE_SENSOR_AVR)    
-    supervisor_data.avr_sensor_data = dev_avr_sensor_uart_get();
-    PRINTF("AVR Sensor data: %c%c%c%c%c%c%c%c\n", BYTE_TO_BINARY(supervisor_data.avr_sensor_data));
-    if (supervisor_data.avr_sensor_data)
-    {
-        supervisor_data.avr_driver_cmd = ROBOT_MOTION_BREAK;
-    }
-    else
-    {
-        supervisor_data.avr_driver_cmd = ROBOT_MOTION_FW_COAST;
-    }
-#endif    
 
-#if (FEATURE_AVR_DRIVER_ALL)
-    // dev_avr_driver_reset_req_Water_level(); 
-    //dev_avr_driver_set_req_Haptic();  
-    dev_avr_driver_set_req_Robot_motion(ROBOT_MOTION_FW_COAST, MOTOR_PWM_DUTY_40_PERCENT, MOTOR_PWM_DUTY_40_PERCENT);
-    dev_avr_driver_set_req_Encoder();
-    PRINTF("Left encoder: %d\n", dev_avr_driver_get_EncoderCount(LEFT_AVR_DRIVER));
-    PRINTF("Right encoder: %d\n", dev_avr_driver_get_EncoderCount(RIGHT_AVR_DRIVER));
-#endif   
+    // IR status
+    // battery status
+    // all the feeedbback
+}
 
- 
+void app_supervisor_run20ms(void)
+{
+    const app_state_E current_state = supervisor_data.current_state;
+
+    fetchState(void)
+
+    app_state_E next_state = getNextState(current_state);
+
+    if (next_state != current_state)
+    {
+        transitToNewState(current_state);
+    }
+
+    supervisor_data.current_state = current_state;
+
+    stateAction(current_state);
+
 }
 
 
