@@ -769,7 +769,8 @@ void app_slam_init(void)
 
     // init
     slam_data.sensor_config = & edge_sensor_config;
-    vSemaphoreCreateBinary(slam_data.motion_profile_mutex);
+    slam_data.motion_profile_mutex = xSemaphoreCreateBinary();
+    xSemaphoreGive(slam_data.motion_profile_mutex); // release mutex for usage
 
     // status resport
     PRINTF("[GMAP] Size: (%d x %d)\n", GMAP_WN_PIXEL, GMAP_HN_PIXEL);
