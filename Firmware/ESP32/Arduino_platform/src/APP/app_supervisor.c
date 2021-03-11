@@ -64,7 +64,6 @@ void app_supervisor_init(void)
 
 void app_supervisor_run50ms(void)
 { 
-
     // TODO: to be implemented
 #if (FEATURE_SUPER_USE_PROFILED_MOTIONS | MOCK)
     // uint8_t frame=0U;
