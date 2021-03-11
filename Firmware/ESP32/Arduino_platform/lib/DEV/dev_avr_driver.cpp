@@ -12,17 +12,15 @@
 #include "../../include/avr_driver_common.h"
 #include <stdbool.h>
 
+#define I2C_RECIEVE_TIMEOUT_MILLI_SEC                                       10
+
 #define SET_MESSAGE_ESTOP_EN()                                              (1 << 13)
-#define SET_MESSAGE_ENCODER_EN()                                            (1 << 12)
 #define SET_MESSAGE_HAPTIC_EN()                                             (1 << 11)
-#define SET_MESSAGE_WATERLEVEL_EN()                                         (1 << 10)
 #define SET_MESSAGE_TOF_CONFIG_EN(tof_sensor_config)                        (tof_sensor_config << 8)
 
 
 #define RESET_MESSAGE_ESTOP_EN()                                            ~(1 << 13)
-#define RESET_MESSAGE_ENCODER_EN()                                          ~(1 << 12)
 #define RESET_MESSAGE_HAPTIC_EN()                                           ~(1 << 11)
-#define RESET_MESSAGE_WATERLEVEL_EN()                                       ~(1 << 10)
 #define RESET_MESSAGE_TOF_CONFIG_EN(tof_sensor_config)                      ~(tof_sensor_config << 8)
 
 typedef struct{
@@ -31,9 +29,7 @@ typedef struct{
     const data_frame_header_E   dataFrameHeader[DATA_FRAME_HEADER_COUNT];
     uint16_t                    i2c_message[NUM_AVR_DRIVER];
     uint8_t                     reqEstop;
-    uint8_t                     reqEncoder;
     uint8_t                     reqHaptic;
-    uint8_t                     reqWaterLevel;
     tof_sensor_config_E         reqConfigTof;
     robot_motion_mode_E         reqRobotMotion;
     motor_pwm_duty_E            pwm_duty[NUM_AVR_DRIVER];
@@ -62,9 +58,7 @@ static dev_avr_driver_data_S dev_avr_driver_data = {
         0x0000
     },
     .reqEstop   = 1,
-    .reqEncoder = 0,
     .reqHaptic  = 0,
-    .reqWaterLevel = 0,
     .reqConfigTof = TOF_SENSOR_CONFIG_DISABLE_ALL,
     .reqRobotMotion = ROBOT_MOTION_BREAK,
     .pwm_duty  = {
@@ -111,6 +105,7 @@ static uint16_t dev_avr_driver_receive_two_byte(uint8_t address){
 
 // initialize I2C message
 static void dev_avr_driver_init_message_two_byte(){
+    dev_avr_driver_set_timeout(I2C_RECIEVE_TIMEOUT_MILLI_SEC); 
     dev_avr_driver_data.i2c_message[LEFT_AVR_DRIVER]   = 0b0000000001000000;
     dev_avr_driver_data.i2c_message[RIGHT_AVR_DRIVER]  = 0b0000000001000000;
 }
@@ -127,30 +122,12 @@ static void avr_driver_update_i2c_message_two_byte(){
         dev_avr_driver_data.i2c_message[RIGHT_AVR_DRIVER] &= RESET_MESSAGE_ESTOP_EN();
     }
 
-    // req encoder 
-    if( dev_avr_driver_data.reqEncoder){
-        dev_avr_driver_data.i2c_message[LEFT_AVR_DRIVER]  |= SET_MESSAGE_ENCODER_EN();
-        dev_avr_driver_data.i2c_message[RIGHT_AVR_DRIVER] |= SET_MESSAGE_ENCODER_EN();
-    }
-    else{
-        dev_avr_driver_data.i2c_message[LEFT_AVR_DRIVER]  &= RESET_MESSAGE_ENCODER_EN();
-        dev_avr_driver_data.i2c_message[RIGHT_AVR_DRIVER] &= RESET_MESSAGE_ENCODER_EN();
-    }
-
     // req haptic 
     if( dev_avr_driver_data.reqHaptic){
         dev_avr_driver_data.i2c_message[RIGHT_AVR_DRIVER] |= SET_MESSAGE_HAPTIC_EN();
     }
     else{
         dev_avr_driver_data.i2c_message[RIGHT_AVR_DRIVER] &= RESET_MESSAGE_HAPTIC_EN();
-    }
-
-    // req WaterLevel 
-    if( dev_avr_driver_data.reqWaterLevel ){
-        dev_avr_driver_data.i2c_message[RIGHT_AVR_DRIVER] |= SET_MESSAGE_WATERLEVEL_EN();
-    }
-    else{
-        dev_avr_driver_data.i2c_message[RIGHT_AVR_DRIVER] &= RESET_MESSAGE_WATERLEVEL_EN();
     }
 
     // req ConfigTof
@@ -229,32 +206,26 @@ void dev_avr_driver_init()
 void dev_driver_avr_update100ms(){
     avr_driver_update_i2c_message_two_byte(); 
     dev_avr_driver_transmit_two_byte( dev_avr_driver_data.address[LEFT_AVR_DRIVER] , dev_avr_driver_data.i2c_message[LEFT_AVR_DRIVER] );
-    if (dev_avr_driver_data.reqEncoder){
-        dev_avr_driver_data.encoderCount[LEFT_AVR_DRIVER] = dev_avr_driver_receive_two_byte(dev_avr_driver_data.address[LEFT_AVR_DRIVER]);
-    }
+    dev_avr_driver_data.encoderCount[LEFT_AVR_DRIVER] = dev_avr_driver_receive_two_byte(dev_avr_driver_data.address[LEFT_AVR_DRIVER]);
 
     dev_avr_driver_transmit_two_byte( dev_avr_driver_data.address[RIGHT_AVR_DRIVER] , dev_avr_driver_data.i2c_message[RIGHT_AVR_DRIVER] );
-    if (dev_avr_driver_data.reqEncoder){
-        dev_avr_driver_data.encoderCount[RIGHT_AVR_DRIVER] = dev_avr_driver_receive_two_byte(dev_avr_driver_data.address[RIGHT_AVR_DRIVER]);
-    }
-    if (dev_avr_driver_data.reqWaterLevel){
-        dev_avr_driver_data.waterLevelSig = dev_avr_driver_receive_one_byte(dev_avr_driver_data.address[RIGHT_AVR_DRIVER]);
-    }
+    dev_avr_driver_data.encoderCount[RIGHT_AVR_DRIVER] = dev_avr_driver_receive_two_byte(dev_avr_driver_data.address[RIGHT_AVR_DRIVER]);
+    dev_avr_driver_data.waterLevelSig = dev_avr_driver_receive_one_byte(dev_avr_driver_data.address[RIGHT_AVR_DRIVER]);
+
+}
+
+void dev_avr_driver_set_timeout(uint8_t milliSec){
+    dev_avr_driver_data.I2C.setTimeout(milliSec); 
 }
 
 void dev_avr_driver_set_req_Estop(){
     dev_avr_driver_data.reqEstop = 1;
 }
 
-void dev_avr_driver_set_req_Encoder(){
-    dev_avr_driver_data.reqEncoder = 1;
-}
 void dev_avr_driver_set_req_Haptic(){
     dev_avr_driver_data.reqHaptic = 1;
 }
-void dev_avr_driver_set_req_Water_level(){
-    dev_avr_driver_data.reqWaterLevel = 1; 
-}
+
 void dev_avr_driver_set_req_Tof_config(tof_sensor_config_E tof_sensor_config){
     dev_avr_driver_data.reqConfigTof = tof_sensor_config; 
 }
@@ -269,15 +240,10 @@ void dev_avr_driver_reset_req_Estop(){
     dev_avr_driver_data.reqEstop = 0;
 }
 
-void dev_avr_driver_reset_req_Encoder(){
-    dev_avr_driver_data.reqEncoder = 0;
-}
 void dev_avr_driver_reset_req_Haptic(){
     dev_avr_driver_data.reqHaptic = 0;
 }
-void dev_avr_driver_reset_req_Water_level(){
-    dev_avr_driver_data.reqWaterLevel = 0; 
-}
+
 void dev_avr_driver_reset_req_Tof_config(){
     dev_avr_driver_data.reqConfigTof = TOF_SENSOR_CONFIG_DISABLE_ALL; 
 }

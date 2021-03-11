@@ -3,7 +3,7 @@
  * @author Tsugmui Murata
  * @date 1 Mar 2021
  * @brief AVR DRIVER COMMON HEADER FILE
- * @version V1.1
+ * @version V1.2
  *
  * This document will contains ping definitions
  */
@@ -47,9 +47,9 @@ extern "C"{
 
 // data mask for first incoming data byte 
 #define ESTOP_COMMAND_REQ_MASK          (_BV(5))
-#define ENCODER_DATA_REQ_MASK           (_BV(4))
+
 #define HAPTIC_EN_REQ_MASK              (_BV(3))
-#define WATERLEVEL_DATA_REQ_MASK        (_BV(2))
+
 #define TOF_XSHUT_EN_REQ_BIT_MASK       (_BV(1) | _BV(0))
 
 // data mask for second incoming data byte 
@@ -57,9 +57,6 @@ extern "C"{
 #define MOTOR_DIRECTION_REQ_MASK        (_BV(4))
 #define MOTOR_PWM_DUTY_REQ_MASK         (_BV(3) | _BV(2) | _BV(1) | _BV(0))
 
-// bits of status register for data to master 
-#define SEND_ENCODER_DATA               (2U)
-#define SEND_WATER_LEVEL_DATA           (1U)
 
 // data frame header
 typedef enum data_frame_header{
