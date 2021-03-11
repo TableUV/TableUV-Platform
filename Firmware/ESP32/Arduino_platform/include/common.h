@@ -45,7 +45,8 @@ extern "C"{
 #   define FEATURE_LIDAR_CALIBRATION_MODE  (DISABLE) // TODO: implement calibration strategy
 #   define FEATURE_LIDAR                          ( ENABLE)
 #   define FEATURE_PERIPHERALS                    ( ENABLE)
-
+#   define FEATURE_UV                             ( ENABLE)
+#   define FEATURE_IMU                            ( ENABLE)
 #   define FEATURE_SENSOR_AVR                     ( ENABLE)
 #   define FEATURE_AVR_DRIVER_ALL                 ( ENABLE) //
 #   ifndef FEATURE_AVR_DRIVER_ALL
@@ -75,7 +76,8 @@ extern "C"{
 #   define FEATURE_LIDAR_CALIBRATION_MODE         (   TODO) // TODO: implement calibration strategy
 #   define FEATURE_SUPER_USE_PROFILED_MOTIONS     (   TODO) // TODO: implement calibration strategy
 #   define FEATURE_PERIPHERALS                    ( ENABLE)
-
+#   define FEATURE_UV                             ( DISABLE)
+#   define FEATURE_IMU                            ( DISABLE)
 #   define FEATURE_SENSOR_AVR                     ( ENABLE)
 #   define FEATURE_AVR_DRIVER_ALL                 ( ENABLE) //
 #   ifndef FEATURE_AVR_DRIVER_ALL

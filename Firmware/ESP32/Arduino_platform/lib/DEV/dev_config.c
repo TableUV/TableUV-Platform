@@ -60,8 +60,12 @@ void dev_init(void)
 #if (FEATURE_LIDAR)
     dev_ToF_Lidar_init();
 #endif
-    // dev_uv_init();
-    // dev_imu_init();
+#if (FEATURE_UV)
+    dev_uv_init();
+#endif    
+#if (FEATURE_IMU)
+    dev_imu_init();
+#endif    
 }
 
 void dev_run20ms(void)

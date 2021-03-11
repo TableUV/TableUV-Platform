@@ -138,16 +138,23 @@ bool transitToNewState(app_state_E state)
     switch (state)
     {
         case (APP_STATE_IDLE):
+#if (FEATURE_PERIPHERALS)       
+            dev_led_clear_leds();
+#endif                        
             break;
 
         case (APP_STATE_AUTONOMY):
+#if (FEATURE_PERIPHERALS)       
             dev_led_clear_leds();
             dev_led_green_set(true);
+#endif            
             break;
 
         case (APP_STATE_AUTONOMY_ESTOPPED):
+#if (FEATURE_PERIPHERALS)               
             dev_led_clear_leds();
             dev_led_red_set(true);
+#endif            
             break;
 
         case (APP_STATE_COUNT):            
@@ -185,7 +192,7 @@ void fetchState(void)
     // all the feeedbback
 }
 
-void app_supervisor_run20ms(void)
+void app_supervisor_run50ms(void)
 {
     const app_state_E current_state = supervisor_data.current_state;
 
