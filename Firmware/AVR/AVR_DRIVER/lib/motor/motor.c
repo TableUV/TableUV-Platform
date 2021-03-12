@@ -98,3 +98,8 @@ void testMotorAll(){
     setMotor(MOTOR_MODE_CCW_BREAK, MOTOR_PWM_DUTY_50_PERCENT);
     _delay_ms(10);
 }
+
+void testMotor_sweep(uint8_t motor_sweep_count){
+    OCR0A = motor_sweep_count ;
+    OCR0B = 0; 
+}
