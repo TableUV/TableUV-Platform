@@ -1,0 +1,16 @@
+{
+	"folders": [
+		{
+			"path": ".."
+		},
+		{
+			"name": "AVR_DRIVER",
+			"path": "../../../AVR/AVR_DRIVER"
+		}
+	],
+	"settings": {
+		"files.associations": {
+			"common.h": "c"
+		}
+	}
+}
