@@ -55,9 +55,9 @@
 #define ESP32_CORE_HIGH_LEVEL       (1U)
 
 #define TASK_SLAM_TASK_TICK         (TASK_HZ_TO_TASK_TICK(  10/*[Hz]*/))
-#define TASK_SUPERVISOR_TASK_TICK   (TASK_HZ_TO_TASK_TICK(  20/*[Hz]*/))
-#define TASK_50HZ_TASK_TICK         (TASK_HZ_TO_TASK_TICK(  50/*[Hz]*/)) // TODO: we may not need 100 Hz, 50Hz shall be enough?
-#define TASK_10HZ_TASK_TICK         (TASK_HZ_TO_TASK_TICK(  10/*[Hz]*/))
+#define TASK_SUPERVISOR_TASK_TICK   (TASK_HZ_TO_TASK_TICK(  50/*[Hz]*/))
+#define TASK_50HZ_TASK_TICK         (TASK_HZ_TO_TASK_TICK(  50/*[Hz]*/)) 
+#define TASK_20HZ_TASK_TICK         (TASK_HZ_TO_TASK_TICK(  20/*[Hz]*/))
 #define TASK_1HZ_TASK_TICK          (TASK_HZ_TO_TASK_TICK(   1/*[Hz]*/))
 #define T_500MS_TASK_TICK           (MS_TO_TASK_TICK(      500/*[ms]*/))
 
@@ -79,7 +79,7 @@
 static void esp32_task_init(void);
 
 static void core0_task_run20ms(void * pvParameters);
-static void core0_task_run100ms(void * pvParameters);
+static void core0_task_run50ms(void * pvParameters);
 static void core0_task_run1000ms(void * pvParameters);
 static void core1_task_runSLAM(void * pvParameters);
 
@@ -104,7 +104,7 @@ static void core0_task_run20ms(void * pvParameters)
         vTaskDelayUntil(&xLastWakeTime, TASK_50HZ_TASK_TICK);
     }
 }
-static void core0_task_run100ms(void * pvParameters)
+static void core0_task_run50ms(void * pvParameters)
 {
     TickType_t xLastWakeTime;
     xLastWakeTime = xTaskGetTickCount ();
@@ -113,9 +113,9 @@ static void core0_task_run100ms(void * pvParameters)
         /* Do sth at */
         {
             //  add task
-            dev_run100ms();
+            dev_run50ms();
         }
-        vTaskDelayUntil(&xLastWakeTime, TASK_10HZ_TASK_TICK);
+        vTaskDelayUntil(&xLastWakeTime, TASK_20HZ_TASK_TICK);
     }
 }
 static void core0_task_run1000ms(void * pvParameters)
@@ -178,8 +178,8 @@ static void esp32_task_init()
     vTaskDelay(T_500MS_TASK_TICK);
 
     xTaskCreatePinnedToCore(
-        core0_task_run100ms,    /* Function to implement the task */
-        "core0_task_run100ms",  /* Name of the task */
+        core0_task_run50ms,    /* Function to implement the task */
+        "core0_task_run50ms",  /* Name of the task */
         10000,                  /* Stack size in words */
         NULL,                   /* Task input parameter */
         2,                      /* Priority of the task */
@@ -228,6 +228,7 @@ static void esp32_task_init()
 void setup() {
     // put your setup code here, to run once:
     // device initialization
+    delay(500);
     dev_init();
 
     // app level init
@@ -238,7 +239,7 @@ void setup() {
     esp32_task_init();
 
     // report status:
-    PRINTF("[SYS] %s", (PROJECT_MODE_SELECTION==PROJECT_MODE_PRODUCTION) ? ("PRODUCTION"):\
+    PRINTF("[SYS] %s\n", (PROJECT_MODE_SELECTION==PROJECT_MODE_PRODUCTION) ? ("PRODUCTION"):\
         ((PROJECT_MODE_SELECTION==PROJECT_MODE_DEVELOPMENT) ? ("DEVELOPMENT"):("UNKNOWN")));
 }
 

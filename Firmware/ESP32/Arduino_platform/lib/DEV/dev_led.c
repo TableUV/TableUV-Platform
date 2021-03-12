@@ -18,8 +18,13 @@
 /////////////////////////////////
 ///////   DEFINITION     ////////
 /////////////////////////////////
+#define CHECK_MSEC          50   // Read hardware every 5 msec
+#define PRESS_MSEC          100  // Stable time before registering pressed
+#define RELEASE_MSEC        100 // Stable time before registering released
+
 typedef struct{
-    bool button_pressed;
+    volatile bool button_pressed;
+    volatile uint32_t button_count;
     bool green_led_on;
     bool red_led_on;
     bool orange_led_on;
@@ -35,6 +40,7 @@ static inline void dev_led_private_gpio_config(void);
 ///////////////////////////
 static dev_led_peripherals_data_S peripheral_data = {
     .button_pressed = false,
+    .button_count = 0,
     .green_led_on = false,
     .red_led_on = false,
     .orange_led_on = false
@@ -44,6 +50,11 @@ static dev_led_peripherals_data_S peripheral_data = {
 ////////////////////////////////////////
 ///////   PRIVATE FUNCTION     /////////
 ////////////////////////////////////////
+static void IRAM_ATTR button_isr_handler(void)
+{
+    peripheral_data.button_count++;    
+}
+
 static inline void dev_led_private_gpio_config(void)
 {
     gpio_pad_select_gpio(STATUS_RED_LED);
@@ -61,9 +72,16 @@ static inline void dev_led_private_gpio_config(void)
     gpio_config(&io_conf);
 
     io_conf.mode = GPIO_MODE_INPUT;
+    io_conf.intr_type = GPIO_PIN_INTR_NEGEDGE;
     io_conf.pin_bit_mask = (1ULL << BUTTON);
     gpio_config(&io_conf);
+
+    //install gpio isr service
+    gpio_install_isr_service(0);
+    //hook isr handler for specific gpio pin
+    gpio_isr_handler_add(BUTTON, button_isr_handler, (void*) BUTTON);    
 }
+
 
 ///////////////////////////////////////
 ///////   PUBLIC FUNCTION     /////////
@@ -78,9 +96,33 @@ void dev_button_update(void)
     peripheral_data.button_pressed = !(gpio_get_level(BUTTON));
 }
 
+bool dev_button_update_50ms(void)
+{
+    uint32_t temp_count = peripheral_data.button_count;
+    if (temp_count >= 1 && temp_count <= 2)
+    {
+        peripheral_data.button_count = 0;
+        peripheral_data.button_pressed = true;
+        return true;
+    }
+    else
+    {
+        peripheral_data.button_count = 0;
+        peripheral_data.button_pressed = false;
+        return false;
+    }
+}
+
 bool dev_button_get(void)
 {
-    return peripheral_data.button_pressed;
+    bool temp_button_pressed = peripheral_data.button_pressed;
+    peripheral_data.button_pressed = false;
+    return temp_button_pressed;
+}
+
+bool dev_button_read(void)
+{
+    return !(gpio_get_level(BUTTON));
 }
 
 void dev_led_update(void)
@@ -125,6 +167,14 @@ void dev_led_orange_set(bool led_on)
 {
     peripheral_data.orange_led_on = led_on;
 }
+
+void dev_led_clear_leds(void)
+{
+    peripheral_data.green_led_on = false;
+    peripheral_data.red_led_on = false;
+    peripheral_data.orange_led_on = false;
+}
+
 
 
 // Test Code:

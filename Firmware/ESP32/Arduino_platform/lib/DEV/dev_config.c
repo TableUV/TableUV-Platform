@@ -53,18 +53,21 @@ void dev_init(void)
 #if (FEATURE_SENSOR_AVR)       
     dev_avr_sensor_init();
 #endif    
+#if (FEATURE_BATTERY)    
     dev_battery_init();
+#endif    
+#if (FEATURE_PERIPHERALS)    
     dev_led_init();
+#endif    
 #if (FEATURE_LIDAR)
     dev_ToF_Lidar_init();
 #endif
-<<<<<<< HEAD
-    // dev_uv_init();
-    // dev_imu_init();
-=======
-    //dev_uv_init();
-    //dev_imu_init();
->>>>>>> add timeout and delete encod and waterlevel request
+#if (FEATURE_UV)
+    dev_uv_init();
+#endif    
+#if (FEATURE_IMU)
+    dev_imu_init();
+#endif    
 }
 
 void dev_run20ms(void)
@@ -76,15 +79,23 @@ void dev_run20ms(void)
 #if (FEATURE_SENSOR_AVR)
     dev_avr_sensor_uart_update();
 #endif
-}
-
-void dev_run100ms(void)
-{
 #if (FEATURE_AVR_DRIVER_ALL)
     dev_driver_avr_update100ms(); 
-#endif       
+#endif   
+
+}
+
+void dev_run50ms(void)
+{
+ 
+#if (FEATURE_PERIPHERALS)
+    dev_led_update();
+#endif
 }
 
 void dev_run1000ms(void)
 {
+#if (FEATURE_BATTERY)    
+    dev_battery_update();
+#endif    
 }
