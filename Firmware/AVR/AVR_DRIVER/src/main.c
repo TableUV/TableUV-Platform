@@ -75,7 +75,10 @@ int main(void)
 
     uint16_t time_out_count = 0; 
 
-    DDRB |= _BV(PB0);
+    usiTwiTransmitByte(0xFF);
+    usiTwiTransmitByte(0xFF);
+
+    _delay_ms(1000); 
 
     while(1)
     { 
@@ -179,24 +182,18 @@ int main(void)
         //     }     
         // }
 
-        PORTB ^= _BV(PB0);
-        _delay_ms(1000); 
-
-        usiTwiTransmitByte(0xFF);
-        usiTwiTransmitByte(0xFF);
-
         int i = 0;
         for(i =0; i < REG_MAX; i ++){
             OCR0A = 0; 
             OCR0B = i;
-
-            //send data back to master
-            cli();
-            //send encoder data 
-            usiTwiTransmitByte(getEncoderCount16_first_8bit());
-            usiTwiTransmitByte(getEncoderCount16_second_8bit());
-            setEncoderCount(0);
-            sei();
+            _delay_ms(1);
+            // //send data back to master
+            // cli();
+            // //send encoder data 
+            // usiTwiTransmitByte(getEncoderCount16_first_8bit());
+            // usiTwiTransmitByte(getEncoderCount16_second_8bit());
+            // setEncoderCount(0);
+            // sei();
         }
 
         // if data received from master
