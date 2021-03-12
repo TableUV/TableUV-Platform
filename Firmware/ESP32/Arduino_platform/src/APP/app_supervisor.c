@@ -22,6 +22,7 @@
 #include "dev_led.h"
 #include "dev_battery.h"
 
+
 // External Library
 
 #define BYTE_TO_BINARY(byte)  \
@@ -92,7 +93,6 @@ void app_supervisor_init(void)
 {
     memset(&supervisor_data, 0x00, sizeof(app_supervisor_data_S));
 }
-
 
 app_state_E getNextState(app_state_E state)
 {
@@ -242,9 +242,7 @@ void app_supervisor_run50ms(void)
         transitToNewState(next_state);
         supervisor_data.current_state = next_state;
     }
-
     stateAction(current_state);
 
 }
-
 
