@@ -75,9 +75,10 @@ extern "C"{
 #   define FEATURE_LIDAR                          (DISABLE)
 #   define FEATURE_LIDAR_CALIBRATION_MODE         (   TODO) // TODO: implement calibration strategy
 #   define FEATURE_SUPER_USE_PROFILED_MOTIONS     (   TODO) // TODO: implement calibration strategy
+#   define FEATURE_SUPER_USE_HARDCODE_CHORE       ( ENABLE)
 #   define FEATURE_PERIPHERALS                    ( ENABLE)
-#   define FEATURE_UV                             ( DISABLE)
-#   define FEATURE_IMU                            ( DISABLE)
+#   define FEATURE_UV                             (DISABLE)
+#   define FEATURE_IMU                            (DISABLE)
 #   define FEATURE_SENSOR_AVR                     ( ENABLE)
 #   define FEATURE_AVR_DRIVER_ALL                 ( ENABLE) //
 #   ifndef FEATURE_AVR_DRIVER_ALL
@@ -120,6 +121,16 @@ extern "C"{
 #       define INLINE inline
 #   endif
 #endif
+
+#define BYTE_TO_BINARY(byte)   \
+    (byte & 0x80 ? '1' : '0'), \
+    (byte & 0x40 ? '1' : '0'), \
+    (byte & 0x20 ? '1' : '0'), \
+    (byte & 0x10 ? '1' : '0'), \
+    (byte & 0x08 ? '1' : '0'), \
+    (byte & 0x04 ? '1' : '0'), \
+    (byte & 0x02 ? '1' : '0'), \
+    (byte & 0x01 ? '1' : '0') 
 
 #ifdef __cplusplus  
 }
