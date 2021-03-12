@@ -38,6 +38,8 @@
 /////////////////////////////////
 ///////   DEFINITION     ////////
 /////////////////////////////////
+#define BATTERY_STATUS              (10.5F)
+
 typedef enum {
     APP_STATE_IDLE,
     APP_STATE_AUTONOMY,
@@ -109,43 +111,44 @@ app_state_E getNextState(app_state_E state)
             break;
 
         case (APP_STATE_AUTONOMY):
-            if (supervisor_data.battery_voltage < 10.5)
+            if (supervisor_data.avr_sensor_data & DEV_AVR_ALL_SENSORS)
             {
-                supervisor_data.fault_flag |= APP_FAULTS_LOW_BATTERY;
-                nextState = APP_STATE_FAULT;
+                nextState = APP_STATE_AUTONOMY_ESTOPPED;
             }
             else if (supervisor_data.button_pressed)
             {
                 nextState =  APP_STATE_IDLE;
             }
-            else if (supervisor_data.avr_sensor_data & DEV_AVR_ALL_SENSORS)
+            else if (supervisor_data.battery_voltage < BATTERY_STATUS) // check last, for the least probable state
             {
-                nextState = APP_STATE_AUTONOMY_ESTOPPED;
+                supervisor_data.fault_flag |= APP_FAULTS_LOW_BATTERY;
+                nextState = APP_STATE_FAULT;
             }
             break;
 
         case (APP_STATE_AUTONOMY_ESTOPPED):
-            if (supervisor_data.battery_voltage < 10.5)
+            if ((supervisor_data.avr_sensor_data & DEV_AVR_ALL_SENSORS) == 0)
             {
-                supervisor_data.fault_flag |= APP_FAULTS_LOW_BATTERY;
-                nextState = APP_STATE_FAULT;
-            }        
+                nextState = APP_STATE_AUTONOMY;
+            }
             else if (supervisor_data.button_pressed)
             {
                 nextState =  APP_STATE_IDLE;
             }
-            else if ((supervisor_data.avr_sensor_data & DEV_AVR_ALL_SENSORS) == 0)
+            else if (supervisor_data.battery_voltage < BATTERY_STATUS)
             {
-                nextState = APP_STATE_AUTONOMY;
-            }
+                supervisor_data.fault_flag |= APP_FAULTS_LOW_BATTERY;
+                nextState = APP_STATE_FAULT;
+            }    
             break;
 
         case (APP_STATE_FAULT):
-            if (supervisor_data.battery_voltage >= 10.5)
+            if (supervisor_data.battery_voltage >= BATTERY_STATUS)
             {
                 supervisor_data.fault_flag &= ~APP_FAULTS_LOW_BATTERY;
                 nextState = APP_STATE_IDLE;
-            }            
+            }
+            // TODO: maybe utilize the state when there are more faults??
             break;
         case (APP_STATE_COUNT):
             break;
