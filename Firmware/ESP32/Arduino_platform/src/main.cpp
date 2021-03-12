@@ -64,15 +64,6 @@
 #define MS_TO_TASK_TICK(x)          (TickType_t)((x)/(portTICK_PERIOD_MS))
 #define TASK_HZ_TO_TASK_TICK(x)     (MS_TO_TASK_TICK(1000/(x))) // Range: [ < 1 kHz]
 
-#define BYTE_TO_BINARY(byte)  \
-  (byte & 0x80 ? '1' : '0'), \
-  (byte & 0x40 ? '1' : '0'), \
-  (byte & 0x20 ? '1' : '0'), \
-  (byte & 0x10 ? '1' : '0'), \
-  (byte & 0x08 ? '1' : '0'), \
-  (byte & 0x04 ? '1' : '0'), \
-  (byte & 0x02 ? '1' : '0'), \
-  (byte & 0x01 ? '1' : '0') 
 /////////////////////////////////////////
 ///////   PRIVATE PROTOTYPE     /////////
 /////////////////////////////////////////
@@ -82,6 +73,7 @@ static void core0_task_run20ms(void * pvParameters);
 static void core0_task_run50ms(void * pvParameters);
 static void core0_task_run1000ms(void * pvParameters);
 static void core1_task_runSLAM(void * pvParameters);
+static void core1_task_runSupervisor(void * pvParameters);
 
 ///////////////////////////
 ///////   DATA     ////////
