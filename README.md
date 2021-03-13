@@ -1,4 +1,4 @@
-# FYDP__Code_6Buzz
+# Palm-sized Fully Autonomous Table-top Sanitization Robot
 
 [![License: GPL v3](https://img.shields.io/badge/License-GPLv3-blue.svg)](https://www.gnu.org/licenses/gpl-3.0) ![coverage](https://img.shields.io/badge/coverage-60%25-green) ![version](https://img.shields.io/badge/version-1.0.0-blue)  ![uptime](https://img.shields.io/badge/uptime-100%25-brightgreen)
 
