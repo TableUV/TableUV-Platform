@@ -39,7 +39,23 @@ void setupMotorConfig(pwm_mode_E pwm_mode){
     }
 }
 
-void setMotor(motor_mode_E motor_mode, motor_pwm_duty_E percent_pwm){
+void setMotor(motor_mode_E motor_mode, motor_pwm_duty_E percent_pwm, uint8_t driver_mode){
+    
+    uint8_t temp_pwm = 200; 
+    
+    if (percent_pwm == MOTOR_PWM_DUTY_30_PERCENT){
+        if(driver_mode)     temp_pwm  = 94;
+        else                temp_pwm = 99; 
+    }
+    else if (percent_pwm == MOTOR_PWM_DUTY_40_PERCENT){
+        if(driver_mode)     temp_pwm  = 85;
+        else                temp_pwm = 92; 
+    }
+    else if(percent_pwm == MOTOR_PWM_DUTY_50_PERCENT){
+        if(driver_mode)     temp_pwm  = 77;
+        else                temp_pwm = 83; 
+    }
+    
     switch(motor_mode){
         case(MOTOR_MODE_COAST):
             //PORTB &= ~_BV(MOTOR_OUT_A); 
@@ -49,7 +65,8 @@ void setMotor(motor_mode_E motor_mode, motor_pwm_duty_E percent_pwm){
         break;
 
         case(MOTOR_MODE_CW_COAST):
-            OCR0A = percent_pwm * REG_MAX / 10 ;
+            //OCR0A = percent_pwm * REG_MAX / 10 ;
+            OCR0A =  temp_pwm; 
             OCR0B = 0; 
             //PORTA &= ~_BV(MOTOR_OUT_B);
         break; 
@@ -57,16 +74,19 @@ void setMotor(motor_mode_E motor_mode, motor_pwm_duty_E percent_pwm){
         case(MOTOR_MODE_CCW_COAST):
             //PORTB &= ~_BV(MOTOR_OUT_A); 
             OCR0A = 0; 
-            OCR0B = percent_pwm * REG_MAX / 10;
+            //OCR0B = percent_pwm * REG_MAX / 10;
+            OCR0B = temp_pwm; 
         break; 
 
         case(MOTOR_MODE_CW_BREAK):
             OCR0A = 255 ;
-            OCR0B = percent_pwm * REG_MAX / 10;
+            //OCR0B = percent_pwm * REG_MAX / 10;
+            OCR0B = temp_pwm; 
         break; 
 
         case(MOTOR_MODE_CCW_BREAK):
-            OCR0A = percent_pwm * REG_MAX / 10 ;
+            //OCR0A = percent_pwm * REG_MAX / 10 ;
+            OCR0A =  temp_pwm; 
             OCR0B = 255 ;
         break; 
 
@@ -85,17 +105,17 @@ void eStopMotor(){
 }
 
 void testMotorAll(){
-    setMotor(MOTOR_MODE_COAST, MOTOR_PWM_DUTY_50_PERCENT);
+    setMotor(MOTOR_MODE_COAST, MOTOR_PWM_DUTY_50_PERCENT, 1);
     _delay_ms(10);
-    setMotor(MOTOR_MODE_CW_COAST, MOTOR_PWM_DUTY_50_PERCENT);
+    setMotor(MOTOR_MODE_CW_COAST, MOTOR_PWM_DUTY_50_PERCENT,1);
     _delay_ms(10);
-    setMotor(MOTOR_MODE_BREAK, MOTOR_PWM_DUTY_50_PERCENT);
+    setMotor(MOTOR_MODE_BREAK, MOTOR_PWM_DUTY_50_PERCENT,1);
     _delay_ms(10);
-    setMotor(MOTOR_MODE_CCW_COAST, MOTOR_PWM_DUTY_50_PERCENT);
+    setMotor(MOTOR_MODE_CCW_COAST, MOTOR_PWM_DUTY_50_PERCENT,1);
     _delay_ms(10);
-    setMotor(MOTOR_MODE_CW_BREAK, MOTOR_PWM_DUTY_50_PERCENT);
+    setMotor(MOTOR_MODE_CW_BREAK, MOTOR_PWM_DUTY_50_PERCENT,1);
     _delay_ms(10);
-    setMotor(MOTOR_MODE_CCW_BREAK, MOTOR_PWM_DUTY_50_PERCENT);
+    setMotor(MOTOR_MODE_CCW_BREAK, MOTOR_PWM_DUTY_50_PERCENT,1);
     _delay_ms(10);
 }
 

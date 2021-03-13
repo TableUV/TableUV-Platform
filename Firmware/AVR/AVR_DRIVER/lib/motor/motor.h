@@ -27,7 +27,7 @@ typedef enum pwm_mode{
 } pwm_mode_E;
 
 void setupMotorConfig(pwm_mode_E pwm_mode); 
-void setMotor(motor_mode_E motor_mode, motor_pwm_duty_E percent_pwm); 
+void setMotor(motor_mode_E motor_mode, motor_pwm_duty_E percent_pwm, uint8_t driver_mode); 
 void eStopMotor(); 
 void testMotorAll(); 
 void testMotor_sweep(uint8_t motor_sweep_count); 

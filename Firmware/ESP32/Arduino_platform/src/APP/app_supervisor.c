@@ -222,7 +222,14 @@ void fetchState(void)
     // TODO: battery status
 #if (FEATURE_BATTERY)
     supervisor_data.battery_voltage = dev_battery_get();
-#endif    
+#endif   
+
+#if (FEATURE_AVR_DRIVER_ALL)
+    dev_avr_driver_set_req_Robot_motion(ROBOT_MOTION_BREAK, MOTOR_PWM_DUTY_40_PERCENT, MOTOR_PWM_DUTY_40_PERCENT);
+    printf("Left encoder %d\n", dev_avr_driver_get_EncoderCount(LEFT_AVR_DRIVER));
+    printf("Right encoder %d\n", dev_avr_driver_get_EncoderCount(RIGHT_AVR_DRIVER));
+
+#endif 
     // TODO: IMU
     
 }

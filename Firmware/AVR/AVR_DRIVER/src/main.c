@@ -143,27 +143,27 @@ int main(void)
 
                     // check if data is indeed the second data byte of message 
                     if (checkDataHeader(message_second_byte, DATA_FRAME_HEADER_SECOND)){
-                        testMotor_sweep(motor_sweep); 
-                        motor_sweep ++ ; 
+                        //testMotor_sweep(motor_sweep); 
+                        //motor_sweep ++ ; 
                         
-                        // // check motor command mode  
-                        // if (message_second_byte & MOTOR_MODE_REQ_MASK)      motor_command_mode = MOTOR_COMMAND_MODE_BRAKE;
-                        // else                                                motor_command_mode = MOTOR_COMMAND_MODE_COAST; 
+                        // check motor command mode  
+                        if (message_second_byte & MOTOR_MODE_REQ_MASK)      motor_command_mode = MOTOR_COMMAND_MODE_BRAKE;
+                        else                                                motor_command_mode = MOTOR_COMMAND_MODE_COAST; 
 
-                        // // check motor command direction 
-                        // if (message_second_byte & MOTOR_DIRECTION_REQ_MASK) motor_command_direction = MOTOR_COMMAND_DIRECTION_CW; 
-                        // else                                                motor_command_direction = MOTOR_COMMAND_DIRECTION_CCW; 
+                        // check motor command direction 
+                        if (message_second_byte & MOTOR_DIRECTION_REQ_MASK) motor_command_direction = MOTOR_COMMAND_DIRECTION_CW; 
+                        else                                                motor_command_direction = MOTOR_COMMAND_DIRECTION_CCW; 
                             
-                        // motor_pwm_duty = (message_second_byte & MOTOR_PWM_DUTY_REQ_MASK);
+                        motor_pwm_duty = (message_second_byte & MOTOR_PWM_DUTY_REQ_MASK);
 
-                        // if (motor_command_direction == MOTOR_COMMAND_DIRECTION_CW){
-                        //     if (motor_command_mode == MOTOR_COMMAND_MODE_COAST)           setMotor(MOTOR_MODE_CW_COAST, motor_pwm_duty);
-                        //     else if (motor_command_mode == MOTOR_COMMAND_MODE_BRAKE)      setMotor(MOTOR_MODE_CW_BREAK, motor_pwm_duty);
-                        // }
-                        // else if (motor_command_direction == MOTOR_COMMAND_DIRECTION_CCW){
-                        //     if (motor_command_mode == MOTOR_COMMAND_MODE_COAST)           setMotor(MOTOR_MODE_CCW_COAST, motor_pwm_duty);
-                        //     else if (motor_command_mode == MOTOR_COMMAND_MODE_BRAKE)      setMotor(MOTOR_MODE_CCW_BREAK, motor_pwm_duty);
-                        // }
+                        if (motor_command_direction == MOTOR_COMMAND_DIRECTION_CW){
+                            if (motor_command_mode == MOTOR_COMMAND_MODE_COAST)           setMotor(MOTOR_MODE_CW_COAST, motor_pwm_duty, driver_mode);
+                            else if (motor_command_mode == MOTOR_COMMAND_MODE_BRAKE)      setMotor(MOTOR_MODE_CW_BREAK, motor_pwm_duty, driver_mode);
+                        }
+                        else if (motor_command_direction == MOTOR_COMMAND_DIRECTION_CCW){
+                            if (motor_command_mode == MOTOR_COMMAND_MODE_COAST)           setMotor(MOTOR_MODE_CCW_COAST, motor_pwm_duty,driver_mode);
+                            else if (motor_command_mode == MOTOR_COMMAND_MODE_BRAKE)      setMotor(MOTOR_MODE_CCW_BREAK, motor_pwm_duty,driver_mode);
+                        }
                     }
                 }
                 // send data back to master
