@@ -45,9 +45,6 @@
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 
-// Test Code
-#include "dev_uv.h"
-
 /////////////////////////////////
 ///////   DEFINITION     ////////
 /////////////////////////////////
@@ -236,6 +233,5 @@ void setup() {
 }
 
 void loop() {
-    while (true) {};
 }
 
