@@ -65,6 +65,10 @@ void dev_uv_set_side(int pwm_duty, uint8_t dac_duty);
  */
 void dev_uv_stop();
 
+void dev_uv_fw_shutdown();
+
+void dev_uv_fw_shutdown_clear();
+
 
 # ifdef __cplusplus  
 }
