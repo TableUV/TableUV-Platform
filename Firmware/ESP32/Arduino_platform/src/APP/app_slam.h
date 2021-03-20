@@ -24,7 +24,7 @@ extern "C"{
 ///////////////////////////////////////
 void app_slam_init(void);
 void app_slam_run100ms(void);
-
+void app_slam_requestToResetMap(void);
 
 /**
  * @brief get motion velocity
