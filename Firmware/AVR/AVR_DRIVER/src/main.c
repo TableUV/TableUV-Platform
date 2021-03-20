@@ -99,6 +99,18 @@ int main(void)
 
             // check if data is indeed the first data byte of message 
             if (checkDataHeader(message_first_byte, DATA_FRAME_HEADER_FIRST)){
+
+                // send data back to master
+                cli();
+
+                // send encoder data 
+                usiTwiTransmitByte(getEncoderCount16_first_8bit());
+                usiTwiTransmitByte(getEncoderCount16_second_8bit());
+                setEncoderCount(0);
+
+                //send water level signal 
+                //usiTwiTransmitByte(getWaterLevelSignal());
+                sei();
                 
                 // check if eStop bit is enabled 
                 if (message_first_byte & ESTOP_COMMAND_REQ_MASK){
@@ -143,40 +155,45 @@ int main(void)
 
                     // check if data is indeed the second data byte of message 
                     if (checkDataHeader(message_second_byte, DATA_FRAME_HEADER_SECOND)){
-                        //testMotor_sweep(motor_sweep); 
-                        //motor_sweep ++ ; 
+                        testMotor_sweep(motor_sweep); 
+                        motor_sweep ++ ; 
+                        if (motor_sweep == 255){
+                            motor_sweep = 0; 
+                            OCR0A = 255;
+                            OCR0B = 255;
+                        }
                         
-                        // check motor command mode  
-                        if (message_second_byte & MOTOR_MODE_REQ_MASK)      motor_command_mode = MOTOR_COMMAND_MODE_BRAKE;
-                        else                                                motor_command_mode = MOTOR_COMMAND_MODE_COAST; 
+                        // // check motor command mode  
+                        // if (message_second_byte & MOTOR_MODE_REQ_MASK)      motor_command_mode = MOTOR_COMMAND_MODE_BRAKE;
+                        // else                                                motor_command_mode = MOTOR_COMMAND_MODE_COAST; 
 
-                        // check motor command direction 
-                        if (message_second_byte & MOTOR_DIRECTION_REQ_MASK) motor_command_direction = MOTOR_COMMAND_DIRECTION_CW; 
-                        else                                                motor_command_direction = MOTOR_COMMAND_DIRECTION_CCW; 
+                        // // check motor command direction 
+                        // if (message_second_byte & MOTOR_DIRECTION_REQ_MASK) motor_command_direction = MOTOR_COMMAND_DIRECTION_CW; 
+                        // else                                                motor_command_direction = MOTOR_COMMAND_DIRECTION_CCW; 
                             
-                        motor_pwm_duty = (message_second_byte & MOTOR_PWM_DUTY_REQ_MASK);
+                        // motor_pwm_duty = (message_second_byte & MOTOR_PWM_DUTY_REQ_MASK);
 
-                        if (motor_command_direction == MOTOR_COMMAND_DIRECTION_CW){
-                            if (motor_command_mode == MOTOR_COMMAND_MODE_COAST)           setMotor(MOTOR_MODE_CW_COAST, motor_pwm_duty, driver_mode);
-                            else if (motor_command_mode == MOTOR_COMMAND_MODE_BRAKE)      setMotor(MOTOR_MODE_CW_BREAK, motor_pwm_duty, driver_mode);
-                        }
-                        else if (motor_command_direction == MOTOR_COMMAND_DIRECTION_CCW){
-                            if (motor_command_mode == MOTOR_COMMAND_MODE_COAST)           setMotor(MOTOR_MODE_CCW_COAST, motor_pwm_duty,driver_mode);
-                            else if (motor_command_mode == MOTOR_COMMAND_MODE_BRAKE)      setMotor(MOTOR_MODE_CCW_BREAK, motor_pwm_duty,driver_mode);
-                        }
+                        // if (motor_command_direction == MOTOR_COMMAND_DIRECTION_CW){
+                        //     if (motor_command_mode == MOTOR_COMMAND_MODE_COAST)           setMotor(MOTOR_MODE_CW_COAST, motor_pwm_duty, driver_mode);
+                        //     else if (motor_command_mode == MOTOR_COMMAND_MODE_BRAKE)      setMotor(MOTOR_MODE_CW_BREAK, motor_pwm_duty, driver_mode);
+                        // }
+                        // else if (motor_command_direction == MOTOR_COMMAND_DIRECTION_CCW){
+                        //     if (motor_command_mode == MOTOR_COMMAND_MODE_COAST)           setMotor(MOTOR_MODE_CCW_COAST, motor_pwm_duty,driver_mode);
+                        //     else if (motor_command_mode == MOTOR_COMMAND_MODE_BRAKE)      setMotor(MOTOR_MODE_CCW_BREAK, motor_pwm_duty,driver_mode);
+                        // }
                     }
                 }
-                // send data back to master
-                cli();
+                // // send data back to master
+                // cli();
 
-                // send encoder data 
-                usiTwiTransmitByte(getEncoderCount16_first_8bit());
-                usiTwiTransmitByte(getEncoderCount16_second_8bit());
-                setEncoderCount(0);
+                // // send encoder data 
+                // usiTwiTransmitByte(getEncoderCount16_first_8bit());
+                // usiTwiTransmitByte(getEncoderCount16_second_8bit());
+                // setEncoderCount(0);
 
-                //send water level signal 
-                //usiTwiTransmitByte(getWaterLevelSignal());
-                sei();
+                // //send water level signal 
+                // //usiTwiTransmitByte(getWaterLevelSignal());
+                // sei();
             }     
         }
     }
