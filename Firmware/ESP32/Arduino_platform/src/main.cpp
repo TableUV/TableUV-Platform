@@ -46,7 +46,7 @@
 #include "freertos/task.h"
 
 // Test Code
-#include "dev_avr_sensor.h"
+#include "dev_uv.h"
 
 /////////////////////////////////
 ///////   DEFINITION     ////////
@@ -236,5 +236,6 @@ void setup() {
 }
 
 void loop() {
+    while (true) {};
 }
 

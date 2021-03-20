@@ -75,6 +75,10 @@ static inline void dev_uv_private_gpio_config(void)
     {
         ledc_channel_config(&uv_data.ledc_channel[ch]);
     }
+
+    //DAC enable 
+    dac_output_enable(ESP_DAC);
+
 }
 
 ///////////////////////////////////////
