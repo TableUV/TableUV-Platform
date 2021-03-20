@@ -98,5 +98,4 @@ void dev_run1000ms(void)
 #if (FEATURE_BATTERY)    
     dev_battery_update();
 #endif
-    dev_uv_set_row(500,128);
 }
