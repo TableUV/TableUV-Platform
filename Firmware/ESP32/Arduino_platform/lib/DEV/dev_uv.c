@@ -15,6 +15,7 @@
 // External Library
 #include "driver/ledc.h"
 #include "driver/dac.h"
+#include "driver/gpio.h"
 
 /////////////////////////////////
 ///////   DEFINITION     ////////
@@ -75,6 +76,21 @@ static inline void dev_uv_private_gpio_config(void)
     {
         ledc_channel_config(&uv_data.ledc_channel[ch]);
     }
+    //DAC enable 
+    dac_output_enable(ESP_DAC);
+
+    // FW Shutdown Pin Initialization
+    gpio_pad_select_gpio(FW_SHUTDOWN);
+
+    gpio_config_t io_conf;
+    io_conf.intr_type = GPIO_INTR_DISABLE;
+    io_conf.mode = GPIO_MODE_OUTPUT;
+    io_conf.pin_bit_mask =  (1ULL<<FW_SHUTDOWN);
+    io_conf.pull_down_en = 0;
+    io_conf.pull_up_en = 0;
+    gpio_config(&io_conf);    
+
+    dev_uv_fw_shutdown_clear();
 }
 
 ///////////////////////////////////////
@@ -119,4 +135,14 @@ void dev_uv_stop()
     {
         ledc_stop(channel[ch].speed_mode, channel[ch].channel, 0);
     }
+}
+
+void dev_uv_fw_shutdown()
+{
+    gpio_set_level(FW_SHUTDOWN, 1);
+}
+
+void dev_uv_fw_shutdown_clear()
+{
+    gpio_set_level(FW_SHUTDOWN, 0);
 }

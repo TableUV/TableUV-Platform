@@ -22,11 +22,14 @@
 #include "dev_led.h"
 #include "dev_battery.h"
 #include "app_slam.h"
+#include "dev_uv.h"
 
 /////////////////////////////////
 ///////   DEFINITION     ////////
 /////////////////////////////////
 #define BATTERY_STATUS              (10.5F)
+#define UV_PWM                      (500)
+#define UV_DAC                      (64)
 
 typedef enum {
     APP_STATE_IDLE,
@@ -241,6 +244,10 @@ static bool app_supervisor_private_transitToNewState(app_state_E state)
             dev_led_green_set(true);
 #endif
             dev_avr_driver_set_req_Robot_motion(ROBOT_MOTION_FW_COAST, MOTOR_PWM_DUTY_40_PERCENT, MOTOR_PWM_DUTY_40_PERCENT);
+#if (FEATURE_UV)
+            dev_uv_fw_shutdown_clear();
+            dev_uv_set_row(UV_PWM, UV_DAC);
+#endif            
             break;
 
         case (APP_STATE_AUTONOMY_ESTOPPED):
@@ -278,6 +285,9 @@ static bool app_supervisor_private_exitCurrentState(app_state_E state)
 
         case (APP_STATE_AUTONOMY_ESTOPPED):
         case (APP_STATE_AUTONOMY):
+#if (FEATURE_UV)
+            dev_uv_fw_shutdown();
+#endif        
         case (APP_STATE_COUNT):            
         case (APP_STATE_UNKNOWN):
         default:

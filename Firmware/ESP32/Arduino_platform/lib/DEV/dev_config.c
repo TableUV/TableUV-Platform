@@ -97,5 +97,5 @@ void dev_run1000ms(void)
 {
 #if (FEATURE_BATTERY)    
     dev_battery_update();
-#endif    
+#endif
 }
