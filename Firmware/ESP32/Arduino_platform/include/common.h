@@ -72,6 +72,7 @@ extern "C"{
 #   define MOCK                                   ( ENABLE)
 
 /*****   FEATURE ENABLES  ****/
+#   define FEATURE_SLAM                           (DISABLE) // APP SLAM
 #   define FEATURE_LIDAR                          (DISABLE)
 #   define FEATURE_LIDAR_CALIBRATION_MODE         (   TODO) // TODO: implement calibration strategy
 #   define FEATURE_SUPER_USE_PROFILED_MOTIONS     (   TODO) // TODO: implement calibration strategy
@@ -87,15 +88,25 @@ extern "C"{
 #       define FEATURE_AVR_HAPTIC                 ( ENABLE) //
 #       define FEATURE_AVR_ENCODER                ( ENABLE) //
 #   endif // (FEATURE_AVR_DRIVER_ALL)
+#   define FEATURE_SLAM_AVR_SENSOR           (FEATURE_SLAM)
 #   define FEATURE_BATTERY                        ( ENABLE)
 
 /*****   DEBUG PRINT FLAGS  ****/
 #   define DEBUG_FPRINT                           ( ENABLE)
 #   ifdef DEBUG_FPRINT
 #       define DEBUG_FPRINT_FEATURE_LIDAR         (DISABLE) // Live feed of sensor readings
-#       define DEBUG_FPRINT_FEATURE_MAP           (DISABLE) 
-#       define DEBUG_FPRINT_FEATURE_MAP_CENTERED  (  FALSE) // Mode: true->memory_map, false->center_map
+#       define DEBUG_FPRINT_APP_SUPERVISOR        (DISABLE) // Live feed of collision status
+#       define DEBUG_FPRINT_FEATURE_MAP           (DISABLE) // Live feed of global map
+#       define DEBUG_FPRINT_FEATURE_MAP_CENTERED  (   TRUE) // Map Feeding Mode: true->memory_map, false->center_map
 #       define DEBUG_FPRINT_FEATURE_OBSTACLES     (DISABLE) // Live feed of obstacle detection
+#       define DEBUG_FPRINT_FEATURE_CHOREOGRAPHY  (DISABLE) // Live feed of choreography
+#   else
+#       define DEBUG_FPRINT_FEATURE_LIDAR         (DISABLE)
+#       define DEBUG_FPRINT_APP_SUPERVISOR        (DISABLE)
+#       define DEBUG_FPRINT_FEATURE_MAP           (DISABLE)
+#       define DEBUG_FPRINT_FEATURE_MAP_CENTERED  (DISABLE)
+#       define DEBUG_FPRINT_FEATURE_OBSTACLES     (DISABLE)
+#       define DEBUG_FPRINT_FEATURE_CHOREOGRAPHY  (DISABLE)
 #   endif
 
 /***********************************

@@ -21,6 +21,7 @@
 #include "dev_avr_driver.h"
 #include "dev_led.h"
 #include "dev_battery.h"
+#include "app_slam.h"
 
 /////////////////////////////////
 ///////   DEFINITION     ////////
@@ -84,6 +85,11 @@ typedef struct{
 /////////////////////////////////////////
 ///////   PRIVATE PROTOTYPE     /////////
 /////////////////////////////////////////
+static bool app_supervisor_private_exitCurrentState(app_state_E state);
+static bool app_supervisor_private_stateAction(app_state_E state);
+static void app_supervisor_private_fetchState(void);
+static bool app_supervisor_private_transitToNewState(app_state_E state);
+static app_state_E app_supervisor_private_getNextState(app_state_E state);
 
 ///////////////////////////
 ///////   DATA     ////////
@@ -140,15 +146,7 @@ static app_supervisor_data_S supervisor_data = {
 ///////   PRIVATE FUNCTION     /////////
 ////////////////////////////////////////
 
-
-///////////////////////////////////////
-///////   PUBLIC FUNCTION     /////////
-///////////////////////////////////////
-void app_supervisor_init(void)
-{
-}
-
-app_state_E getNextState(app_state_E state)
+static app_state_E app_supervisor_private_getNextState(app_state_E state)
 {
     app_state_E nextState = state;
     // check all conditions, return the next state
@@ -179,28 +177,28 @@ app_state_E getNextState(app_state_E state)
             break;
 
         case (APP_STATE_AUTONOMY_ESTOPPED):
-#if (FEATURE_SUPER_USE_HARDCODE_CHORE)
-            if (supervisor_data.estop_choreography_wip < APP_CHOREOGRAPHY_STEP_COUNT)
+            if (supervisor_data.button_pressed)
             {
-                // choreography still in progress
-                PRINTF("[ CHOREOGRAPHY ]: %d \n", supervisor_data.estop_choreography_wip);
-            }
-            else if ((supervisor_data.avr_sensor_data & DEV_AVR_ALL_SENSORS) == 0)
-#else
-            if ((supervisor_data.avr_sensor_data & DEV_AVR_ALL_SENSORS) == 0)
-#endif // (FEATURE_SUPER_USE_HARDCODE_CHORE)
-            {
-                nextState = APP_STATE_AUTONOMY;
-            }
-            else if (supervisor_data.button_pressed)
-            {
-                nextState =  APP_STATE_IDLE;
+                nextState =  APP_STATE_IDLE; // Highest priority
             }
             else if (supervisor_data.battery_voltage < BATTERY_STATUS)
             {
                 supervisor_data.fault_flag |= APP_FAULTS_LOW_BATTERY;
                 nextState = APP_STATE_FAULT;
             }    
+#if (FEATURE_SUPER_USE_HARDCODE_CHORE)
+            else if (supervisor_data.estop_choreography_wip < APP_CHOREOGRAPHY_STEP_COUNT)
+            {
+                // choreography still in progress
+#   if (DEBUG_FPRINT_FEATURE_CHOREOGRAPHY)
+                PRINTF("[ CHOREOGRAPHY ]: %d \n", supervisor_data.estop_choreography_wip);
+#   endif//(DEBUG_FPRINT_FEATURE_CHOREOGRAPHY)
+            }
+#endif // (FEATURE_SUPER_USE_HARDCODE_CHORE)
+            else if ((supervisor_data.avr_sensor_data & DEV_AVR_ALL_SENSORS) == 0)
+            {
+                nextState = APP_STATE_AUTONOMY;
+            }
             break;
 
         case (APP_STATE_FAULT):
@@ -225,7 +223,7 @@ app_state_E getNextState(app_state_E state)
     return nextState;
 }
 
-bool transitToNewState(app_state_E state)
+static bool app_supervisor_private_transitToNewState(app_state_E state)
 {
     switch (state)
     {
@@ -241,7 +239,7 @@ bool transitToNewState(app_state_E state)
             // TODO: Debug why led not being set
             dev_led_clear_leds();
             dev_led_green_set(true);
-#endif            
+#endif
             dev_avr_driver_set_req_Robot_motion(ROBOT_MOTION_FW_COAST, MOTOR_PWM_DUTY_40_PERCENT, MOTOR_PWM_DUTY_40_PERCENT);
             break;
 
@@ -268,7 +266,28 @@ bool transitToNewState(app_state_E state)
     return true;
 }
 
-bool stateAction(app_state_E state)
+static bool app_supervisor_private_exitCurrentState(app_state_E state)
+{
+    switch (state)
+    {
+        case (APP_STATE_IDLE):
+#if (FEATURE_SLAM)
+            app_slam_requestToResetMap(); // reset map upon entering autonomy
+#endif //(FEATURE_SLAM)
+            break;
+
+        case (APP_STATE_AUTONOMY_ESTOPPED):
+        case (APP_STATE_AUTONOMY):
+        case (APP_STATE_COUNT):            
+        case (APP_STATE_UNKNOWN):
+        default:
+            // Do nothing
+            break;
+    }
+    return true;
+}
+
+static bool app_supervisor_private_stateAction(app_state_E state)
 {
 #if (FEATURE_SUPER_USE_HARDCODE_CHORE)
     const uint8_t index = supervisor_data.estop_choreography_wip;
@@ -280,7 +299,9 @@ bool stateAction(app_state_E state)
         case (APP_STATE_AUTONOMY_ESTOPPED):
             if (index < APP_CHOREOGRAPHY_STEP_COUNT)
             {
+#   if (DEBUG_FPRINT_APP_SUPERVISOR)
                 PRINTF(">> output [%d] m:%d, l:%d, r:%d\n", index, mode, model, moder);
+#   endif // (DEBUG_FPRINT_APP_SUPERVISOR)
                 // perform action sequence:
                 dev_avr_driver_set_req_Robot_motion(mode, model, moder);
                 supervisor_data.estop_chorography_tick_20ms ++;
@@ -300,7 +321,7 @@ bool stateAction(app_state_E state)
     return true;
 }
 
-void fetchState(void)
+static void app_supervisor_private_fetchState(void)
 {
 #if (FEATURE_PERIPHERALS)
     supervisor_data.button_pressed = dev_button_update_50ms();
@@ -323,22 +344,33 @@ void fetchState(void)
     
 }
 
+///////////////////////////////////////
+///////   PUBLIC FUNCTION     /////////
+///////////////////////////////////////
+void app_supervisor_init(void)
+{
+    // do nothing
+}
+
 // TODO: Rename to 20ms
 void app_supervisor_run50ms(void)
 {
     app_state_E current_state = supervisor_data.current_state;
 
-    fetchState();
+    app_supervisor_private_fetchState();
 
-    app_state_E next_state = getNextState(current_state);
+    app_state_E next_state = app_supervisor_private_getNextState(current_state);
 
     if (next_state != current_state)
     {
+        app_supervisor_private_exitCurrentState(current_state);
+#if (DEBUG_FPRINT_APP_SUPERVISOR)
         PRINTF("STATE TRANSITION from %d to %d\n", current_state, next_state);
-        transitToNewState(next_state);
+#endif //(DEBUG_FPRINT_APP_SUPERVISOR)
+        app_supervisor_private_transitToNewState(next_state);
         supervisor_data.current_state = next_state;
     }
-    stateAction(current_state);
+    app_supervisor_private_stateAction(current_state);
 
 }
 

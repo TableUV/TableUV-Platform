@@ -17,6 +17,7 @@
 #include "common.h"
 #include "dev_ToF_Lidar.h"
 #include "slam_math.h"
+#include "dev_avr_sensor.h"
 
 // SDK config 
 #include "sdkconfig.h"
@@ -235,11 +236,15 @@ typedef struct{
     SemaphoreHandle_t           motion_profile_mutex;
     motion_profile_S            motion_profile;
 
+    // interface
+    bool                        mapResetRequested;
+
     // global map info.
     dynamic_map_S               gMap;
 
     // sensor configuration
     const edge_sensor_config_S * sensor_config;
+
 } app_slam_data_S;
 
 /////////////////////////////////////////
@@ -359,9 +364,21 @@ static void app_slam_private_localMapUpdate(void)
     dev_ToF_Lidar_dampDataBuffer(& (slam_data.lidar_data));
 #endif //(FEATURE_LIDAR)
 
-    // TODO: 2. Grab IR + Collision Data
-    
-    // TODO: 3. Process data?
+    // 2. Grab IR + Collision Data
+#if (FEATURE_SLAM_AVR_SENSOR)
+    uint8_t avr_sensor_data = dev_avr_sensor_uart_get();
+    bool* ir_node = slam_data.ir_node;
+    bool* cn_node = slam_data.collision_end_node;
+    // Interpret:
+    ir_node[IR_RR]       = (avr_sensor_data) & (DEV_AVR_RIGHT_IR_1);
+    ir_node[IR_RF]       = (avr_sensor_data) & (DEV_AVR_RIGHT_IR_2);
+    ir_node[IR_FR]       = (avr_sensor_data) & (DEV_AVR_FRONT_IR_1);
+    ir_node[IR_FL]       = (avr_sensor_data) & (DEV_AVR_FRONT_IR_2);
+    ir_node[IR_LF]       = (avr_sensor_data) & (DEV_AVR_LEFT_IR_2);
+    ir_node[IR_LR]       = (avr_sensor_data) & (DEV_AVR_LEFT_IR_1);
+    cn_node[COLLISION_R] = (avr_sensor_data) & (DEV_AVR_RIGHT_COLLISION);
+    cn_node[COLLISION_L] = (avr_sensor_data) & (DEV_AVR_LEFT_COLLISION);
+#else
     bool* ir_node = slam_data.ir_node;
     bool* cn_node = slam_data.collision_end_node;
     ir_node[IR_RR] = FALSE;
@@ -371,7 +388,8 @@ static void app_slam_private_localMapUpdate(void)
     ir_node[IR_LF] = FALSE;
     ir_node[IR_LR] = FALSE;
     cn_node[COLLISION_R] = FALSE;
-    cn_node[COLLISION_L] = FALSE;    
+    cn_node[COLLISION_L] = FALSE;
+#endif //(FEATURE_SLAM_AVR_SENSOR)
 }
 
 static INLINE void app_slam_private_resetGlobalMap(void)
@@ -778,6 +796,12 @@ void app_slam_init(void)
 
 void app_slam_run100ms(void)
 {
+#if (FEATURE_SLAM)
+    if (slam_data.mapResetRequested)
+    {
+        app_slam_private_resetGlobalMap();
+        slam_data.mapResetRequested = FALSE;
+    }
     app_slam_private_localization();
     app_slam_private_localMapUpdate();
     app_slam_private_globalMapUpdate();
@@ -785,14 +809,15 @@ void app_slam_run100ms(void)
     app_slam_private_pathPlanning();
     app_slam_private_motionPlanning();
     
-#if (DEBUG_FPRINT_FEATURE_MAP)
+# if (DEBUG_FPRINT_FEATURE_MAP)
     static int count = 0;
     count ++;
     if (count % 10 == 0)
     {
         app_slam_private_debugPrintMap(DEBUG_FPRINT_FEATURE_MAP_CENTERED, count);
     }
-#endif
+# endif
+#endif //(FEATURE_SLAM)
 }
 
 uint8_t app_slam_getMotionVelocity(int8_t * left_motor_mm_s_50ms, int8_t * right_motor_mm_s_50ms, uint8_t frame_stamp)
@@ -816,4 +841,8 @@ uint8_t app_slam_getMotionVelocity(int8_t * left_motor_mm_s_50ms, int8_t * right
     return frame_stamp;
 }
 
+void app_slam_requestToResetMap(void)
+{
+    slam_data.mapResetRequested = TRUE;
+}
 

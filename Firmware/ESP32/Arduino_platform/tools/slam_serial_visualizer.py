@@ -14,7 +14,7 @@ import os
 import cv2
 
 class serialPlot:
-    def __init__(self, serialPort = '/dev/cu.usbserial-141210', serialBaud = 115200, map_dim = [101, 101]):
+    def __init__(self, serialPort = '/dev/cu.usbserial-144220', serialBaud = 115200, map_dim = [101, 101]):
         self.port = serialPort
         self.baud = serialBaud
         self.map_data = []
