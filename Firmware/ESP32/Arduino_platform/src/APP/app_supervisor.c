@@ -233,8 +233,10 @@ static bool app_supervisor_private_transitToNewState(app_state_E state)
         case (APP_STATE_IDLE):
 #if (FEATURE_PERIPHERALS)       
             dev_led_clear_leds();
-#endif                        
+#endif
+#if (FEATURE_SUPER_CMD_DEV_DRIVER)    
             dev_avr_driver_set_req_Robot_motion(ROBOT_MOTION_BREAK, MOTOR_PWM_DUTY_40_PERCENT, MOTOR_PWM_DUTY_40_PERCENT);
+#endif //(FEATURE_SUPER_CMD_DEV_DRIVER)    
             break;
 
         case (APP_STATE_AUTONOMY):
@@ -243,7 +245,9 @@ static bool app_supervisor_private_transitToNewState(app_state_E state)
             dev_led_clear_leds();
             dev_led_green_set(true);
 #endif
+#if (FEATURE_SUPER_CMD_DEV_DRIVER)    
             dev_avr_driver_set_req_Robot_motion(ROBOT_MOTION_FW_COAST, MOTOR_PWM_DUTY_40_PERCENT, MOTOR_PWM_DUTY_40_PERCENT);
+#endif // (FEATURE_SUPER_CMD_DEV_DRIVER)    
 #if (FEATURE_UV)
             dev_uv_fw_shutdown_clear();
             dev_uv_set_row(UV_PWM, UV_DAC);
@@ -309,11 +313,13 @@ static bool app_supervisor_private_stateAction(app_state_E state)
         case (APP_STATE_AUTONOMY_ESTOPPED):
             if (index < APP_CHOREOGRAPHY_STEP_COUNT)
             {
-#   if (DEBUG_FPRINT_APP_SUPERVISOR)
+#   if (DEBUG_FPRINT_APP_SUPERVISOR_AVR_SENSOR)
                 PRINTF(">> output [%d] m:%d, l:%d, r:%d\n", index, mode, model, moder);
 #   endif // (DEBUG_FPRINT_APP_SUPERVISOR)
                 // perform action sequence:
+#   if (FEATURE_SUPER_CMD_DEV_DRIVER)    
                 dev_avr_driver_set_req_Robot_motion(mode, model, moder);
+#   endif //(FEATURE_SUPER_CMD_DEV_DRIVER)    
                 supervisor_data.estop_chorography_tick_20ms ++;
                 supervisor_data.estop_choreography_wip = supervisor_data.estop_chorography_tick_20ms/CHOREOGRAPHY_BASE_TICK_20MS;
             }

@@ -30,9 +30,9 @@ typedef enum{
 } DEV_TOF_FIRING_KEYFRAME_E;
 
 typedef enum{
-    DEV_TOF_LIDAR_R = (0U),
-    DEV_TOF_LIDAR_C,
+    DEV_TOF_LIDAR_C = (0U),
     DEV_TOF_LIDAR_L,
+    DEV_TOF_LIDAR_R,
     DEV_TOF_LIDAR_COUNT,
     DEV_TOF_LIDAR_UNKNOWN
 } DEV_TOF_LIDAR_E;

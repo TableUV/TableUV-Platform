@@ -232,7 +232,7 @@ void dev_avr_driver_init()
     xSemaphoreGive(dev_avr_driver_data.mp_mutex);
 }
 
-void dev_driver_avr_update100ms()
+void dev_driver_avr_update20ms()
 {
     uint16_t temp_left_encoder = 0, temp_right_encoder = 0;
     avr_driver_update_i2c_message_two_byte(); 

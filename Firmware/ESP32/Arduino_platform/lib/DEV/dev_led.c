@@ -71,7 +71,7 @@ static inline void dev_led_private_gpio_config(void)
     gpio_config(&io_conf);
 
     io_conf.mode = GPIO_MODE_INPUT;
-    io_conf.intr_type = GPIO_PIN_INTR_NEGEDGE;
+    io_conf.intr_type = GPIO_PIN_INTR_POSEDGE; //GPIO_PIN_INTR_NEGEDGE;
     io_conf.pin_bit_mask = (1ULL << BUTTON);
     gpio_config(&io_conf);
 
