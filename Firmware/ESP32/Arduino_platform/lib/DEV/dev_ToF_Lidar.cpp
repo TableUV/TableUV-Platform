@@ -257,7 +257,7 @@ void dev_ToF_Lidar_update20ms(void)
             sensor->clearInterrupt();
 
             // store data
-            if (error == VL53L1_ERROR_NONE)
+            if (error == VL53L1_ERROR_NONE) // TODO: 0: no err (give 60% r = 1 : prob), 2: weak signal (give 30% r = 2 : prob)
             {
                 geo_label = lidar_data.firing_sequence_label[sensor_id][firing_frame];
                 if (xSemaphoreTake(lidar_data.mp_mutex, MP_MUTEX_BLOCK_TIME_MS) == pdTRUE) {
