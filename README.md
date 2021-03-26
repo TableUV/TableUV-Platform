@@ -1,6 +1,6 @@
 # Palm-sized Fully Autonomous Table-top Sanitization Robot
 
-<a href="https://jackxu.io" target="_blank"><img alt="https://tableuv.github.io" src="https://img.shields.io/website?style=for-the-badge&url=https%3A%2F%2Ftableuv.github.io" /></a> [![](https://img.shields.io/badge/Supported%20by-Table%20Robotics%20%E2%86%92-gray.svg?colorA=655BE1&colorB=4F44D6&style=for-the-badge)](https://github.com/orgs/TableUV/teams/table-robotics)
+<a href="https://tableuv.github.io" target="_blank"><img alt="https://tableuv.github.io" src="https://img.shields.io/website?style=for-the-badge&url=https%3A%2F%2Ftableuv.github.io" /></a> [![](https://img.shields.io/badge/Supported%20by-Table%20Robotics%20%E2%86%92-gray.svg?colorA=655BE1&colorB=4F44D6&style=for-the-badge)](https://github.com/orgs/TableUV/teams/table-robotics)
 
 ---
 
