@@ -76,6 +76,7 @@ typedef struct{
     bool                button_pressed;
     uint8_t             avr_sensor_data;
     float               battery_voltage;
+    uint16_t            app_slam_EFlag;
 #if (FEATURE_SUPER_USE_HARDCODE_CHORE)
     uint32_t                estop_chorography_tick_20ms;
     app_choreography_E      estop_choreography_wip;
@@ -103,6 +104,7 @@ static app_supervisor_data_S supervisor_data = {
     .button_pressed  = false,
     .avr_sensor_data = 0,
     .battery_voltage = 12.6,
+    .app_slam_EFlag  = APP_SLAM_TOF_DANGER_ZONE_FLAG_NULL,
 #if (FEATURE_SUPER_USE_HARDCODE_CHORE)
     .estop_chorography_tick_20ms = 0U,
     .estop_choreography_wip      = APP_CHOREOGRAPHY_STEP_UNKNOWN,
@@ -110,7 +112,7 @@ static app_supervisor_data_S supervisor_data = {
         [APP_CHOREOGRAPHY_INIT  ] = MOTOR_PWM_DUTY_0_PERCENT,
         [APP_CHOREOGRAPHY_STEP_1] = MOTOR_PWM_DUTY_30_PERCENT,
         [APP_CHOREOGRAPHY_STEP_2] = MOTOR_PWM_DUTY_30_PERCENT,
-        [APP_CHOREOGRAPHY_STEP_3] = MOTOR_PWM_DUTY_40_PERCENT,
+        [APP_CHOREOGRAPHY_STEP_3] = MOTOR_PWM_DUTY_30_PERCENT,
         [APP_CHOREOGRAPHY_STEP_4] = MOTOR_PWM_DUTY_0_PERCENT,
         [APP_CHOREOGRAPHY_STEP_5] = MOTOR_PWM_DUTY_0_PERCENT,
         [APP_CHOREOGRAPHY_STEP_6] = MOTOR_PWM_DUTY_30_PERCENT,
@@ -122,7 +124,7 @@ static app_supervisor_data_S supervisor_data = {
         [APP_CHOREOGRAPHY_INIT  ] = MOTOR_PWM_DUTY_0_PERCENT,
         [APP_CHOREOGRAPHY_STEP_1] = MOTOR_PWM_DUTY_30_PERCENT,
         [APP_CHOREOGRAPHY_STEP_2] = MOTOR_PWM_DUTY_30_PERCENT,
-        [APP_CHOREOGRAPHY_STEP_3] = MOTOR_PWM_DUTY_40_PERCENT,
+        [APP_CHOREOGRAPHY_STEP_3] = MOTOR_PWM_DUTY_30_PERCENT,
         [APP_CHOREOGRAPHY_STEP_4] = MOTOR_PWM_DUTY_0_PERCENT,
         [APP_CHOREOGRAPHY_STEP_5] = MOTOR_PWM_DUTY_0_PERCENT,
         [APP_CHOREOGRAPHY_STEP_6] = MOTOR_PWM_DUTY_30_PERCENT,
@@ -134,7 +136,7 @@ static app_supervisor_data_S supervisor_data = {
         [APP_CHOREOGRAPHY_INIT  ] = ROBOT_MOTION_BREAK,
         [APP_CHOREOGRAPHY_STEP_1] = ROBOT_MOTION_REV_COAST,
         [APP_CHOREOGRAPHY_STEP_2] = ROBOT_MOTION_REV_COAST,
-        [APP_CHOREOGRAPHY_STEP_3] = ROBOT_MOTION_REV_COAST,
+        [APP_CHOREOGRAPHY_STEP_3] = ROBOT_MOTION_BREAK,
         [APP_CHOREOGRAPHY_STEP_4] = ROBOT_MOTION_BREAK,
         [APP_CHOREOGRAPHY_STEP_5] = ROBOT_MOTION_BREAK,
         [APP_CHOREOGRAPHY_STEP_6] = ROBOT_MOTION_CW_ROTATION,
@@ -164,18 +166,22 @@ static app_state_E app_supervisor_private_getNextState(app_state_E state)
             break;
 
         case (APP_STATE_AUTONOMY):
-            if (supervisor_data.avr_sensor_data & DEV_AVR_ALL_SENSORS)
+            if (supervisor_data.button_pressed)
             {
-                nextState = APP_STATE_AUTONOMY_ESTOPPED;
-            }
-            else if (supervisor_data.button_pressed)
-            {
-                nextState =  APP_STATE_IDLE;
+                nextState =  APP_STATE_IDLE; // Highest priority
             }
             else if (supervisor_data.battery_voltage < BATTERY_STATUS) // check last, for the least probable state
             {
                 supervisor_data.fault_flag |= APP_FAULTS_LOW_BATTERY;
                 nextState = APP_STATE_FAULT;
+            }
+            else if (supervisor_data.avr_sensor_data & DEV_AVR_ALL_SENSORS)
+            {
+                nextState = APP_STATE_AUTONOMY_ESTOPPED;
+            }
+            else if (supervisor_data.app_slam_EFlag != APP_SLAM_TOF_DANGER_ZONE_FLAG_NULL)
+            {
+                nextState = APP_STATE_AUTONOMY_ESTOPPED;
             }
             break;
 
@@ -308,13 +314,14 @@ static bool app_supervisor_private_stateAction(app_state_E state)
     const uint8_t mode  = supervisor_data.estop_choreography_sequence_mode[index];
     const uint8_t model = supervisor_data.estop_choreography_sequence_l   [index];
     const uint8_t moder = supervisor_data.estop_choreography_sequence_r   [index];
+    const uint16_t tof  = supervisor_data.app_slam_EFlag;
     switch (state)
     {
         case (APP_STATE_AUTONOMY_ESTOPPED):
             if (index < APP_CHOREOGRAPHY_STEP_COUNT)
             {
-#   if (DEBUG_FPRINT_APP_SUPERVISOR_AVR_SENSOR)
-                PRINTF(">> output [%d] m:%d, l:%d, r:%d\n", index, mode, model, moder);
+#   if (DEBUG_FPRINT_APP_SUPERVISOR_STATE)
+                PRINTF(">> output [%d] m:%d, l:%d, r:%d, tof:%d\n", index, mode, model, moder, tof);
 #   endif // (DEBUG_FPRINT_APP_SUPERVISOR)
                 // perform action sequence:
 #   if (FEATURE_SUPER_CMD_DEV_DRIVER)    
@@ -357,7 +364,9 @@ static void app_supervisor_private_fetchState(void)
     supervisor_data.battery_voltage = dev_battery_get();
 #endif    
     // TODO: IMU
-    
+
+    // APP_SLAM
+    supervisor_data.app_slam_EFlag = app_slam_requestToFDangerZone();
 }
 
 ///////////////////////////////////////

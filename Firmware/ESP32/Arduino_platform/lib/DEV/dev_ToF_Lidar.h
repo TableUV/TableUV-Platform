@@ -57,7 +57,6 @@ typedef enum{ // Geometrical Region 1 -> 15
     DEV_TOF_FIRING_GEOMETRICAL_UNKNOWN,
 } DEV_TOF_FIRING_GEOMETRICAL_REGION_E;
 
-
 #define DEV_TOF_TOTAL_POINTS_PER_SCAN       (DEV_TOF_LIDAR_COUNT * DEV_TOF_FIRING_KEYFRAME_COUNT)
 #define DEV_TOF_BUFFER_SCALE                (2U) // 2x buffer shall be enough to cover
 #define DEV_TOF_BUFFER_SIZE                 (DEV_TOF_TOTAL_POINTS_PER_SCAN * DEV_TOF_BUFFER_SCALE)

@@ -230,6 +230,8 @@ void dev_avr_driver_init()
     dev_avr_driver_init_message_two_byte(); 
     dev_avr_driver_set_timeout(I2C_RECIEVE_TIMEOUT_MILLI_SEC); 
     xSemaphoreGive(dev_avr_driver_data.mp_mutex);
+
+    delay(100);
 }
 
 void dev_driver_avr_update20ms()

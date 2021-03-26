@@ -18,6 +18,7 @@ extern "C"{
 /////////////////////////////////
 ///////   DEFINITION     ////////
 /////////////////////////////////
+#define APP_SLAM_TOF_DANGER_ZONE_FLAG_NULL    (0x00)
 
 ///////////////////////////////////////
 ///////   PUBLIC PROTOTYPE    /////////
@@ -25,6 +26,7 @@ extern "C"{
 void app_slam_init(void);
 void app_slam_run100ms(void);
 void app_slam_requestToResetMap(void);
+uint16_t app_slam_requestToFDangerZone(void);
 
 /**
  * @brief get motion velocity

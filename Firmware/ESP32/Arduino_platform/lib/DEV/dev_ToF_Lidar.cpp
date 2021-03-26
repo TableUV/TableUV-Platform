@@ -61,9 +61,9 @@ void dev_ToF_reset_all_sensors(void);
 static dev_tof_lidar_data_S lidar_data = {
     .I2C = TwoWire(1),
     .tofs = {
-        SFEVL53L1X(lidar_data.I2C, -1, TOF_INT_2),//TOF_SHUT, TOF_INT_1),
-        SFEVL53L1X(lidar_data.I2C, -1, TOF_INT_1),//TOF_SHUT, TOF_INT_2),
-        SFEVL53L1X(lidar_data.I2C, -1, TOF_INT_3),//TOF_SHUT, TOF_INT_3)
+        /* DEV_TOF_LIDAR_C */ SFEVL53L1X(lidar_data.I2C, -1, TOF_INT_2),//TOF_SHUT, TOF_INT_1),
+        /* DEV_TOF_LIDAR_L */ SFEVL53L1X(lidar_data.I2C, -1, TOF_INT_1),//TOF_SHUT, TOF_INT_2),
+        /* DEV_TOF_LIDAR_R */ SFEVL53L1X(lidar_data.I2C, -1, TOF_INT_3),//TOF_SHUT, TOF_INT_3)
     },
     .address = { 
         [DEV_TOF_LIDAR_C] = 0x62, 
@@ -104,14 +104,14 @@ static dev_tof_lidar_data_S lidar_data = {
         //Firing Order:  Left <-    [2] - [4] - [1] - [5] - [3]    -> Right
     },
     .firing_sequence_label = {
-        DEV_TOF_FIRING_GEOMETRICAL_3, DEV_TOF_FIRING_GEOMETRICAL_1, DEV_TOF_FIRING_GEOMETRICAL_5, DEV_TOF_FIRING_GEOMETRICAL_2, DEV_TOF_FIRING_GEOMETRICAL_4,
-        DEV_TOF_FIRING_GEOMETRICAL_8, DEV_TOF_FIRING_GEOMETRICAL_6, DEV_TOF_FIRING_GEOMETRICAL_10, DEV_TOF_FIRING_GEOMETRICAL_7, DEV_TOF_FIRING_GEOMETRICAL_9,
-        DEV_TOF_FIRING_GEOMETRICAL_13, DEV_TOF_FIRING_GEOMETRICAL_11, DEV_TOF_FIRING_GEOMETRICAL_15, DEV_TOF_FIRING_GEOMETRICAL_12, DEV_TOF_FIRING_GEOMETRICAL_14,
+        /* DEV_TOF_LIDAR_C */ DEV_TOF_FIRING_GEOMETRICAL_8, DEV_TOF_FIRING_GEOMETRICAL_6, DEV_TOF_FIRING_GEOMETRICAL_10, DEV_TOF_FIRING_GEOMETRICAL_7, DEV_TOF_FIRING_GEOMETRICAL_9,
+        /* DEV_TOF_LIDAR_L */ DEV_TOF_FIRING_GEOMETRICAL_13, DEV_TOF_FIRING_GEOMETRICAL_11, DEV_TOF_FIRING_GEOMETRICAL_15, DEV_TOF_FIRING_GEOMETRICAL_12, DEV_TOF_FIRING_GEOMETRICAL_14,
+        /* DEV_TOF_LIDAR_R */ DEV_TOF_FIRING_GEOMETRICAL_3, DEV_TOF_FIRING_GEOMETRICAL_1, DEV_TOF_FIRING_GEOMETRICAL_5, DEV_TOF_FIRING_GEOMETRICAL_2, DEV_TOF_FIRING_GEOMETRICAL_4,
     },
     .prev_firingframe = {
-        DEV_TOF_FIRING_KEYFRAME_UNKNOWN,
-        DEV_TOF_FIRING_KEYFRAME_UNKNOWN,
-        DEV_TOF_FIRING_KEYFRAME_UNKNOWN,
+        /* DEV_TOF_LIDAR_C */ DEV_TOF_FIRING_KEYFRAME_UNKNOWN,
+        /* DEV_TOF_LIDAR_L */ DEV_TOF_FIRING_KEYFRAME_UNKNOWN,
+        /* DEV_TOF_LIDAR_R */ DEV_TOF_FIRING_KEYFRAME_UNKNOWN,
     },
     .mp_mutex = xSemaphoreCreateBinary(),
     .mp_data ={
@@ -208,6 +208,9 @@ void dev_ToF_reset_all_sensors(void)
 ///////////////////////////////////////
 void dev_ToF_Lidar_init(void)
 {
+    // release semaphore
+    xSemaphoreGive(lidar_data.mp_mutex);
+
     // start tof I2C
     lidar_data.I2C.begin(TOF_I2C_SDA, TOF_I2C_SCL);
 
