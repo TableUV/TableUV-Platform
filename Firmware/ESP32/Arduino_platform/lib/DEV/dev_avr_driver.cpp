@@ -39,6 +39,8 @@ typedef struct{
     uint16_t                    encoderCount[NUM_AVR_DRIVER];
     uint8_t                     waterLevelSig; 
     SemaphoreHandle_t           mp_mutex;
+    float                       robot_vel;
+    float                       robot_theta;
 } dev_avr_driver_data_S;
 
 ///////////////////////////
@@ -75,6 +77,8 @@ static dev_avr_driver_data_S dev_avr_driver_data = {
     },
     .waterLevelSig = 0,
     .mp_mutex = xSemaphoreCreateBinary(),
+    .robot_vel = 0.0F,
+    .robot_theta = 0.0F
 };
 
 
@@ -261,6 +265,7 @@ void dev_driver_avr_update20ms()
     if (xSemaphoreTake(dev_avr_driver_data.mp_mutex, MP_MUTEX_BLOCK_TIME_MS) == pdTRUE) {
         dev_avr_driver_data.encoderCount[LEFT_AVR_DRIVER]  = temp_left_encoder; 
         dev_avr_driver_data.encoderCount[RIGHT_AVR_DRIVER] = temp_right_encoder;
+        dev_avr_driver_update_pose();
         //release the mutex 
         xSemaphoreGive(dev_avr_driver_data.mp_mutex); 
     }
@@ -335,4 +340,12 @@ uint8_t  dev_avr_driver_get_WaterLevelSig(){
         xSemaphoreGive(dev_avr_driver_data.mp_mutex); 
     }
     return data;
+}
+
+void dev_avr_driver_update_pose(void) {
+    float r_wheel_vel = dev_avr_driver_data.encoderCount[RIGHT_AVR_DRIVER] * R_WHEEL_TICK_PER_MM / ENCODER_UPDATE_PERIOD_MS;
+    float l_wheel_vel = dev_avr_driver_data.encoderCount[LEFT_AVR_DRIVER] * L_WHEEL_TICK_PER_MM / ENCODER_UPDATE_PERIOD_MS;
+
+    dev_avr_driver_data.robot_vel = (r_wheel_vel + l_wheel_vel)/2.0;
+    dev_avr_driver_data.robot_theta = (r_wheel_vel - l_wheel_vel) * 0.5 / DIST_BW_WHEELS;
 }

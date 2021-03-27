@@ -38,20 +38,12 @@ typedef enum robot_motion_mode{
     ROBOT_MOTION_REV_DIFF_ROTATION,
     ROBOT_MOTION_COUNT,
     ROBOT_MOTION_UNDEFINED
-} robot_motion_mode_E; 
+} robot_motion_mode_E;
 
 
 void dev_avr_driver_init();
 void dev_driver_avr_update20ms();
 
-/**
- * @brief Accesses encoder value from specified motor
- * @param driver_side LEFT_AVR_DRIVER or RIGHT_AVR_DRIVER
- * @see avr_driver_common.h
- * @return 16 bit encoder value
- */
-uint16_t dev_avr_driver_get_EncoderCount(uint8_t driver_side);
-uint8_t  dev_avr_driver_get_WaterLevelSig();
 
 void dev_avr_driver_set_timeout(uint8_t milliSec);
 void dev_avr_driver_set_req_Estop();
@@ -64,6 +56,16 @@ void dev_avr_driver_reset_req_Haptic();
 void dev_avr_driver_reset_req_Tof_config();
 void dev_avr_driver_reset_req_Robot_motion();
 
+/**
+ * @brief Accesses encoder value from specified motor
+ * @param driver_side LEFT_AVR_DRIVER or RIGHT_AVR_DRIVER
+ * @see avr_driver_common.h
+ * @return 16 bit encoder value
+ */
+uint16_t dev_avr_driver_get_EncoderCount(uint8_t driver_side);
+uint8_t  dev_avr_driver_get_WaterLevelSig();
+
+void dev_avr_driver_update_pose(void);
 
 # ifdef __cplusplus  
 }
