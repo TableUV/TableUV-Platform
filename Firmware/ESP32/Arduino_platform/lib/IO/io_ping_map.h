@@ -40,6 +40,7 @@ extern "C"{
 #define TOF_I2C_SDA          33
 #define MOTOR_I2C_SCL        22
 #define MOTOR_I2C_SDA        23
+#define MOTOR_I2C_FREQ       50000
 
 //UART 
 #define SENSOR_AVR_UART_RX      GPIO_NUM_27

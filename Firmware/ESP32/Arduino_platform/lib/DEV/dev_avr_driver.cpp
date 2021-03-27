@@ -82,11 +82,13 @@ static dev_avr_driver_data_S dev_avr_driver_data = {
 ////////////////////////////////////////
 
 // I2C transmit two byte 
-static void dev_avr_driver_transmit_two_byte(uint8_t address, uint16_t message){
+static uint8_t dev_avr_driver_transmit_two_byte(uint8_t address, uint16_t message){
+	uint8_t status = 0;
     dev_avr_driver_data.I2C.beginTransmission(address);
     dev_avr_driver_data.I2C.write((message & DATA_MASK_16BIT_FIRST_8BIT) >> 8);
     dev_avr_driver_data.I2C.write( message & DATA_MASK_16BIT_SECOND_8BIT);
-    dev_avr_driver_data.I2C.endTransmission(true);
+    status = dev_avr_driver_data.I2C.endTransmission(true);
+    return status;
 }
 
 // I2C receive one byte 
@@ -99,12 +101,15 @@ static uint8_t  dev_avr_driver_receive_one_byte(uint8_t address){
 
 // I2C receive two byte 
 static uint16_t dev_avr_driver_receive_two_byte(uint8_t address){
-    uint8_t receive_first_byte, receive_second_byte; 
-    dev_avr_driver_data.I2C.requestFrom(address, 2, true); 
-    receive_first_byte = dev_avr_driver_data.I2C.read(); 
-    receive_second_byte = dev_avr_driver_data.I2C.read();
-    receive_second_byte = abs(receive_second_byte);
-    return (receive_first_byte << 8) | receive_second_byte;
+    uint8_t buffer[2];
+    int i = 0;
+    dev_avr_driver_data.I2C.requestFrom(address, 2); 
+    while (dev_avr_driver_data.I2C.available())
+	{
+        buffer[i] = dev_avr_driver_data.I2C.read();
+		i ++;
+	}
+    return ((buffer[0] << 8) | buffer[1]);
 }
 
 // initialize I2C message
@@ -226,23 +231,36 @@ static void avr_driver_update_i2c_message_two_byte(){
 // init dev_avr_driver
 void dev_avr_driver_init()
 {
-    dev_avr_driver_data.I2C.begin(MOTOR_I2C_SDA, MOTOR_I2C_SCL); 
+    dev_avr_driver_data.I2C.begin(MOTOR_I2C_SDA, MOTOR_I2C_SCL, MOTOR_I2C_FREQ); 
     dev_avr_driver_init_message_two_byte(); 
     dev_avr_driver_set_timeout(I2C_RECIEVE_TIMEOUT_MILLI_SEC); 
     xSemaphoreGive(dev_avr_driver_data.mp_mutex);
-
-    delay(100);
 }
 
 void dev_driver_avr_update20ms()
 {
     uint16_t temp_left_encoder = 0, temp_right_encoder = 0;
+    uint16_t temp_message_left = 0, temp_message_right = 0;
+    uint8_t status = 0;
     avr_driver_update_i2c_message_two_byte(); 
-    dev_avr_driver_transmit_two_byte( dev_avr_driver_data.address[LEFT_AVR_DRIVER] , dev_avr_driver_data.i2c_message[LEFT_AVR_DRIVER] );
-    temp_left_encoder = dev_avr_driver_receive_two_byte(dev_avr_driver_data.address[LEFT_AVR_DRIVER]);
 
-    dev_avr_driver_transmit_two_byte( dev_avr_driver_data.address[RIGHT_AVR_DRIVER] , dev_avr_driver_data.i2c_message[RIGHT_AVR_DRIVER] );
-    temp_right_encoder = dev_avr_driver_receive_two_byte(dev_avr_driver_data.address[RIGHT_AVR_DRIVER]);
+    if (xSemaphoreTake(dev_avr_driver_data.mp_mutex, MP_MUTEX_BLOCK_TIME_MS) == pdTRUE) {
+        temp_message_left  = dev_avr_driver_data.i2c_message[LEFT_AVR_DRIVER];
+        temp_message_right = dev_avr_driver_data.i2c_message[RIGHT_AVR_DRIVER];
+        xSemaphoreGive(dev_avr_driver_data.mp_mutex); 
+    }
+
+    status = dev_avr_driver_transmit_two_byte( dev_avr_driver_data.address[LEFT_AVR_DRIVER] , temp_message_left );
+    if (status == 0)
+    {
+        temp_left_encoder = dev_avr_driver_receive_two_byte(dev_avr_driver_data.address[LEFT_AVR_DRIVER]);
+    }
+
+    status = dev_avr_driver_transmit_two_byte( dev_avr_driver_data.address[RIGHT_AVR_DRIVER] , temp_message_right );
+    if (status == 0)
+    {
+        temp_right_encoder = dev_avr_driver_receive_two_byte(dev_avr_driver_data.address[RIGHT_AVR_DRIVER]);
+    }
     //dev_avr_driver_data.waterLevelSig = dev_avr_driver_receive_one_byte(dev_avr_driver_data.address[RIGHT_AVR_DRIVER]);
     
     if (xSemaphoreTake(dev_avr_driver_data.mp_mutex, MP_MUTEX_BLOCK_TIME_MS) == pdTRUE) {

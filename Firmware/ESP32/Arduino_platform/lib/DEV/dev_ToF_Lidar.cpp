@@ -34,8 +34,6 @@
 #define TOF_INTERMEDIATE_SETTING_DELAY_MS   (10U)
 #define MP_MUTEX_BLOCK_TIME_MS              ((1U)/portTICK_PERIOD_MS)
 #define TOF_SENSOR_COUNT                    (DEV_TOF_LIDAR_COUNT)
-#define VL53L1_100PERCENT_CONFIDENCE        (0U)
-#define VL53L1_030PERCENT_CONFIDENCE        (2U)
 
 typedef struct{
     TwoWire             I2C;
@@ -252,7 +250,7 @@ void dev_ToF_Lidar_update20ms(void)
             }
 
 # if (DEBUG_FPRINT_FEATURE_LIDAR)
-            PRINTF("%d Sensor: %3d [mm] F:[%d] Label:(%2d) Status:(%d) \n", sensor_id, dist_mm, firing_frame, lidar_data.firing_sequence_label[sensor_id][firing_frame], error);
+            PRINTF("[ DEV:TOF ] Sensor[%d]: %3d [mm] F:[%d] Label:(%2d) Status:(%d) \n", sensor_id, dist_mm, firing_frame, lidar_data.firing_sequence_label[sensor_id][firing_frame], error);
 # endif
             // update new firing pattern
             if (sensor->setCenter(lidar_data.firing_sequence[firing_frame_new]) == VL53L1_ERROR_NONE)
@@ -262,7 +260,7 @@ void dev_ToF_Lidar_update20ms(void)
             sensor->clearInterrupt();
 
             // store data
-            if ((error == VL53L1_100PERCENT_CONFIDENCE) || (error == VL53L1_030PERCENT_CONFIDENCE)) // TODO: 0: no err (give 60% r = 1 : prob), 2: weak signal (give 30% r = 2 : prob)
+            if (error <= DEV_TOF_RANGE_STATUS_OUT_OF_BOUNDS_FAILURE)
             {
                 geo_label = lidar_data.firing_sequence_label[sensor_id][firing_frame];
                 if (xSemaphoreTake(lidar_data.mp_mutex, MP_MUTEX_BLOCK_TIME_MS) == pdTRUE) {

@@ -46,10 +46,10 @@
 ///////////////////////////////////////
 void dev_init(void)
 {
-    // sub-device  initialization
 #if (FEATURE_AVR_DRIVER_ALL)    
     dev_avr_driver_init();
 #endif    
+    // sub-device  initialization
 #if (FEATURE_SENSOR_AVR)       
     dev_avr_sensor_init();
 #endif    
@@ -64,7 +64,7 @@ void dev_init(void)
 #endif    
 #if (FEATURE_IMU)
     dev_imu_init();
-#endif    
+#endif
 #if (FEATURE_LIDAR)
     dev_ToF_Lidar_init();
 #endif

@@ -22,6 +22,7 @@ extern "C"{
 #define SENSOR_AVR_BAUD 115200
 
 typedef enum{
+    DEV_AVR_NO_SENSOR           = (0U),
     DEV_AVR_LEFT_COLLISION      = (1<<0U),
     DEV_AVR_RIGHT_COLLISION     = (1<<1U),
     DEV_AVR_FRONT_IR_1          = (1<<2U),
@@ -30,6 +31,10 @@ typedef enum{
     DEV_AVR_RIGHT_IR_2          = (1<<5U),
     DEV_AVR_LEFT_IR_1           = (1<<6U),
     DEV_AVR_LEFT_IR_2           = (1<<7U),
+    DEV_AVR_ALL_IR_SENSORS      = (
+        DEV_AVR_FRONT_IR_1 | DEV_AVR_FRONT_IR_2 | DEV_AVR_RIGHT_IR_1 
+        | DEV_AVR_RIGHT_IR_2 | DEV_AVR_LEFT_IR_1 | DEV_AVR_LEFT_IR_2
+    ),
     DEV_AVR_ALL_SENSORS         = (0xFF)
 } DEV_AVR_SENSOR_E;
 
