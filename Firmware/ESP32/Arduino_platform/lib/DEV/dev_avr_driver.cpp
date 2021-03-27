@@ -11,6 +11,7 @@
 #include "dev_avr_driver.h"
 #include <Wire.h>
 #include "../../include/avr_driver_common.h"
+#include "../../include/common.h"
 #include <stdbool.h>
 
 #define I2C_RECIEVE_TIMEOUT_MILLI_SEC                                       10
@@ -73,7 +74,7 @@ static dev_avr_driver_data_S dev_avr_driver_data = {
         0
     },
     .waterLevelSig = 0,
-    .mp_mutex = xSemaphoreCreateBinary()
+    .mp_mutex = xSemaphoreCreateBinary(),
 };
 
 
@@ -104,7 +105,7 @@ static uint16_t dev_avr_driver_receive_two_byte(uint8_t address){
     uint8_t buffer[2];
     int i = 0;
     dev_avr_driver_data.I2C.requestFrom(address, 2); 
-    while (dev_avr_driver_data.I2C.available())
+    while (dev_avr_driver_data.I2C.available() && i < 2)
 	{
         buffer[i] = dev_avr_driver_data.I2C.read();
 		i ++;
@@ -113,7 +114,7 @@ static uint16_t dev_avr_driver_receive_two_byte(uint8_t address){
 }
 
 // initialize I2C message
-static void dev_avr_driver_init_message_two_byte(){
+static inline void dev_avr_driver_init_message_two_byte(){
     dev_avr_driver_data.i2c_message[LEFT_AVR_DRIVER]   = 0b0000000001000000;
     dev_avr_driver_data.i2c_message[RIGHT_AVR_DRIVER]  = 0b0000000001000000;
 }
@@ -231,10 +232,10 @@ static void avr_driver_update_i2c_message_two_byte(){
 // init dev_avr_driver
 void dev_avr_driver_init()
 {
+    xSemaphoreGive(dev_avr_driver_data.mp_mutex);
     dev_avr_driver_data.I2C.begin(MOTOR_I2C_SDA, MOTOR_I2C_SCL, MOTOR_I2C_FREQ); 
     dev_avr_driver_init_message_two_byte(); 
     dev_avr_driver_set_timeout(I2C_RECIEVE_TIMEOUT_MILLI_SEC); 
-    xSemaphoreGive(dev_avr_driver_data.mp_mutex);
 }
 
 void dev_driver_avr_update20ms()
@@ -244,19 +245,13 @@ void dev_driver_avr_update20ms()
     uint8_t status = 0;
     avr_driver_update_i2c_message_two_byte(); 
 
-    if (xSemaphoreTake(dev_avr_driver_data.mp_mutex, MP_MUTEX_BLOCK_TIME_MS) == pdTRUE) {
-        temp_message_left  = dev_avr_driver_data.i2c_message[LEFT_AVR_DRIVER];
-        temp_message_right = dev_avr_driver_data.i2c_message[RIGHT_AVR_DRIVER];
-        xSemaphoreGive(dev_avr_driver_data.mp_mutex); 
-    }
-
-    status = dev_avr_driver_transmit_two_byte( dev_avr_driver_data.address[LEFT_AVR_DRIVER] , temp_message_left );
+    status = dev_avr_driver_transmit_two_byte( dev_avr_driver_data.address[LEFT_AVR_DRIVER] , dev_avr_driver_data.i2c_message[LEFT_AVR_DRIVER] );
     if (status == 0)
     {
         temp_left_encoder = dev_avr_driver_receive_two_byte(dev_avr_driver_data.address[LEFT_AVR_DRIVER]);
     }
 
-    status = dev_avr_driver_transmit_two_byte( dev_avr_driver_data.address[RIGHT_AVR_DRIVER] , temp_message_right );
+    status = dev_avr_driver_transmit_two_byte( dev_avr_driver_data.address[RIGHT_AVR_DRIVER] , dev_avr_driver_data.i2c_message[RIGHT_AVR_DRIVER] );
     if (status == 0)
     {
         temp_right_encoder = dev_avr_driver_receive_two_byte(dev_avr_driver_data.address[RIGHT_AVR_DRIVER]);
@@ -270,6 +265,7 @@ void dev_driver_avr_update20ms()
         xSemaphoreGive(dev_avr_driver_data.mp_mutex); 
     }
 
+    PRINTF("[ AVR:DRIVER ] left: %d, right: %d \n", dev_avr_driver_data.i2c_message[LEFT_AVR_DRIVER], dev_avr_driver_data.i2c_message[RIGHT_AVR_DRIVER]);
 }
 
 void dev_avr_driver_set_timeout(uint8_t milliSec){
@@ -288,10 +284,13 @@ void dev_avr_driver_set_req_Tof_config(tof_sensor_config_E tof_sensor_config){
     dev_avr_driver_data.reqConfigTof = tof_sensor_config; 
 }
 void dev_avr_driver_set_req_Robot_motion(robot_motion_mode_E robot_motion_mode, motor_pwm_duty_E motor_pwm_duty_left, motor_pwm_duty_E motor_pwm_duty_right){
-    dev_avr_driver_reset_req_Estop();
-    dev_avr_driver_data.reqRobotMotion = robot_motion_mode;
-    dev_avr_driver_data.pwm_duty[LEFT_AVR_DRIVER] = motor_pwm_duty_left;
-    dev_avr_driver_data.pwm_duty[RIGHT_AVR_DRIVER] = motor_pwm_duty_right;
+    if (xSemaphoreTake(dev_avr_driver_data.mp_mutex, MP_MUTEX_BLOCK_TIME_MS) == pdTRUE) {
+        dev_avr_driver_data.reqEstop = 0;
+        dev_avr_driver_data.reqRobotMotion = robot_motion_mode;
+        dev_avr_driver_data.pwm_duty[LEFT_AVR_DRIVER] = motor_pwm_duty_left;
+        dev_avr_driver_data.pwm_duty[RIGHT_AVR_DRIVER] = motor_pwm_duty_right;
+        xSemaphoreGive(dev_avr_driver_data.mp_mutex);
+    }
 }
 
 void dev_avr_driver_reset_req_Estop(){
@@ -307,10 +306,13 @@ void dev_avr_driver_reset_req_Tof_config(){
 }
 
 void dev_avr_driver_reset_req_Robot_motion(){
-    dev_avr_driver_set_req_Estop();
-    dev_avr_driver_data.reqRobotMotion = ROBOT_MOTION_BREAK;
-    dev_avr_driver_data.pwm_duty[LEFT_AVR_DRIVER] = MOTOR_PWM_DUTY_0_PERCENT;
-    dev_avr_driver_data.pwm_duty[RIGHT_AVR_DRIVER] = MOTOR_PWM_DUTY_0_PERCENT;
+    if (xSemaphoreTake(dev_avr_driver_data.mp_mutex, MP_MUTEX_BLOCK_TIME_MS) == pdTRUE) {
+        dev_avr_driver_set_req_Estop();
+        dev_avr_driver_data.reqRobotMotion = ROBOT_MOTION_BREAK;
+        dev_avr_driver_data.pwm_duty[LEFT_AVR_DRIVER] = MOTOR_PWM_DUTY_0_PERCENT;
+        dev_avr_driver_data.pwm_duty[RIGHT_AVR_DRIVER] = MOTOR_PWM_DUTY_0_PERCENT;
+        xSemaphoreGive(dev_avr_driver_data.mp_mutex); 
+    }
 }
 
 uint16_t dev_avr_driver_get_EncoderCount(uint8_t driver_side){

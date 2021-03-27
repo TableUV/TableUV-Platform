@@ -210,7 +210,7 @@ void dev_ToF_Lidar_init(void)
     xSemaphoreGive(lidar_data.mp_mutex);
 
     // start tof I2C
-    lidar_data.I2C.begin(TOF_I2C_SDA, TOF_I2C_SCL);
+    lidar_data.I2C.begin(TOF_I2C_SDA, TOF_I2C_SCL, TOF_I2C_FREQ);
 
     // reset ToF
     dev_ToF_reset_all_sensors();
@@ -260,7 +260,7 @@ void dev_ToF_Lidar_update20ms(void)
             sensor->clearInterrupt();
 
             // store data
-            if (error <= DEV_TOF_RANGE_STATUS_OUT_OF_BOUNDS_FAILURE)
+            if ((error == DEV_TOF_RANGE_STATUS_SIGNAL_FAILURE) || (error == DEV_TOF_RANGE_STATUS_NO_ERROR))
             {
                 geo_label = lidar_data.firing_sequence_label[sensor_id][firing_frame];
                 if (xSemaphoreTake(lidar_data.mp_mutex, MP_MUTEX_BLOCK_TIME_MS) == pdTRUE) {

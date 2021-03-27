@@ -81,7 +81,7 @@ extern "C"{
 #   define FEATURE_SUPER_USE_HARDCODE_CHORE       ( ENABLE)
 #   define FEATURE_SUPER_CMD_DEV_DRIVER           ( ENABLE) // Super command on actuators
 #   define FEATURE_PERIPHERALS                    ( ENABLE)
-#   define FEATURE_UV                             ( ENABLE)
+#   define FEATURE_UV                             (DISABLE)
 #   define FEATURE_IMU                            (DISABLE)
 #   define FEATURE_SENSOR_AVR                     ( ENABLE)
 #   define FEATURE_AVR_DRIVER_ALL                 ( ENABLE) //
