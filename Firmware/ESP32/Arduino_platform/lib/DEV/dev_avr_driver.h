@@ -44,6 +44,12 @@ typedef enum robot_motion_mode{
 void dev_avr_driver_init();
 void dev_driver_avr_update20ms();
 
+/**
+ * @brief Accesses encoder value from specified motor
+ * @param driver_side LEFT_AVR_DRIVER or RIGHT_AVR_DRIVER
+ * @see avr_driver_common.h
+ * @return 16 bit encoder value
+ */
 uint16_t dev_avr_driver_get_EncoderCount(uint8_t driver_side);
 uint8_t  dev_avr_driver_get_WaterLevelSig();
 
