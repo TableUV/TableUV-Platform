@@ -39,14 +39,14 @@ typedef struct{
     uint16_t                    encoderCount[NUM_AVR_DRIVER];
     uint8_t                     waterLevelSig; 
     SemaphoreHandle_t           mp_mutex;
-    float                       robot_vel;
-    float                       robot_theta;
+    float                       robot_vel_q[POSE_BUFFER];
+    float                       robot_theta_q[POSE_BUFFER];
+    uint8_t                     pose_buf_index;
 } dev_avr_driver_data_S;
 
 ///////////////////////////
 ///////   DATA     ////////
 ///////////////////////////
-
 static dev_avr_driver_data_S dev_avr_driver_data = {
     .I2C     = TwoWire(0),
     .address = {
@@ -77,8 +77,9 @@ static dev_avr_driver_data_S dev_avr_driver_data = {
     },
     .waterLevelSig = 0,
     .mp_mutex = xSemaphoreCreateBinary(),
-    .robot_vel = 0.0F,
-    .robot_theta = 0.0F
+    .robot_vel_q = {0},
+    .robot_theta_q = {0},
+    .pose_buf_index = 0
 };
 
 
@@ -346,6 +347,31 @@ void dev_avr_driver_update_pose(void) {
     float r_wheel_vel = dev_avr_driver_data.encoderCount[RIGHT_AVR_DRIVER] * R_WHEEL_TICK_PER_MM / ENCODER_UPDATE_PERIOD_MS;
     float l_wheel_vel = dev_avr_driver_data.encoderCount[LEFT_AVR_DRIVER] * L_WHEEL_TICK_PER_MM / ENCODER_UPDATE_PERIOD_MS;
 
-    dev_avr_driver_data.robot_vel = (r_wheel_vel + l_wheel_vel)/2.0;
-    dev_avr_driver_data.robot_theta = (r_wheel_vel - l_wheel_vel) * 0.5 / DIST_BW_WHEELS;
+    float robot_vel = (r_wheel_vel + l_wheel_vel) / 2.0;
+    float robot_theta = (r_wheel_vel - l_wheel_vel) * 0.5 / DIST_BW_WHEELS;
+
+    dev_avr_driver_data.robot_vel_q[dev_avr_driver_data.pose_buf_index] = robot_vel;
+    dev_avr_driver_data.robot_theta_q[dev_avr_driver_data.pose_buf_index] = robot_theta;
+
+    // FIFO
+    dev_avr_driver_data.pose_buf_index = (dev_avr_driver_data.pose_buf_index == POSE_BUFFER-1) ? 0 : dev_avr_driver_data.pose_buf_index+1;
+}
+
+void dev_avr_driver_get_pose(float* vel_avg, float* theta_avg) {
+    double vel_sum = 0;
+    double theta_sum = 0;
+
+    if (xSemaphoreTake(dev_avr_driver_data.mp_mutex, MP_MUTEX_BLOCK_TIME_MS) == pdTRUE) {
+        // Average the queue
+        for(int i = 0; i++; i < POSE_BUFFER) 
+        {
+            vel_sum += dev_avr_driver_data.robot_vel_q[i];
+            theta_sum += dev_avr_driver_data.robot_theta_q[i];
+        }
+        //release the mutex 
+        xSemaphoreGive(dev_avr_driver_data.mp_mutex); 
+    }
+
+    *vel_avg = vel_sum / POSE_BUFFER;
+    *theta_avg = theta_sum / POSE_BUFFER;
 }

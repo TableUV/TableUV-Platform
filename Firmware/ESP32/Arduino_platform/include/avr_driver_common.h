@@ -63,6 +63,7 @@ extern "C"{
 #define WHEEL_RADIUS                    (16.735F) //Not needed
 #define ENCODER_UPDATE_PERIOD_MS        (20U) 
 #define DIST_BW_WHEELS                  (77.18F)
+#define POSE_BUFFER                     (5U)
 
 
 // data frame header

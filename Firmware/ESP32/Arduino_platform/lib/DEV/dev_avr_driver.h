@@ -66,6 +66,7 @@ uint16_t dev_avr_driver_get_EncoderCount(uint8_t driver_side);
 uint8_t  dev_avr_driver_get_WaterLevelSig();
 
 void dev_avr_driver_update_pose(void);
+void dev_avr_driver_get_pose(float* vel_avg, float* theta_avg);
 
 # ifdef __cplusplus  
 }
