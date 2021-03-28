@@ -258,6 +258,7 @@ typedef struct{
     int16_t right_enc_buf[ENC_BUFFER_SIZE];
 
     math_cart_coord_float_S     encoder_delta_mm;
+    float                       encoder_delta_theta_rad;
 } app_slam_data_S;
 
 /////////////////////////////////////////
@@ -360,7 +361,9 @@ static const edge_sensor_config_S edge_sensor_config = {
 static void app_slam_private_localization(void)
 {
     // TODO: intake  IMU, Encoder => EKF
-    
+    dev_avr_driver_get_encoder_buffers(&slam_data.left_enc_buf, &slam_data.right_enc_buf);
+    slam_data.encoder_delta_mm = slam_math_get_enc_pose(&slam_data.left_enc_buf, &slam_data.right_enc_buf);
+    slam_data.encoder_delta_theta_rad = slam_math_get_theta(slam_data.encoder_delta_mm);
 }
 
 /**
@@ -626,13 +629,16 @@ static void app_slam_private_globalMapUpdate(void)
     float mock_dx_mm = 0.0f; // 1mm / 0.1s => 10mm / s
     float mock_dy_mm = 1.0f;
     float mock_dtheta_rad = 0.0f; // Assume: < pi
-#endif // (MOCK)
-
     //// Update Dynamic Map ===== ======
     // accumulate leftover float bits from previous update
     float dx_mm = mock_dx_mm + slam_data.gMap.map_offset_mm.x;
     float dy_mm = mock_dy_mm + slam_data.gMap.map_offset_mm.y;
     float theta = mock_dtheta_rad + slam_data.gMap.vehicle_orientation_rad;
+#else
+    float dx_mm = slam_data.encoder_delta_mm.x + slam_data.gMap.map_offset_mm.x;
+    float dy_mm = slam_data.encoder_delta_mm.y + slam_data.gMap.map_offset_mm.y;
+    float theta = slam_data.encoder_delta_theta_rad + slam_data.gMap.vehicle_orientation_rad;
+#endif // (MOCK)
     // translate translation to pixel space:
     const int32_t dx_pixel = GMAP_MM_TO_UNIT_PIXEL(dx_mm);
     const int32_t dy_pixel = GMAP_MM_TO_UNIT_PIXEL(dy_mm);

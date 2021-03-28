@@ -46,6 +46,8 @@ typedef struct{
  */
 math_cart_coord_float_S slam_math_get_enc_pose(int16_t* l_enc_buf, int16_t* r_enc_buf);
 
+float slam_math_get_theta(math_cart_coord_float_S input_coord);
+
 # ifdef __cplusplus  
 }
 # endif 

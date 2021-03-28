@@ -37,21 +37,26 @@
 ///////////////////////////////////////
 math_cart_coord_float_S slam_math_get_enc_pose(int16_t* l_enc_buf, int16_t* r_enc_buf) 
 {
-    float r_wheel_vel, l_wheel_vel, robot_vel, robot_theta;
+    float r_wheel_disp, l_wheel_disp, robot_disp, robot_theta;
     math_cart_coord_float_S total_sum = {0};
     
 
     for (int i = 0; i ++; i < ENC_BUFFER_SIZE)
     {
-        r_wheel_vel = r_enc_buf[i] * R_WHEEL_MM_PER_TICK * ENCODER_UPDATE_FREQ_HZ;
-        l_wheel_vel = l_enc_buf[i] * L_WHEEL_MM_PER_TICK * ENCODER_UPDATE_FREQ_HZ;
+        r_wheel_disp = r_enc_buf[i] * R_WHEEL_MM_PER_TICK;
+        l_wheel_disp = l_enc_buf[i] * L_WHEEL_MM_PER_TICK;
 
-        robot_vel = (r_wheel_vel + l_wheel_vel) * 0.5;
-        robot_theta = (r_wheel_vel - l_wheel_vel) * 0.5 * INVERSE_DIST_BW_WHEELS_MM;
+        robot_disp = (r_wheel_disp + l_wheel_disp) * 0.5;
+        robot_theta = (r_wheel_disp - l_wheel_disp) * 0.5 * INVERSE_DIST_BW_WHEELS_MM;
 
-        total_sum.x = total_sum.x + robot_vel * cos(robot_theta);
-        total_sum.y = total_sum.y + robot_vel * sin(robot_theta);
+        total_sum.x = total_sum.x + robot_disp * cos(robot_theta);
+        total_sum.y = total_sum.y + robot_disp * sin(robot_theta);
     }
 
     return total_sum;
+}
+
+float slam_math_get_theta(math_cart_coord_float_S input_coord)
+{
+    return atan2f(input_coord.y, input_coord.x);
 }
