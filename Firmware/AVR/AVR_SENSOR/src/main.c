@@ -16,11 +16,11 @@
 #include "uart_attiny.h"
 #include "ir_sensor.h"
 
-#define BUFFER_SIZE                     (10U)
 #define COLLISION_FILTER_THRESHOLD      (0.8F)
 #define SENSOR_READ_FREQ                (200U) // Max 7kHz otherwise change the timer prescaler
-#define FILTER_FREQ                     (20U)
+#define FILTER_FREQ                     (50U)
 #define SENSOR_FILTER_RATIO             (SENSOR_READ_FREQ/FILTER_FREQ)
+#define BUFFER_SIZE                     (SENSOR_FILTER_RATIO)
 #define SCHEDULER_TIMER_COMPARE         (39U)//(8000000U/(SENSOR_READ_FREQ * 1024U))
 
 typedef enum {

@@ -103,7 +103,6 @@ static uint16_t dev_avr_driver_receive_two_byte(uint8_t address){
     dev_avr_driver_data.I2C.requestFrom(address, 2, true); 
     receive_first_byte = dev_avr_driver_data.I2C.read(); 
     receive_second_byte = dev_avr_driver_data.I2C.read();
-    receive_second_byte = abs(receive_second_byte);
     return (receive_first_byte << 8) | receive_second_byte;
 }
 
