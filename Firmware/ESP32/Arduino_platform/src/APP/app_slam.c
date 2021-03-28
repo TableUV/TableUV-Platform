@@ -18,6 +18,7 @@
 #include "dev_ToF_Lidar.h"
 #include "slam_math.h"
 #include "dev_avr_sensor.h"
+#include "dev_avr_driver.h"
 
 // SDK config 
 #include "sdkconfig.h"

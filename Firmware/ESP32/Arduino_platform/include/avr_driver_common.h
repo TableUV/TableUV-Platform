@@ -57,13 +57,6 @@ extern "C"{
 #define MOTOR_DIRECTION_REQ_MASK        (_BV(4))
 #define MOTOR_PWM_DUTY_REQ_MASK         (_BV(3) | _BV(2) | _BV(1) | _BV(0))
 
-// Motor Encoder Macros
-#define R_WHEEL_MM_PER_TICK             (0.0185245F) //mm in terms of linear motion not angular
-#define L_WHEEL_MM_PER_TICK             (0.01828202F)
-#define WHEEL_RADIUS                    (16.735F) //Not needed
-#define ENCODER_UPDATE_PERIOD_MS        (20U) 
-#define DIST_BW_WHEELS                  (77.18F)
-#define ENC_BUFFER_SIZE                 (5U)
 
 
 // data frame header

@@ -22,6 +22,14 @@ extern "C"{
 #include "../IO/io_ping_map.h"
 #include "../../include/avr_driver_common.h"
 
+// Motor Encoder Macros
+#define R_WHEEL_MM_PER_TICK             (0.0185245F) //mm in terms of linear motion not angular
+#define L_WHEEL_MM_PER_TICK             (0.01828202F)
+#define WHEEL_RADIUS                    (16.735F) //Not needed
+#define ENCODER_UPDATE_FREQ_HZ          (50U) 
+#define INVERSE_DIST_BW_WHEELS_MM       (0.01295606F)
+#define ENC_BUFFER_SIZE                 (5U)
+
 
 /////////////////////////////////
 /////////   ENUM    /////////
@@ -64,9 +72,6 @@ void dev_avr_driver_reset_req_Robot_motion();
  */
 uint16_t dev_avr_driver_get_EncoderCount(uint8_t driver_side);
 uint8_t  dev_avr_driver_get_WaterLevelSig();
-
-void dev_avr_driver_update_pose(void);
-void dev_avr_driver_get_pose(float* vel_avg, float* theta_avg);
 
 # ifdef __cplusplus  
 }
