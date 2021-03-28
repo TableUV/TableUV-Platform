@@ -625,7 +625,11 @@ static void app_slam_private_globalMapUpdate(void)
 {
     //// Fetch Data ====== ====== ======
     // TODO: Assume we get (dx, dy) from localization (@Alex)
-#if (MOCK)
+#if(FEATURE_SLAM_ENCODER)
+    float dx_mm = slam_data.encoder_delta_mm.x + slam_data.gMap.map_offset_mm.x;
+    float dy_mm = slam_data.encoder_delta_mm.y + slam_data.gMap.map_offset_mm.y;
+    float theta = slam_data.encoder_delta_theta_rad + slam_data.gMap.vehicle_orientation_rad;
+#elif (MOCK)
     float mock_dx_mm = 0.0f; // 1mm / 0.1s => 10mm / s
     float mock_dy_mm = 1.0f;
     float mock_dtheta_rad = 0.0f; // Assume: < pi
@@ -634,10 +638,6 @@ static void app_slam_private_globalMapUpdate(void)
     float dx_mm = mock_dx_mm + slam_data.gMap.map_offset_mm.x;
     float dy_mm = mock_dy_mm + slam_data.gMap.map_offset_mm.y;
     float theta = mock_dtheta_rad + slam_data.gMap.vehicle_orientation_rad;
-#else
-    float dx_mm = slam_data.encoder_delta_mm.x + slam_data.gMap.map_offset_mm.x;
-    float dy_mm = slam_data.encoder_delta_mm.y + slam_data.gMap.map_offset_mm.y;
-    float theta = slam_data.encoder_delta_theta_rad + slam_data.gMap.vehicle_orientation_rad;
 #endif // (MOCK)
     // translate translation to pixel space:
     const int32_t dx_pixel = GMAP_MM_TO_UNIT_PIXEL(dx_mm);

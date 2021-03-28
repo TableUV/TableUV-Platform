@@ -76,6 +76,7 @@ extern "C"{
 #   define FEATURE_DEV_DRIVER                     ( ENABLE) // DEV avr driver: motor, mist, encoder feedback
 #   define FEATURE_SLAM                           ( ENABLE) // APP SLAM
 #   define FEATURE_LIDAR                          ( ENABLE)
+#   define FEATURE_SLAM_ENCODER                   ( ENABLE)
 #   define FEATURE_LIDAR_CALIBRATION_MODE         (   TODO) // TODO: implement calibration strategy
 #   define FEATURE_SUPER_USE_PROFILED_MOTIONS     (   TODO) // TODO: implement calibration strategy
 #   define FEATURE_SUPER_USE_HARDCODE_CHORE       ( ENABLE)
