@@ -51,11 +51,17 @@
 #define ESP32_CORE_LOW_LEVEL        (0U)
 #define ESP32_CORE_HIGH_LEVEL       (1U)
 
-#define TASK_SLAM_TASK_TICK         (TASK_HZ_TO_TASK_TICK(  10/*[Hz]*/))
-#define TASK_SUPERVISOR_TASK_TICK   (TASK_HZ_TO_TASK_TICK(  20/*[Hz]*/))
-#define TASK_50HZ_TASK_TICK         (TASK_HZ_TO_TASK_TICK(  20/*[Hz]*/)) 
-#define TASK_20HZ_TASK_TICK         (TASK_HZ_TO_TASK_TICK(  20/*[Hz]*/))
-#define TASK_1HZ_TASK_TICK          (TASK_HZ_TO_TASK_TICK(   1/*[Hz]*/))
+#define TASK_SLAM_TASK_TICK             (TASK_HZ_TO_TASK_TICK(  10/*[Hz]*/))
+#if (FEATURE_FAST_MODE)
+#   define TASK_SUPERVISOR_TASK_TICK    (TASK_HZ_TO_TASK_TICK(  50/*[Hz]*/))
+#   define TASK_50HZ_TASK_TICK          (TASK_HZ_TO_TASK_TICK(  50/*[Hz]*/)) 
+#else
+#   define TASK_SUPERVISOR_TASK_TICK    (TASK_HZ_TO_TASK_TICK(  20/*[Hz]*/))
+#   define TASK_50HZ_TASK_TICK          (TASK_HZ_TO_TASK_TICK(  20/*[Hz]*/)) 
+#endif //(FEATURE_FAST_MODE)
+#define TASK_20HZ_TASK_TICK             (TASK_HZ_TO_TASK_TICK(  20/*[Hz]*/))
+#define TASK_1HZ_TASK_TICK              (TASK_HZ_TO_TASK_TICK(   1/*[Hz]*/))
+
 #define T_500MS_TASK_TICK           (MS_TO_TASK_TICK(      500/*[ms]*/))
 
 #define MS_TO_TASK_TICK(x)          (TickType_t)((x)/(portTICK_PERIOD_MS))

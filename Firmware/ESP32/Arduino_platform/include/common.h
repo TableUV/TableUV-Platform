@@ -81,7 +81,8 @@ extern "C"{
 #   define FEATURE_SUPER_USE_HARDCODE_CHORE       ( ENABLE)
 #   define FEATURE_SUPER_CMD_DEV_DRIVER           ( ENABLE) // Super command on actuators
 #   define FEATURE_PERIPHERALS                    ( ENABLE)
-#   define FEATURE_UV                             (DISABLE)
+#   define FEATURE_FAST_MODE                      (DISABLE) // Wacky shit | Attempt to use 50Hz, currently it is safe to use 20Hz, to increase, we need to find a way to increase ToF to 400kHz.
+#   define FEATURE_UV                             ((DISABLE) && (! FEATURE_FAST_MODE))
 #   define FEATURE_IMU                            (DISABLE)
 #   define FEATURE_SENSOR_AVR                     ( ENABLE)
 #   define FEATURE_AVR_DRIVER_ALL                 ( ENABLE) //

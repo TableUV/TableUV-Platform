@@ -115,8 +115,8 @@ typedef enum {
 // TOF: 
 #if (FEATURE_DEMO_TOF_OBSTACLE)
 // obstacle
-# define VEHICLE_TOF_OBSTACLE_DIST_MIN           (40U) // [mm]
-# define VEHICLE_TOF_OBSTACLE_DIST_MIN_CORNER    (30U) // [mm]
+# define VEHICLE_TOF_OBSTACLE_DIST_MIN           (30U) // [mm]
+# define VEHICLE_TOF_OBSTACLE_DIST_MIN_CORNER    (10U) // [mm]
 #endif // (FEATURE_DEMO_TOF_OBSTACLE)
 
 /*** (parameterization) ***/

@@ -58,7 +58,11 @@ typedef enum {
 } app_faults_E;
 
 #if (FEATURE_SUPER_USE_HARDCODE_CHORE)
-#define CHOREOGRAPHY_BASE_TICK_20MS    (5U) // base ticK 10*20ms
+#   if (FEATURE_FAST_MODE)
+#   define CHOREOGRAPHY_BASE_TICK_20MS    (10U) // base ticK 10*20ms
+#   else
+#   define CHOREOGRAPHY_BASE_TICK_20MS    (4U) // base ticK 4*50ms
+#   endif //(FEATURE_FAST_MODE)
 
 typedef enum{
     APP_CHOREOGRAPHY_INIT,
