@@ -43,16 +43,26 @@ typedef enum {
 
 typedef enum {
     APP_FAULTS_CLEAR                = (0U),
-    APP_FAULTS_LOW_BATTERY          = (1<<0U),
-    APP_FAULTS_TOF_INIT             = (1<<1U),
-    APP_FAULTS_IMU_INIT             = (1<<2U),
+    // Critical Faults:
+    APP_FAULTS_CRITICAL_LOW_BATTERY = (1<<0U),
     // ...
-    APP_FAULTS_MAX                  = (1<<20U),
+    APP_FAULTS_CRITICAL_MAX         = (1<<10U),
+    
+    // App Level:
+    APP_FAULTS_ROBOT_IN_THE_AIR     = (1<<2U),
+    // ...    
+
+    // CAP:
+    APP_FAULTS_MAX                  = (1<<29U),
     APP_FAULTS_INVALID_STATE        = (1<<30U),
 } app_faults_E;
 
 #if (FEATURE_SUPER_USE_HARDCODE_CHORE)
-#define CHOREOGRAPHY_BASE_TICK_20MS    (10U) // base ticK 10*20ms
+#   if (FEATURE_FAST_MODE)
+#   define CHOREOGRAPHY_BASE_TICK_20MS    (10U) // base ticK 10*20ms
+#   else
+#   define CHOREOGRAPHY_BASE_TICK_20MS    (4U) // base ticK 4*50ms
+#   endif //(FEATURE_FAST_MODE)
 
 typedef enum{
     APP_CHOREOGRAPHY_INIT,
@@ -72,10 +82,11 @@ typedef enum{
 
 typedef struct{
     app_state_E         current_state;
-    uint32_t            fault_flag; // Ex: (APP_FAULTS_TOF_INIT | APP_FAULTS_IMU_INIT);
+    uint32_t            fault_flag;
     bool                button_pressed;
     uint8_t             avr_sensor_data;
     float               battery_voltage;
+    uint16_t            app_slam_EFlag;
 #if (FEATURE_SUPER_USE_HARDCODE_CHORE)
     uint32_t                estop_chorography_tick_20ms;
     app_choreography_E      estop_choreography_wip;
@@ -103,6 +114,7 @@ static app_supervisor_data_S supervisor_data = {
     .button_pressed  = false,
     .avr_sensor_data = 0,
     .battery_voltage = 12.6,
+    .app_slam_EFlag  = APP_SLAM_TOF_DANGER_ZONE_FLAG_NULL,
 #if (FEATURE_SUPER_USE_HARDCODE_CHORE)
     .estop_chorography_tick_20ms = 0U,
     .estop_choreography_wip      = APP_CHOREOGRAPHY_STEP_UNKNOWN,
@@ -110,7 +122,7 @@ static app_supervisor_data_S supervisor_data = {
         [APP_CHOREOGRAPHY_INIT  ] = MOTOR_PWM_DUTY_0_PERCENT,
         [APP_CHOREOGRAPHY_STEP_1] = MOTOR_PWM_DUTY_30_PERCENT,
         [APP_CHOREOGRAPHY_STEP_2] = MOTOR_PWM_DUTY_30_PERCENT,
-        [APP_CHOREOGRAPHY_STEP_3] = MOTOR_PWM_DUTY_40_PERCENT,
+        [APP_CHOREOGRAPHY_STEP_3] = MOTOR_PWM_DUTY_30_PERCENT,
         [APP_CHOREOGRAPHY_STEP_4] = MOTOR_PWM_DUTY_0_PERCENT,
         [APP_CHOREOGRAPHY_STEP_5] = MOTOR_PWM_DUTY_0_PERCENT,
         [APP_CHOREOGRAPHY_STEP_6] = MOTOR_PWM_DUTY_30_PERCENT,
@@ -122,7 +134,7 @@ static app_supervisor_data_S supervisor_data = {
         [APP_CHOREOGRAPHY_INIT  ] = MOTOR_PWM_DUTY_0_PERCENT,
         [APP_CHOREOGRAPHY_STEP_1] = MOTOR_PWM_DUTY_30_PERCENT,
         [APP_CHOREOGRAPHY_STEP_2] = MOTOR_PWM_DUTY_30_PERCENT,
-        [APP_CHOREOGRAPHY_STEP_3] = MOTOR_PWM_DUTY_40_PERCENT,
+        [APP_CHOREOGRAPHY_STEP_3] = MOTOR_PWM_DUTY_30_PERCENT,
         [APP_CHOREOGRAPHY_STEP_4] = MOTOR_PWM_DUTY_0_PERCENT,
         [APP_CHOREOGRAPHY_STEP_5] = MOTOR_PWM_DUTY_0_PERCENT,
         [APP_CHOREOGRAPHY_STEP_6] = MOTOR_PWM_DUTY_30_PERCENT,
@@ -134,7 +146,7 @@ static app_supervisor_data_S supervisor_data = {
         [APP_CHOREOGRAPHY_INIT  ] = ROBOT_MOTION_BREAK,
         [APP_CHOREOGRAPHY_STEP_1] = ROBOT_MOTION_REV_COAST,
         [APP_CHOREOGRAPHY_STEP_2] = ROBOT_MOTION_REV_COAST,
-        [APP_CHOREOGRAPHY_STEP_3] = ROBOT_MOTION_REV_COAST,
+        [APP_CHOREOGRAPHY_STEP_3] = ROBOT_MOTION_BREAK,
         [APP_CHOREOGRAPHY_STEP_4] = ROBOT_MOTION_BREAK,
         [APP_CHOREOGRAPHY_STEP_5] = ROBOT_MOTION_BREAK,
         [APP_CHOREOGRAPHY_STEP_6] = ROBOT_MOTION_CW_ROTATION,
@@ -156,26 +168,36 @@ static app_state_E app_supervisor_private_getNextState(app_state_E state)
     switch (state)
     {
         case (APP_STATE_IDLE):
-            if (supervisor_data.button_pressed)
+            if (supervisor_data.button_pressed && (supervisor_data.avr_sensor_data == DEV_AVR_NO_SENSOR))
             {
                 // TODO: Starting on powerup problem
+                supervisor_data.fault_flag = APP_FAULTS_CLEAR;
                 nextState =  APP_STATE_AUTONOMY;
             }
             break;
 
         case (APP_STATE_AUTONOMY):
-            if (supervisor_data.avr_sensor_data & DEV_AVR_ALL_SENSORS)
+            if (supervisor_data.button_pressed)
+            {
+                nextState =  APP_STATE_IDLE; // Highest priority
+            }
+            else if (supervisor_data.battery_voltage < BATTERY_STATUS)
+            {
+                supervisor_data.fault_flag |= APP_FAULTS_CRITICAL_LOW_BATTERY;
+                nextState = APP_STATE_FAULT;
+            }
+            else if (supervisor_data.avr_sensor_data == DEV_AVR_ALL_IR_SENSORS)
+            {
+                supervisor_data.fault_flag |= APP_FAULTS_ROBOT_IN_THE_AIR;
+                nextState = APP_STATE_FAULT;
+            }
+            else if (supervisor_data.avr_sensor_data & DEV_AVR_ALL_SENSORS)
             {
                 nextState = APP_STATE_AUTONOMY_ESTOPPED;
             }
-            else if (supervisor_data.button_pressed)
+            else if (supervisor_data.app_slam_EFlag != APP_SLAM_TOF_DANGER_ZONE_FLAG_NULL)
             {
-                nextState =  APP_STATE_IDLE;
-            }
-            else if (supervisor_data.battery_voltage < BATTERY_STATUS) // check last, for the least probable state
-            {
-                supervisor_data.fault_flag |= APP_FAULTS_LOW_BATTERY;
-                nextState = APP_STATE_FAULT;
+                nextState = APP_STATE_AUTONOMY_ESTOPPED;
             }
             break;
 
@@ -186,9 +208,14 @@ static app_state_E app_supervisor_private_getNextState(app_state_E state)
             }
             else if (supervisor_data.battery_voltage < BATTERY_STATUS)
             {
-                supervisor_data.fault_flag |= APP_FAULTS_LOW_BATTERY;
+                supervisor_data.fault_flag |= APP_FAULTS_CRITICAL_LOW_BATTERY;
                 nextState = APP_STATE_FAULT;
             }    
+            else if (supervisor_data.avr_sensor_data == DEV_AVR_ALL_IR_SENSORS)
+            {
+                supervisor_data.fault_flag |= APP_FAULTS_ROBOT_IN_THE_AIR;
+                nextState = APP_STATE_FAULT;
+            }
 #if (FEATURE_SUPER_USE_HARDCODE_CHORE)
             else if (supervisor_data.estop_choreography_wip < APP_CHOREOGRAPHY_STEP_COUNT)
             {
@@ -198,7 +225,7 @@ static app_state_E app_supervisor_private_getNextState(app_state_E state)
 #   endif//(DEBUG_FPRINT_FEATURE_CHOREOGRAPHY)
             }
 #endif // (FEATURE_SUPER_USE_HARDCODE_CHORE)
-            else if ((supervisor_data.avr_sensor_data & DEV_AVR_ALL_SENSORS) == 0)
+            else if (supervisor_data.avr_sensor_data == DEV_AVR_NO_SENSOR)
             {
                 nextState = APP_STATE_AUTONOMY;
             }
@@ -207,7 +234,7 @@ static app_state_E app_supervisor_private_getNextState(app_state_E state)
         case (APP_STATE_FAULT):
             if (supervisor_data.battery_voltage >= BATTERY_STATUS)
             {
-                supervisor_data.fault_flag &= ~APP_FAULTS_LOW_BATTERY;
+                supervisor_data.fault_flag &= ~APP_FAULTS_CRITICAL_LOW_BATTERY;
                 nextState = APP_STATE_IDLE;
             }
             // TODO: maybe utilize the state when there are more faults??
@@ -233,8 +260,10 @@ static bool app_supervisor_private_transitToNewState(app_state_E state)
         case (APP_STATE_IDLE):
 #if (FEATURE_PERIPHERALS)       
             dev_led_clear_leds();
-#endif                        
+#endif
+#if (FEATURE_SUPER_CMD_DEV_DRIVER)    
             dev_avr_driver_set_req_Robot_motion(ROBOT_MOTION_BREAK, MOTOR_PWM_DUTY_40_PERCENT, MOTOR_PWM_DUTY_40_PERCENT);
+#endif //(FEATURE_SUPER_CMD_DEV_DRIVER)    
             break;
 
         case (APP_STATE_AUTONOMY):
@@ -243,7 +272,9 @@ static bool app_supervisor_private_transitToNewState(app_state_E state)
             dev_led_clear_leds();
             dev_led_green_set(true);
 #endif
+#if (FEATURE_SUPER_CMD_DEV_DRIVER)    
             dev_avr_driver_set_req_Robot_motion(ROBOT_MOTION_FW_COAST, MOTOR_PWM_DUTY_40_PERCENT, MOTOR_PWM_DUTY_40_PERCENT);
+#endif // (FEATURE_SUPER_CMD_DEV_DRIVER)    
 #if (FEATURE_UV)
             dev_uv_fw_shutdown_clear();
             dev_uv_set_row(UV_PWM, UV_DAC);
@@ -304,16 +335,19 @@ static bool app_supervisor_private_stateAction(app_state_E state)
     const uint8_t mode  = supervisor_data.estop_choreography_sequence_mode[index];
     const uint8_t model = supervisor_data.estop_choreography_sequence_l   [index];
     const uint8_t moder = supervisor_data.estop_choreography_sequence_r   [index];
+    const uint16_t tof  = supervisor_data.app_slam_EFlag;
     switch (state)
     {
         case (APP_STATE_AUTONOMY_ESTOPPED):
             if (index < APP_CHOREOGRAPHY_STEP_COUNT)
             {
-#   if (DEBUG_FPRINT_APP_SUPERVISOR)
-                PRINTF(">> output [%d] m:%d, l:%d, r:%d\n", index, mode, model, moder);
-#   endif // (DEBUG_FPRINT_APP_SUPERVISOR)
+#   if (DEBUG_FPRINT_APP_SUPER_CHOREOGRAPHY)
+                PRINTF("[ SUPER ] >> choreography output [%d] m:%d, l:%d, r:%d, tof:%d\n", index, mode, model, moder, tof);
+#   endif // (DEBUG_FPRINT_APP_SUPER_STATE)
                 // perform action sequence:
+#   if (FEATURE_SUPER_CMD_DEV_DRIVER)    
                 dev_avr_driver_set_req_Robot_motion(mode, model, moder);
+#   endif //(FEATURE_SUPER_CMD_DEV_DRIVER)    
                 supervisor_data.estop_chorography_tick_20ms ++;
                 supervisor_data.estop_choreography_wip = supervisor_data.estop_chorography_tick_20ms/CHOREOGRAPHY_BASE_TICK_20MS;
             }
@@ -338,7 +372,9 @@ static void app_supervisor_private_fetchState(void)
 #endif
 #if (FEATURE_SENSOR_AVR)
     supervisor_data.avr_sensor_data = dev_avr_sensor_uart_get();
-    // PRINTF("AVR SENSOR DATE: %c%c%c%c%c%c%c%c\n", BYTE_TO_BINARY(supervisor_data.avr_sensor_data));
+#   if (DEBUG_FPRINT_APP_SUPER_AVR_SENSOR)
+    PRINTF("[ SUPER ] AVR SENSOR RAW: %c%c%c%c%c%c%c%c\n", BYTE_TO_BINARY(supervisor_data.avr_sensor_data));
+#   endif
 #endif
 #if (FEATURE_SUPER_USE_PROFILED_MOTIONS | MOCK)
     // uint8_t frame=0U;
@@ -351,7 +387,9 @@ static void app_supervisor_private_fetchState(void)
     supervisor_data.battery_voltage = dev_battery_get();
 #endif    
     // TODO: IMU
-    
+
+    // APP_SLAM
+    supervisor_data.app_slam_EFlag = app_slam_requestToFDangerZone();
 }
 
 ///////////////////////////////////////
@@ -374,13 +412,13 @@ void app_supervisor_run50ms(void)
     if (next_state != current_state)
     {
         app_supervisor_private_exitCurrentState(current_state);
-#if (DEBUG_FPRINT_APP_SUPERVISOR)
-        PRINTF("STATE TRANSITION from %d to %d\n", current_state, next_state);
-#endif //(DEBUG_FPRINT_APP_SUPERVISOR)
         app_supervisor_private_transitToNewState(next_state);
         supervisor_data.current_state = next_state;
     }
     app_supervisor_private_stateAction(current_state);
 
+#if (DEBUG_FPRINT_APP_SUPER_STATE)
+        PRINTF("[ SUPER ] STATE: [%d] FAULT: [%d]\n", current_state, supervisor_data.fault_flag);
+#endif //(DEBUG_FPRINT_APP_SUPER_STATE)
 }
 

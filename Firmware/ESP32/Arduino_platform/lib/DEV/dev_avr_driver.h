@@ -42,7 +42,7 @@ typedef enum robot_motion_mode{
 
 
 void dev_avr_driver_init();
-void dev_driver_avr_update100ms();
+void dev_driver_avr_update20ms();
 
 uint16_t dev_avr_driver_get_EncoderCount(uint8_t driver_side);
 uint8_t  dev_avr_driver_get_WaterLevelSig();

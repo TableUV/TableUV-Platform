@@ -18,6 +18,7 @@
 // TableUV Lib
 #include "../IO/io_ping_map.h"
 #include "../../include/common.h"
+#include "dev_avr_driver.h"
 
 // Arduino Lib
 #include <SparkFun_VL53L1X.h>
@@ -30,14 +31,15 @@
 #define TOF_WIDTH_OF_SPADS_PER_ZONE         (5U) // MIN: 4 pix
 #define TOF_HEIGHT_OF_SPADS_PER_ZONE        (5U) // MIN: 4 pix
 #define TOF_MAX_DIST_MM                     (1300U) // 1.3 [m] in short range mode
-#define TOF_INTERMEDIATE_SETTING_DELAY_MS   (20U)
+#define TOF_INTERMEDIATE_SETTING_DELAY_MS   (10U)
 #define MP_MUTEX_BLOCK_TIME_MS              ((1U)/portTICK_PERIOD_MS)
-#define TOF_SENSOR_COUNT                    (1U) // (DEV_TOF_LIDAR_COUNT)
+#define TOF_SENSOR_COUNT                    (DEV_TOF_LIDAR_COUNT)
 
 typedef struct{
     TwoWire             I2C;
     SFEVL53L1X          tofs[DEV_TOF_LIDAR_COUNT];
     const uint8_t       address[DEV_TOF_LIDAR_COUNT];
+    const tof_sensor_config_E avr_config[DEV_TOF_LIDAR_COUNT];
     const uint8_t       firing_sequence[DEV_TOF_FIRING_KEYFRAME_COUNT];
     const uint8_t       firing_sequence_label[DEV_TOF_LIDAR_COUNT][DEV_TOF_FIRING_KEYFRAME_COUNT];
     uint8_t             prev_firingframe[DEV_TOF_LIDAR_COUNT];
@@ -57,14 +59,19 @@ void dev_ToF_reset_all_sensors(void);
 static dev_tof_lidar_data_S lidar_data = {
     .I2C = TwoWire(1),
     .tofs = {
-        SFEVL53L1X(lidar_data.I2C, 21, TOF_INT_1),//TOF_SHUT, TOF_INT_1),
-        SFEVL53L1X(lidar_data.I2C, 22, TOF_INT_2),//TOF_SHUT, TOF_INT_2),
-        SFEVL53L1X(lidar_data.I2C, 23, TOF_INT_3),//TOF_SHUT, TOF_INT_3)
+        /* DEV_TOF_LIDAR_C */ SFEVL53L1X(lidar_data.I2C, -1, TOF_INT_2),//TOF_SHUT, TOF_INT_1),
+        /* DEV_TOF_LIDAR_L */ SFEVL53L1X(lidar_data.I2C, -1, TOF_INT_1),//TOF_SHUT, TOF_INT_2),
+        /* DEV_TOF_LIDAR_R */ SFEVL53L1X(lidar_data.I2C, -1, TOF_INT_3),//TOF_SHUT, TOF_INT_3)
     },
     .address = { 
-        0x62, 
-        0x64, 
-        0x66 // Arbitrary Address (non-default)
+        [DEV_TOF_LIDAR_C] = 0x62, 
+        [DEV_TOF_LIDAR_L] = 0x64, 
+        [DEV_TOF_LIDAR_R] = 0x66, // Arbitrary Address (non-default)
+    },
+    .avr_config = { // MUST BE IN THIS ORDER:
+        [DEV_TOF_LIDAR_C] = TOF_SENSOR_CONFIG_ENABLE_ONE, 
+        [DEV_TOF_LIDAR_L] = TOF_SENSOR_CONFIG_ENABLE_TWO, 
+        [DEV_TOF_LIDAR_R] = TOF_SENSOR_CONFIG_ENABLE_ALL,
     },
 /**Table of Optical Centers**
 *
@@ -95,14 +102,14 @@ static dev_tof_lidar_data_S lidar_data = {
         //Firing Order:  Left <-    [2] - [4] - [1] - [5] - [3]    -> Right
     },
     .firing_sequence_label = {
-        DEV_TOF_FIRING_GEOMETRICAL_3, DEV_TOF_FIRING_GEOMETRICAL_1, DEV_TOF_FIRING_GEOMETRICAL_5, DEV_TOF_FIRING_GEOMETRICAL_2, DEV_TOF_FIRING_GEOMETRICAL_4,
-        DEV_TOF_FIRING_GEOMETRICAL_8, DEV_TOF_FIRING_GEOMETRICAL_6, DEV_TOF_FIRING_GEOMETRICAL_10, DEV_TOF_FIRING_GEOMETRICAL_7, DEV_TOF_FIRING_GEOMETRICAL_9,
-        DEV_TOF_FIRING_GEOMETRICAL_13, DEV_TOF_FIRING_GEOMETRICAL_11, DEV_TOF_FIRING_GEOMETRICAL_15, DEV_TOF_FIRING_GEOMETRICAL_12, DEV_TOF_FIRING_GEOMETRICAL_14,
+        /* DEV_TOF_LIDAR_C */ DEV_TOF_FIRING_GEOMETRICAL_8, DEV_TOF_FIRING_GEOMETRICAL_6, DEV_TOF_FIRING_GEOMETRICAL_10, DEV_TOF_FIRING_GEOMETRICAL_7, DEV_TOF_FIRING_GEOMETRICAL_9,
+        /* DEV_TOF_LIDAR_L */ DEV_TOF_FIRING_GEOMETRICAL_13, DEV_TOF_FIRING_GEOMETRICAL_11, DEV_TOF_FIRING_GEOMETRICAL_15, DEV_TOF_FIRING_GEOMETRICAL_12, DEV_TOF_FIRING_GEOMETRICAL_14,
+        /* DEV_TOF_LIDAR_R */ DEV_TOF_FIRING_GEOMETRICAL_3, DEV_TOF_FIRING_GEOMETRICAL_1, DEV_TOF_FIRING_GEOMETRICAL_5, DEV_TOF_FIRING_GEOMETRICAL_2, DEV_TOF_FIRING_GEOMETRICAL_4,
     },
     .prev_firingframe = {
-        DEV_TOF_FIRING_KEYFRAME_UNKNOWN,
-        DEV_TOF_FIRING_KEYFRAME_UNKNOWN,
-        DEV_TOF_FIRING_KEYFRAME_UNKNOWN,
+        /* DEV_TOF_LIDAR_C */ DEV_TOF_FIRING_KEYFRAME_UNKNOWN,
+        /* DEV_TOF_LIDAR_L */ DEV_TOF_FIRING_KEYFRAME_UNKNOWN,
+        /* DEV_TOF_LIDAR_R */ DEV_TOF_FIRING_KEYFRAME_UNKNOWN,
     },
     .mp_mutex = xSemaphoreCreateBinary(),
     .mp_data ={
@@ -141,40 +148,43 @@ void dev_ToF_reset_all_sensors(void)
 	// int16_t offset;
 
     // start ToFs
-    for (int sensor_id = DEV_TOF_LIDAR_R; sensor_id < TOF_SENSOR_COUNT; sensor_id ++)
+    for (int sensor_id = 0U; sensor_id < TOF_SENSOR_COUNT; sensor_id ++)
     {
         sensor = & (lidar_data.tofs[sensor_id]);
-        if (sensor->begin() == true)
+        const int8_t begin_status = sensor->begin();
+        if (begin_status == VL53L1X_ERROR_NONE)
         {
-            PRINTF("%d Sensor online!\n", sensor_id);
+            PRINTF("[ DEV:ToF ] Sensor[%d] online! [Code:%d]\n", sensor_id, begin_status);
         }
         else
         {
-            PRINTF("%d Sensor offline!\n", sensor_id);
+            PRINTF("[ DEV:ToF ] Sensor[%d] offline! [Code:%d]\n", sensor_id, begin_status);
         }
-
-        // Take down all sensors
-        sensor->sensorOff();
     }
-
+    // Take down all sensors : DEFAULT: off on AVR
+    dev_avr_driver_set_req_Tof_config(TOF_SENSOR_CONFIG_DISABLE_ALL);
+    dev_driver_avr_update20ms(); // Force update
     delay(TOF_INTERMEDIATE_SETTING_DELAY_MS);
 
     // read sensor initial values & set address & activate sensor
-    for (int sensor_id = DEV_TOF_LIDAR_R; sensor_id < TOF_SENSOR_COUNT; sensor_id ++)
+    for (int sensor_id = 0U; sensor_id < TOF_SENSOR_COUNT; sensor_id ++)
     {
         sensor = & (lidar_data.tofs[sensor_id]);
 
-        // turn on sensor
-        sensor->sensorOn();
-        int boot = sensor->checkBootState();
+        // turn on sensor | WARNING: Do not call: sensor->sensorOn();
+        dev_avr_driver_set_req_Tof_config(lidar_data.avr_config[sensor_id]);
+        dev_driver_avr_update20ms(); // Force update
+        delay(TOF_INTERMEDIATE_SETTING_DELAY_MS);
+
+        const int8_t boot = sensor->checkBootState();
         
         // change address
         sensor->setI2CAddress(lidar_data.address[sensor_id]);
-        
-        PRINTF("%d [#%d] Sensor Boot Code: %d \n", sensor_id, lidar_data.address[sensor_id], boot);
+        PRINTF("[ DEV:ToF ] Sensor[%d] [#%d] Boot Code: %d \n", sensor_id, lidar_data.address[sensor_id], boot);
         
         // activate sensor
-        sensor->init();
+        const int8_t status = sensor->init(); // TODO: get if successful
+        PRINTF("[ DEV:ToF ] Sensor[%d] [#%d] Init Code: %d \n", sensor_id, lidar_data.address[sensor_id], status);
 
         // set initial values
         sensor->setDistanceModeShort();
@@ -188,6 +198,7 @@ void dev_ToF_reset_all_sensors(void)
         // begin firing
         sensor->startRanging();
         delay(TOF_INTERMEDIATE_SETTING_DELAY_MS);
+        sensor->clearInterrupt();
     }
 }
 
@@ -196,8 +207,11 @@ void dev_ToF_reset_all_sensors(void)
 ///////////////////////////////////////
 void dev_ToF_Lidar_init(void)
 {
+    // release semaphore
+    xSemaphoreGive(lidar_data.mp_mutex);
+
     // start tof I2C
-    lidar_data.I2C.begin(TOF_I2C_SDA, TOF_I2C_SCL);
+    lidar_data.I2C.begin(TOF_I2C_SDA, TOF_I2C_SCL, TOF_I2C_FREQ);
 
     // reset ToF
     dev_ToF_reset_all_sensors();
@@ -216,9 +230,9 @@ void dev_ToF_Lidar_update20ms(void)
     uint8_t firing_frame;
     uint8_t firing_frame_new;
     uint8_t geo_label;
-    
+
     // firing
-    for (uint8_t sensor_id = DEV_TOF_LIDAR_R; sensor_id < TOF_SENSOR_COUNT; sensor_id ++)
+    for (uint8_t sensor_id = 0U; sensor_id < TOF_SENSOR_COUNT; sensor_id ++)
     {
         sensor = & (lidar_data.tofs[sensor_id]);
         // if data ready
@@ -237,7 +251,7 @@ void dev_ToF_Lidar_update20ms(void)
             }
 
 # if (DEBUG_FPRINT_FEATURE_LIDAR)
-            PRINTF("%d Sensor: %3d [mm] F:[%d] Label:(%2d) Status:(%d) \n", sensor_id, dist_mm, firing_frame, lidar_data.firing_sequence_label[sensor_id][firing_frame], error);
+            PRINTF("[ DEV:TOF ] Sensor[%d]: %3d [mm] F:[%d] Label:(%2d) Status:(%d) \n", sensor_id, dist_mm, firing_frame, lidar_data.firing_sequence_label[sensor_id][firing_frame], error);
 # endif
             // update new firing pattern
             if (sensor->setCenter(lidar_data.firing_sequence[firing_frame_new]) == VL53L1_ERROR_NONE)
@@ -247,7 +261,7 @@ void dev_ToF_Lidar_update20ms(void)
             sensor->clearInterrupt();
 
             // store data
-            if (error == VL53L1_ERROR_NONE)
+            if ((error == DEV_TOF_RANGE_STATUS_SIGNAL_FAILURE) || (error == DEV_TOF_RANGE_STATUS_NO_ERROR))
             {
                 geo_label = lidar_data.firing_sequence_label[sensor_id][firing_frame];
                 if (xSemaphoreTake(lidar_data.mp_mutex, MP_MUTEX_BLOCK_TIME_MS) == pdTRUE) {

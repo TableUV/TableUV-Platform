@@ -86,7 +86,7 @@ static inline void dev_uv_private_gpio_config(void)
     io_conf.intr_type = GPIO_INTR_DISABLE;
     io_conf.mode = GPIO_MODE_OUTPUT;
     io_conf.pin_bit_mask =  (1ULL<<FW_SHUTDOWN);
-    io_conf.pull_down_en = 0;
+    io_conf.pull_down_en = 1;
     io_conf.pull_up_en = 0;
     gpio_config(&io_conf);    
 
@@ -98,7 +98,7 @@ static inline void dev_uv_private_gpio_config(void)
 ///////////////////////////////////////
 void dev_uv_init(void)
 {
-    dev_uv_private_gpio_config();    
+    dev_uv_private_gpio_config();
 }
 
 void dev_uv_set_both(int pwm_duty, uint8_t dac_duty)

@@ -29,6 +29,7 @@ extern "C"{
 #define TOF_INT_3            39
 #define TOF_INT_2            35
 #define TOF_INT_1            34
+#define TOF_I2C_FREQ         100000 // 400k Hz
 
 // DAC 
 #define ESP_DAC              DAC_CHANNEL_2  //DAC_CHANNEL_2
@@ -40,6 +41,7 @@ extern "C"{
 #define TOF_I2C_SDA          33
 #define MOTOR_I2C_SCL        22
 #define MOTOR_I2C_SDA        23
+#define MOTOR_I2C_FREQ       100000 // 100k Hz
 
 //UART 
 #define SENSOR_AVR_UART_RX      GPIO_NUM_27

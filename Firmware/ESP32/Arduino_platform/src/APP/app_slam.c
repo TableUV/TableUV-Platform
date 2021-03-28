@@ -112,6 +112,13 @@ typedef enum {
 #define VEHICLE_COLLISION_NUM_NODES         (5)
 #define VEHICLE_AVOIDANCE_R_PIXEL           (4)
 
+// TOF: 
+#if (FEATURE_DEMO_TOF_OBSTACLE)
+// obstacle
+# define VEHICLE_TOF_OBSTACLE_DIST_MIN           (30U) // [mm]
+# define VEHICLE_TOF_OBSTACLE_DIST_MIN_CORNER    (10U) // [mm]
+#endif // (FEATURE_DEMO_TOF_OBSTACLE)
+
 /*** (parameterization) ***/
 // Robot Characteristics 
 #define ROBOT_SIZE_D_MM                     (100U)  // 100 [mm] => boundary would be (100 + 10/2 + 10/2) = 110 [mm]
@@ -232,6 +239,7 @@ typedef struct{
     bool                        ir_node[IR_COUNT];
     bool                        collision_end_node[COLLISION_COUNT];
     uint8_t                     obstacle_count; // store obstacle result
+    uint16_t                    tof_dangerous_zone;
 
     SemaphoreHandle_t           motion_profile_mutex;
     motion_profile_S            motion_profile;
@@ -361,7 +369,8 @@ static void app_slam_private_localMapUpdate(void)
 {
     // 1. Grab data from Lidar
 #if (FEATURE_LIDAR)
-    dev_ToF_Lidar_dampDataBuffer(& (slam_data.lidar_data));
+    const dev_tof_lidar_sensor_data_S * lidar_data = &(slam_data.lidar_data);
+    const bool status = dev_ToF_Lidar_dampDataBuffer(lidar_data);
 #endif //(FEATURE_LIDAR)
 
     // 2. Grab IR + Collision Data
@@ -390,6 +399,31 @@ static void app_slam_private_localMapUpdate(void)
     cn_node[COLLISION_R] = FALSE;
     cn_node[COLLISION_L] = FALSE;
 #endif //(FEATURE_SLAM_AVR_SENSOR)
+
+#if (FEATURE_DEMO_TOF_OBSTACLE)
+    slam_data.tof_dangerous_zone = APP_SLAM_TOF_DANGER_ZONE_FLAG_NULL;
+    // TOF threshold detection
+    for (int i = 0; i < lidar_data->data_counter; i ++)
+    {
+        const uint8_t label = lidar_data->keyframe_label[i];
+        if ((DEV_TOF_FIRING_GEOMETRICAL_3 <= label) && (label <= DEV_TOF_FIRING_GEOMETRICAL_13))
+        {
+            if (lidar_data->dist_mm[i] <= VEHICLE_TOF_OBSTACLE_DIST_MIN)
+            {
+                // flag the zone
+                slam_data.tof_dangerous_zone |= (1<<label);
+            }
+        }
+        else
+        {
+            if (lidar_data->dist_mm[i] <= VEHICLE_TOF_OBSTACLE_DIST_MIN_CORNER)
+            {
+                // flag the corner zone
+                slam_data.tof_dangerous_zone |= (1<<label);
+            }
+        }
+    }
+#endif //(FEATURE_DEMO_TOF_OBSTACLE)
 }
 
 static INLINE void app_slam_private_resetGlobalMap(void)
@@ -846,3 +880,11 @@ void app_slam_requestToResetMap(void)
     slam_data.mapResetRequested = TRUE;
 }
 
+uint16_t app_slam_requestToFDangerZone(void)
+{
+    uint16_t status = APP_SLAM_TOF_DANGER_ZONE_FLAG_NULL;
+#if (FEATURE_DEMO_TOF_OBSTACLE)
+    status = slam_data.tof_dangerous_zone;
+#endif //(FEATURE_DEMO_TOF_OBSTACLE)
+    return status;
+}

@@ -116,10 +116,10 @@ typedef enum motor_command_direction{
 // tof_sensor_config
 // XSHUT is active low, pulling low shutsdown the sensor 
 typedef enum tof_sensor_config{
-    TOF_SENSOR_CONFIG_DISABLE_ALL,  //pull XSHUT low, sensor shutdown (active low )
-    TOF_SENSOR_CONFIG_ENABLE_1,
-    TOF_SENSOR_CONFIG_ENABLE_2,
-    TOF_SENSOR_CONFIG_ENABLE_3,
+    TOF_SENSOR_CONFIG_ENABLE_ALL  = 0U,  //pull XSHUT high, sensor shutdown (active high)
+    TOF_SENSOR_CONFIG_ENABLE_TWO  = 1U,
+    TOF_SENSOR_CONFIG_ENABLE_ONE  = 2U,
+    TOF_SENSOR_CONFIG_DISABLE_ALL = 3U,
     TOF_SENSOR_CONFIG_COUNT,
     TOF_SENSOR_CONFIG_UNDEFINED
 } tof_sensor_config_E; 

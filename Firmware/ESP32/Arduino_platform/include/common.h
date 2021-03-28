@@ -72,13 +72,17 @@ extern "C"{
 #   define MOCK                                   ( ENABLE)
 
 /*****   FEATURE ENABLES  ****/
-#   define FEATURE_SLAM                           (DISABLE) // APP SLAM
-#   define FEATURE_LIDAR                          (DISABLE)
+#   define FEATURE_DEMO_TOF_OBSTACLE              ( ENABLE) // DEV avr driver: motor, mist, encoder feedback
+#   define FEATURE_DEV_DRIVER                     ( ENABLE) // DEV avr driver: motor, mist, encoder feedback
+#   define FEATURE_SLAM                           ( ENABLE) // APP SLAM
+#   define FEATURE_LIDAR                          ( ENABLE)
 #   define FEATURE_LIDAR_CALIBRATION_MODE         (   TODO) // TODO: implement calibration strategy
 #   define FEATURE_SUPER_USE_PROFILED_MOTIONS     (   TODO) // TODO: implement calibration strategy
 #   define FEATURE_SUPER_USE_HARDCODE_CHORE       ( ENABLE)
+#   define FEATURE_SUPER_CMD_DEV_DRIVER           ( ENABLE) // Super command on actuators
 #   define FEATURE_PERIPHERALS                    ( ENABLE)
-#   define FEATURE_UV                             ( DISABLE)
+#   define FEATURE_FAST_MODE                      (DISABLE) // Wacky shit | Attempt to use 50Hz, currently it is safe to use 20Hz, to increase, we need to find a way to increase ToF to 400kHz.
+#   define FEATURE_UV                             ((DISABLE) && (! FEATURE_FAST_MODE))
 #   define FEATURE_IMU                            (DISABLE)
 #   define FEATURE_SENSOR_AVR                     ( ENABLE)
 #   define FEATURE_AVR_DRIVER_ALL                 ( ENABLE) //
@@ -94,19 +98,23 @@ extern "C"{
 /*****   DEBUG PRINT FLAGS  ****/
 #   define DEBUG_FPRINT                           ( ENABLE)
 #   ifdef DEBUG_FPRINT
-#       define DEBUG_FPRINT_FEATURE_LIDAR         (DISABLE) // Live feed of sensor readings
-#       define DEBUG_FPRINT_APP_SUPERVISOR        (DISABLE) // Live feed of collision status
-#       define DEBUG_FPRINT_FEATURE_MAP           (DISABLE) // Live feed of global map
-#       define DEBUG_FPRINT_FEATURE_MAP_CENTERED  (   TRUE) // Map Feeding Mode: true->memory_map, false->center_map
-#       define DEBUG_FPRINT_FEATURE_OBSTACLES     (DISABLE) // Live feed of obstacle detection
-#       define DEBUG_FPRINT_FEATURE_CHOREOGRAPHY  (DISABLE) // Live feed of choreography
+#       define DEBUG_FPRINT_FEATURE_LIDAR               ( ENABLE) // Live feed of tof sensor readings
+#       define DEBUG_FPRINT_APP_SUPER_STATE             ( ENABLE) // Live feed of supervisor state
+#       define DEBUG_FPRINT_APP_SUPER_AVR_SENSOR        ( ENABLE) // Live feed of collision status
+#       define DEBUG_FPRINT_APP_SUPER_CHOREOGRAPHY      ( ENABLE) // Live feed of choreography status
+#       define DEBUG_FPRINT_FEATURE_MAP                 (DISABLE) // Live feed of global map
+#       define DEBUG_FPRINT_FEATURE_MAP_CENTERED        (   TRUE) // Map Feeding Mode: true->memory_map, false->center_map
+#       define DEBUG_FPRINT_FEATURE_OBSTACLES           (DISABLE) // Live feed of obstacle detection
+#       define DEBUG_FPRINT_FEATURE_CHOREOGRAPHY        (DISABLE) // Live feed of choreography
 #   else
-#       define DEBUG_FPRINT_FEATURE_LIDAR         (DISABLE)
-#       define DEBUG_FPRINT_APP_SUPERVISOR        (DISABLE)
-#       define DEBUG_FPRINT_FEATURE_MAP           (DISABLE)
-#       define DEBUG_FPRINT_FEATURE_MAP_CENTERED  (DISABLE)
-#       define DEBUG_FPRINT_FEATURE_OBSTACLES     (DISABLE)
-#       define DEBUG_FPRINT_FEATURE_CHOREOGRAPHY  (DISABLE)
+#       define DEBUG_FPRINT_FEATURE_LIDAR               (DISABLE)
+#       define DEBUG_FPRINT_APP_SUPER_STATE             (DISABLE)
+#       define DEBUG_FPRINT_APP_SUPER_AVR_SENSOR        (DISABLE)
+#       define DEBUG_FPRINT_APP_SUPER_CHOREOGRAPHY      (DISABLE)
+#       define DEBUG_FPRINT_FEATURE_MAP                 (DISABLE)
+#       define DEBUG_FPRINT_FEATURE_MAP_CENTERED        (DISABLE)
+#       define DEBUG_FPRINT_FEATURE_OBSTACLES           (DISABLE)
+#       define DEBUG_FPRINT_FEATURE_CHOREOGRAPHY        (DISABLE)
 #   endif
 
 /***********************************

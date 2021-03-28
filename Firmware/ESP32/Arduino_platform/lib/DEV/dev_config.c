@@ -46,10 +46,10 @@
 ///////////////////////////////////////
 void dev_init(void)
 {
-    // sub-device  initialization
 #if (FEATURE_AVR_DRIVER_ALL)    
     dev_avr_driver_init();
 #endif    
+    // sub-device  initialization
 #if (FEATURE_SENSOR_AVR)       
     dev_avr_sensor_init();
 #endif    
@@ -59,15 +59,15 @@ void dev_init(void)
 #if (FEATURE_PERIPHERALS)    
     dev_led_init();
 #endif    
-#if (FEATURE_LIDAR)
-    dev_ToF_Lidar_init();
-#endif
 #if (FEATURE_UV)
     dev_uv_init();
 #endif    
 #if (FEATURE_IMU)
     dev_imu_init();
-#endif    
+#endif
+#if (FEATURE_LIDAR)
+    dev_ToF_Lidar_init();
+#endif
 }
 
 void dev_run20ms(void)
@@ -80,14 +80,13 @@ void dev_run20ms(void)
     dev_avr_sensor_uart_update();
 #endif
 #if (FEATURE_AVR_DRIVER_ALL)
-    dev_driver_avr_update100ms(); 
+    dev_driver_avr_update20ms(); 
 #endif   
 
 }
 
 void dev_run50ms(void)
 {
- 
 #if (FEATURE_PERIPHERALS)
     dev_led_update();
 #endif
