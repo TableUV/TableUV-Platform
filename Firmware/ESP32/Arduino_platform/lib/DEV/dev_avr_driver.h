@@ -71,6 +71,12 @@ void dev_avr_driver_reset_req_Robot_motion();
  * @return 16 bit encoder value
  */
 uint16_t dev_avr_driver_get_EncoderCount(uint8_t driver_side);
+/**
+ * @brief Accesses left and right encoder value buffers 
+ * @param l_enc_buf Left encoder buffer of size ENC_BUFFER_SIZE
+ * @param r_enc_buf Right encoder buffer of size ENC_BUFFER_SIZE
+ */
+void dev_avr_driver_get_encoder_buffers(int16_t* l_enc_buf, int16_t* r_enc_buf);
 uint8_t  dev_avr_driver_get_WaterLevelSig();
 
 # ifdef __cplusplus  

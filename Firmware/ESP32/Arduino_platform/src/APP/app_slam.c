@@ -254,8 +254,8 @@ typedef struct{
     // sensor configuration
     const edge_sensor_config_S * sensor_config;
 
-    float encoder_pose_vel;
-    float encoder_pose_theta;
+    int16_t left_enc_buf[ENC_BUFFER_SIZE];
+    int16_t right_enc_buf[ENC_BUFFER_SIZE];
 
     math_cart_coord_float_S     encoder_delta_mm;
 } app_slam_data_S;
@@ -360,6 +360,7 @@ static const edge_sensor_config_S edge_sensor_config = {
 static void app_slam_private_localization(void)
 {
     // TODO: intake  IMU, Encoder => EKF
+    
 }
 
 /**

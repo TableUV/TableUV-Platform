@@ -336,6 +336,15 @@ uint16_t dev_avr_driver_get_EncoderCount(uint8_t driver_side){
     return data;
 }
 
+void dev_avr_driver_get_encoder_buffers(int16_t* l_enc_buf, int16_t* r_enc_buf) {
+    if (xSemaphoreTake(dev_avr_driver_data.mp_mutex, MP_MUTEX_BLOCK_TIME_MS) == pdTRUE) {
+        *l_enc_buf = dev_avr_driver_data.l_enc_q;
+        *r_enc_buf = dev_avr_driver_data.r_enc_q;
+        //release the mutex 
+        xSemaphoreGive(dev_avr_driver_data.mp_mutex); 
+    }    
+}
+
 uint8_t  dev_avr_driver_get_WaterLevelSig(){
     // take the mutex
     uint8_t data = 0; 
