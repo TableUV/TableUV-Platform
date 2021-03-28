@@ -253,6 +253,10 @@ typedef struct{
     // sensor configuration
     const edge_sensor_config_S * sensor_config;
 
+    float encoder_pose_vel;
+    float encoder_pose_theta;
+
+    math_cart_coord_float_S     encoder_delta_mm;
 } app_slam_data_S;
 
 /////////////////////////////////////////
