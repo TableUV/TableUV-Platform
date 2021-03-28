@@ -55,6 +55,7 @@
 
 typedef int8_t VL53L1X_ERROR;
 
+#define VL53L1X_ERROR_NONE									(0)
 #define SOFT_RESET											0x0000
 #define VL53L1_I2C_SLAVE__DEVICE_ADDRESS					0x0001
 #define VL53L1_VHV_CONFIG__TIMEOUT_MACROP_LOOP_BOUND        0x0008

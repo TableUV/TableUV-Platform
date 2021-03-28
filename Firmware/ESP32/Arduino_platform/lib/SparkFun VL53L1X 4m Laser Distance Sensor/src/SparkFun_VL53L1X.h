@@ -34,8 +34,8 @@ class SFEVL53L1X
 {
 	public:
 	SFEVL53L1X(TwoWire &i2cPort = Wire, int shutdownPin = -1, int interruptPin = -1); //Constructs our Distance sensor without an interrupt or shutdown pin
-	bool init(); //Deprecated version of begin
-	bool begin(); //Initialization of sensor
+	VL53L1X_ERROR init(); //Deprecated version of begin
+	VL53L1X_ERROR begin(); //Initialization of sensor
 	bool checkID(); //Check the ID of the sensor, returns true if ID is correct
 	void sensorOn(); //Toggles shutdown pin to turn sensor on and off
     void sensorOff(); //Toggles shutdown pin to turn sensor on and off

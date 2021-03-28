@@ -151,13 +151,14 @@ void dev_ToF_reset_all_sensors(void)
     for (int sensor_id = 0U; sensor_id < TOF_SENSOR_COUNT; sensor_id ++)
     {
         sensor = & (lidar_data.tofs[sensor_id]);
-        if (sensor->begin() == true)
+        const int8_t begin_status = sensor->begin();
+        if (begin_status == VL53L1X_ERROR_NONE)
         {
-            PRINTF("%d Sensor online!\n", sensor_id);
+            PRINTF("[ DEV:ToF ] Sensor[%d] online! [Code:%d]\n", sensor_id, begin_status);
         }
         else
         {
-            PRINTF("%d Sensor offline!\n", sensor_id);
+            PRINTF("[ DEV:ToF ] Sensor[%d] offline! [Code:%d]\n", sensor_id, begin_status);
         }
     }
     // Take down all sensors : DEFAULT: off on AVR
@@ -175,15 +176,15 @@ void dev_ToF_reset_all_sensors(void)
         dev_driver_avr_update20ms(); // Force update
         delay(TOF_INTERMEDIATE_SETTING_DELAY_MS);
 
-        int boot = sensor->checkBootState();
+        const int8_t boot = sensor->checkBootState();
         
         // change address
         sensor->setI2CAddress(lidar_data.address[sensor_id]);
-        
-        PRINTF("%d [#%d] Sensor Boot Code: %d \n", sensor_id, lidar_data.address[sensor_id], boot);
+        PRINTF("[ DEV:ToF ] Sensor[%d] [#%d] Boot Code: %d \n", sensor_id, lidar_data.address[sensor_id], boot);
         
         // activate sensor
-        sensor->init();
+        const int8_t status = sensor->init(); // TODO: get if successful
+        PRINTF("[ DEV:ToF ] Sensor[%d] [#%d] Init Code: %d \n", sensor_id, lidar_data.address[sensor_id], status);
 
         // set initial values
         sensor->setDistanceModeShort();

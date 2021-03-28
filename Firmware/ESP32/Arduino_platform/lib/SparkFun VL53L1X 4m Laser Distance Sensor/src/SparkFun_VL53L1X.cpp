@@ -35,12 +35,12 @@ SFEVL53L1X::SFEVL53L1X(TwoWire &i2cPort, int shutdownPin, int interruptPin)
 	_device = new VL53L1X(&i2cPort, shutdownPin, interruptPin);
 }
 
-bool SFEVL53L1X::init()
+VL53L1X_ERROR SFEVL53L1X::init()
 {
 	return _device->VL53L1X_SensorInit();
 }
 
-bool SFEVL53L1X::begin()
+VL53L1X_ERROR SFEVL53L1X::begin()
 {
 	if (checkID() == false)
 		return (VL53L1_ERROR_PLATFORM_SPECIFIC_START);
