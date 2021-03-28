@@ -217,6 +217,7 @@ typedef struct{
     map_pixel_data_t             data[GMAP_WN_PIXEL * GMAP_HN_PIXEL];
     math_cart_coord_int32_S      map_center_pixel;     // \in [0, GMAP_GRID_EDGE_SIZE_PIXEL]
     math_cart_coord_float_S      map_offset_mm;        // \in [-GMAP_UNIT_GRID_STEP_SIZE_MM, GMAP_UNIT_GRID_STEP_SIZE_MM]
+    math_cart_coord_float_S      vehicle_state;
     float                        vehicle_orientation_rad;
     vehicle_edge_node_E          orientation_node;
 } dynamic_map_S;
@@ -254,8 +255,8 @@ typedef struct{
     // sensor configuration
     const edge_sensor_config_S * sensor_config;
 
-    int16_t left_enc_buf[ENC_BUFFER_SIZE];
-    int16_t right_enc_buf[ENC_BUFFER_SIZE];
+    int16_t left_enc_buf[DEV_AVR_DRIVER_ENC_BUFFER_SIZE];
+    int16_t right_enc_buf[DEV_AVR_DRIVER_ENC_BUFFER_SIZE];
 
     math_cart_coord_float_S     encoder_delta_mm;
     float                       encoder_delta_theta_rad;
@@ -361,9 +362,10 @@ static const edge_sensor_config_S edge_sensor_config = {
 static void app_slam_private_localization(void)
 {
     // TODO: intake  IMU, Encoder => EKF
-    dev_avr_driver_get_encoder_buffers(&slam_data.left_enc_buf, &slam_data.right_enc_buf);
-    slam_data.encoder_delta_mm = slam_math_get_enc_pose(&slam_data.left_enc_buf, &slam_data.right_enc_buf);
+    uint8_t buffer_size = dev_avr_driver_get_encoder_buffers(slam_data.left_enc_buf, slam_data.right_enc_buf);
+    slam_data.encoder_delta_mm = slam_math_get_enc_pose_reduced(slam_data.left_enc_buf, slam_data.right_enc_buf, buffer_size);
     slam_data.encoder_delta_theta_rad = slam_math_get_theta(slam_data.encoder_delta_mm);
+    PRINTF("[ APP:SLAM ] # encoder fused: [%d] \n", buffer_size);
 }
 
 /**
@@ -639,6 +641,9 @@ static void app_slam_private_globalMapUpdate(void)
     float dy_mm = mock_dy_mm + slam_data.gMap.map_offset_mm.y;
     float theta = mock_dtheta_rad + slam_data.gMap.vehicle_orientation_rad;
 #endif // (MOCK)
+    // accumulate global coord:
+    slam_data.gMap.vehicle_state.x += dx_mm;
+    slam_data.gMap.vehicle_state.y += dy_mm;
     // translate translation to pixel space:
     const int32_t dx_pixel = GMAP_MM_TO_UNIT_PIXEL(dx_mm);
     const int32_t dy_pixel = GMAP_MM_TO_UNIT_PIXEL(dy_mm);
@@ -656,7 +661,9 @@ static void app_slam_private_globalMapUpdate(void)
     slam_data.gMap.map_offset_mm.y = dy_mm;
     slam_data.gMap.vehicle_orientation_rad = theta;
     slam_data.gMap.orientation_node = orientation_node;
-    // printf("mm: [%f, %f] \n", dx_mm, dy_mm);
+
+    PRINTF("[ APP:SLAM ] x,y,theta: (%.3f mm, %.3f mm, %.3f rad)\n", 
+        slam_data.gMap.vehicle_state.x, slam_data.gMap.vehicle_state.y, theta);
     
     //// Update Map Content ===== ======
     // Clear Vehicle Region

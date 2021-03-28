@@ -39,8 +39,8 @@ typedef struct{
     uint16_t                    encoderCount[NUM_AVR_DRIVER];
     uint8_t                     waterLevelSig; 
     SemaphoreHandle_t           mp_mutex;
-    int16_t                     l_enc_q[ENC_BUFFER_SIZE];
-    int16_t                     r_enc_q[ENC_BUFFER_SIZE];
+    int16_t                     l_enc_q[DEV_AVR_DRIVER_ENC_BUFFER_SIZE];
+    int16_t                     r_enc_q[DEV_AVR_DRIVER_ENC_BUFFER_SIZE];
     uint8_t                     enc_buf_index;
 } dev_avr_driver_data_S;
 
@@ -132,16 +132,12 @@ static void avr_driver_update_i2c_message_two_byte(){
     robot_motion_mode_E temp_reqRobotMotion  = ROBOT_MOTION_BREAK; 
     motor_pwm_duty_E temp_left_motor_speed = MOTOR_PWM_DUTY_0_PERCENT, temp_right_motor_speed = MOTOR_PWM_DUTY_0_PERCENT; 
 
-    // take the mutex 
-    if (xSemaphoreTake(dev_avr_driver_data.mp_mutex, MP_MUTEX_BLOCK_TIME_MS) == pdTRUE) {
-        temp_reqEstop  = dev_avr_driver_data.reqEstop ;
-        temp_reqHaptic = dev_avr_driver_data.reqHaptic;
-        temp_reqConfigTof = dev_avr_driver_data.reqConfigTof;
-        temp_reqRobotMotion = dev_avr_driver_data.reqRobotMotion; 
-        temp_left_motor_speed =  dev_avr_driver_data.pwm_duty[LEFT_AVR_DRIVER] ;
-        temp_right_motor_speed = dev_avr_driver_data.pwm_duty[RIGHT_AVR_DRIVER];
-        xSemaphoreGive(dev_avr_driver_data.mp_mutex); 
-    }
+    temp_reqEstop  = dev_avr_driver_data.reqEstop ;
+    temp_reqHaptic = dev_avr_driver_data.reqHaptic;
+    temp_reqConfigTof = dev_avr_driver_data.reqConfigTof;
+    temp_reqRobotMotion = dev_avr_driver_data.reqRobotMotion; 
+    temp_left_motor_speed =  dev_avr_driver_data.pwm_duty[LEFT_AVR_DRIVER] ;
+    temp_right_motor_speed = dev_avr_driver_data.pwm_duty[RIGHT_AVR_DRIVER];
 
     // req estop 
     if(temp_reqEstop){
@@ -222,12 +218,8 @@ static void avr_driver_update_i2c_message_two_byte(){
         temp_message_right |= SET_MESSAGE_ESTOP_EN();
     }
 
-    // take the mutex 
-    if (xSemaphoreTake(dev_avr_driver_data.mp_mutex, MP_MUTEX_BLOCK_TIME_MS) == pdTRUE) {
-        dev_avr_driver_data.i2c_message[LEFT_AVR_DRIVER]  = temp_message_left ;
-        dev_avr_driver_data.i2c_message[RIGHT_AVR_DRIVER] = temp_message_right;
-        xSemaphoreGive(dev_avr_driver_data.mp_mutex); 
-    }
+    dev_avr_driver_data.i2c_message[LEFT_AVR_DRIVER]  = temp_message_left ;
+    dev_avr_driver_data.i2c_message[RIGHT_AVR_DRIVER] = temp_message_right;
 }
 
 ///////////////////////////////////////
@@ -263,14 +255,13 @@ void dev_driver_avr_update20ms()
     }
     //dev_avr_driver_data.waterLevelSig = dev_avr_driver_receive_one_byte(dev_avr_driver_data.address[RIGHT_AVR_DRIVER]);
     
-    if (xSemaphoreTake(dev_avr_driver_data.mp_mutex, MP_MUTEX_BLOCK_TIME_MS) == pdTRUE) {
-        dev_avr_driver_data.encoderCount[LEFT_AVR_DRIVER]  = temp_left_encoder; 
-        dev_avr_driver_data.encoderCount[RIGHT_AVR_DRIVER] = temp_right_encoder;
+    dev_avr_driver_data.encoderCount[LEFT_AVR_DRIVER]  = temp_left_encoder; 
+    dev_avr_driver_data.encoderCount[RIGHT_AVR_DRIVER] = temp_right_encoder;
 
+    if (xSemaphoreTake(dev_avr_driver_data.mp_mutex, MP_MUTEX_BLOCK_TIME_MS) == pdTRUE) {
         dev_avr_driver_data.l_enc_q[dev_avr_driver_data.enc_buf_index] = temp_left_encoder;
         dev_avr_driver_data.r_enc_q[dev_avr_driver_data.enc_buf_index] = temp_right_encoder;
-
-        dev_avr_driver_data.enc_buf_index = (dev_avr_driver_data.enc_buf_index == ENC_BUFFER_SIZE -1) ? 0 : dev_avr_driver_data.enc_buf_index + 1;
+        dev_avr_driver_data.enc_buf_index = (dev_avr_driver_data.enc_buf_index == (DEV_AVR_DRIVER_ENC_BUFFER_SIZE - 1)) ? 0 : dev_avr_driver_data.enc_buf_index + 1;
         //release the mutex 
         xSemaphoreGive(dev_avr_driver_data.mp_mutex); 
     }
@@ -294,13 +285,10 @@ void dev_avr_driver_set_req_Tof_config(tof_sensor_config_E tof_sensor_config){
     dev_avr_driver_data.reqConfigTof = tof_sensor_config; 
 }
 void dev_avr_driver_set_req_Robot_motion(robot_motion_mode_E robot_motion_mode, motor_pwm_duty_E motor_pwm_duty_left, motor_pwm_duty_E motor_pwm_duty_right){
-    if (xSemaphoreTake(dev_avr_driver_data.mp_mutex, MP_MUTEX_BLOCK_TIME_MS) == pdTRUE) {
-        dev_avr_driver_data.reqEstop = 0;
-        dev_avr_driver_data.reqRobotMotion = robot_motion_mode;
-        dev_avr_driver_data.pwm_duty[LEFT_AVR_DRIVER] = motor_pwm_duty_left;
-        dev_avr_driver_data.pwm_duty[RIGHT_AVR_DRIVER] = motor_pwm_duty_right;
-        xSemaphoreGive(dev_avr_driver_data.mp_mutex);
-    }
+    dev_avr_driver_data.reqEstop = 0;
+    dev_avr_driver_data.reqRobotMotion = robot_motion_mode;
+    dev_avr_driver_data.pwm_duty[LEFT_AVR_DRIVER] = motor_pwm_duty_left;
+    dev_avr_driver_data.pwm_duty[RIGHT_AVR_DRIVER] = motor_pwm_duty_right;
 }
 
 void dev_avr_driver_reset_req_Estop(){
@@ -316,43 +304,35 @@ void dev_avr_driver_reset_req_Tof_config(){
 }
 
 void dev_avr_driver_reset_req_Robot_motion(){
-    if (xSemaphoreTake(dev_avr_driver_data.mp_mutex, MP_MUTEX_BLOCK_TIME_MS) == pdTRUE) {
-        dev_avr_driver_set_req_Estop();
-        dev_avr_driver_data.reqRobotMotion = ROBOT_MOTION_BREAK;
-        dev_avr_driver_data.pwm_duty[LEFT_AVR_DRIVER] = MOTOR_PWM_DUTY_0_PERCENT;
-        dev_avr_driver_data.pwm_duty[RIGHT_AVR_DRIVER] = MOTOR_PWM_DUTY_0_PERCENT;
-        xSemaphoreGive(dev_avr_driver_data.mp_mutex); 
-    }
+    dev_avr_driver_set_req_Estop();
+    dev_avr_driver_data.reqRobotMotion = ROBOT_MOTION_BREAK;
+    dev_avr_driver_data.pwm_duty[LEFT_AVR_DRIVER] = MOTOR_PWM_DUTY_0_PERCENT;
+    dev_avr_driver_data.pwm_duty[RIGHT_AVR_DRIVER] = MOTOR_PWM_DUTY_0_PERCENT;
 }
 
 uint16_t dev_avr_driver_get_EncoderCount(uint8_t driver_side){
-    // take the mutex
     uint16_t data = 0; 
-    if (xSemaphoreTake(dev_avr_driver_data.mp_mutex, MP_MUTEX_BLOCK_TIME_MS) == pdTRUE) {
-        data = dev_avr_driver_data.encoderCount[driver_side];
-        //release the mutex 
-        xSemaphoreGive(dev_avr_driver_data.mp_mutex); 
-    }
+    data = dev_avr_driver_data.encoderCount[driver_side];
     return data;
 }
 
-void dev_avr_driver_get_encoder_buffers(int16_t* l_enc_buf, int16_t* r_enc_buf) {
+uint8_t dev_avr_driver_get_encoder_buffers(int16_t* l_enc_buf, int16_t* r_enc_buf) {
+    uint8_t buffer_size = 0;
+    //take the mutex 
     if (xSemaphoreTake(dev_avr_driver_data.mp_mutex, MP_MUTEX_BLOCK_TIME_MS) == pdTRUE) {
-        l_enc_buf = dev_avr_driver_data.l_enc_q;
-        r_enc_buf = dev_avr_driver_data.r_enc_q;
-        //release the mutex 
-        xSemaphoreGive(dev_avr_driver_data.mp_mutex); 
-    }    
-}
-
-uint8_t  dev_avr_driver_get_WaterLevelSig(){
-    // take the mutex
-    uint8_t data = 0; 
-    if (xSemaphoreTake(dev_avr_driver_data.mp_mutex, MP_MUTEX_BLOCK_TIME_MS) == pdTRUE) {
-        data = dev_avr_driver_data.waterLevelSig;
+        memcpy(l_enc_buf, dev_avr_driver_data.l_enc_q, sizeof(int16_t) * DEV_AVR_DRIVER_ENC_BUFFER_SIZE);
+        memcpy(r_enc_buf, dev_avr_driver_data.r_enc_q, sizeof(int16_t) * DEV_AVR_DRIVER_ENC_BUFFER_SIZE);
+        buffer_size = dev_avr_driver_data.enc_buf_index;
+        dev_avr_driver_data.enc_buf_index = 0; // reset buffer index
         //release the mutex 
         xSemaphoreGive(dev_avr_driver_data.mp_mutex); 
     }
+    return buffer_size;
+}
+
+uint8_t  dev_avr_driver_get_WaterLevelSig(){
+    uint8_t data = 0; 
+    data = dev_avr_driver_data.waterLevelSig;
     return data;
 }
 

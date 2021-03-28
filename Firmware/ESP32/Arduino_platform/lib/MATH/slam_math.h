@@ -40,11 +40,15 @@ typedef struct{
 /**
  * @brief Converts left and right encoder buffer into one x and y
  * 
- * @param l_enc_buf: Input left encoder buffer of size ENC_BUFFER_SIZE
- * @param r_enc_buf: Input right encoder buffer of size ENC_BUFFER_SIZE
+ * @param l_enc_buf: Input left encoder buffer of size 'buffer_size'
+ * @param r_enc_buf: Input right encoder buffer of size 'buffer_size'
+ * @param buffer_size: the buffer size 
+ * 
  * @return returns resulting pose
  */
-math_cart_coord_float_S slam_math_get_enc_pose(int16_t* l_enc_buf, int16_t* r_enc_buf);
+math_cart_coord_float_S slam_math_get_enc_pose(int16_t* l_enc_buf, int16_t* r_enc_buf, const uint8_t buffer_size);
+math_cart_coord_float_S slam_math_get_enc_pose_optimized(int16_t* l_enc_buf, int16_t* r_enc_buf, const uint8_t buffer_size);
+math_cart_coord_float_S slam_math_get_enc_pose_reduced(int16_t* l_enc_buf, int16_t* r_enc_buf, const uint8_t buffer_size);
 
 float slam_math_get_theta(math_cart_coord_float_S input_coord);
 
