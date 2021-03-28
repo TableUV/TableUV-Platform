@@ -17,9 +17,9 @@ extern "C"{
 #include "../../include/pinConfig.h"
 
 void setup_TOF_XSHUT_Config();
-void disable_TOF_XSHUT_1();
-void disable_TOF_XSHUT_2();
-void disable_TOF_XSHUT_3();
+void disable_TOF_XSHUT_All();
+void disable_TOF_XSHUT_TWO_SENSOR();
+void disable_TOF_XSHUT_ONE_SENSOR();
 void enable_TOF_XSHUT_All();
 
 #ifdef __cplusplus  

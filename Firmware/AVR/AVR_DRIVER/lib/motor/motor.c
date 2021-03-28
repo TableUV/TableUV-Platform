@@ -26,14 +26,14 @@ void setupMotorConfig(pwm_mode_E pwm_mode){
     if (pwm_mode == PWM_MODE_FAST){
         // set WGM (waveform generation mode)
         TCCR0A |= _BV(WGM01) | _BV(WGM00);
-        // set prescaler of 8, freq = 3.91khz
+        // set prescaler of 1, freq = 31.3khz
         TCCR0B |=  _BV(CS01);
 
     }
     else if (pwm_mode == PWM_MODE_PHASE_CORRECT){
         // set WGM (waveform generation mode)
         TCCR0A |= _BV(WGM00);
-        // set prescaler of 8 , freq = 1.95khz (phase correct pwm is half freq of fast pwm mode)
+        // set prescaler of 1 , freq = 15.6khz (phase correct pwm is half freq of fast pwm mode)
         TCCR0B |= _BV(CS01);
 
     }
@@ -81,12 +81,12 @@ void setMotor(motor_mode_E motor_mode, motor_pwm_duty_E percent_pwm, uint8_t dri
         case(MOTOR_MODE_CW_BREAK):
             OCR0A = 255 ;
             //OCR0B = percent_pwm * REG_MAX / 10;
-            OCR0B = temp_pwm; 
+            OCR0B = 255 - temp_pwm; 
         break; 
 
         case(MOTOR_MODE_CCW_BREAK):
             //OCR0A = percent_pwm * REG_MAX / 10 ;
-            OCR0A =  temp_pwm; 
+            OCR0A = 255 - temp_pwm; 
             OCR0B = 255 ;
         break; 
 
@@ -120,6 +120,6 @@ void testMotorAll(){
 }
 
 void testMotor_sweep(uint8_t motor_sweep_count){
-    OCR0A = motor_sweep_count ;
-    OCR0B = 0; 
+    OCR0A = 255 ;
+    OCR0B = 255 - motor_sweep_count; 
 }

@@ -13,16 +13,18 @@
 
 void setup_TOF_XSHUT_Config(){
     DDRA |= _BV(TOF_CONFIG_1) | _BV(TOF_CONFIG_2) | _BV(TOF_CONFIG_3); 
+    disable_TOF_XSHUT_All(); 
 }
 
-void disable_TOF_XSHUT_1(){
+void disable_TOF_XSHUT_All(){
+    PORTA |= _BV(TOF_CONFIG_1) | _BV(TOF_CONFIG_2) | _BV(TOF_CONFIG_3);
+}
+
+void disable_TOF_XSHUT_TWO_SENSOR(){
+    PORTA |= _BV(TOF_CONFIG_1) | _BV(TOF_CONFIG_2);
+}
+void disable_TOF_XSHUT_ONE_SENSOR(){
     PORTA |= _BV(TOF_CONFIG_1);
-}
-void disable_TOF_XSHUT_2(){
-    PORTA |= _BV(TOF_CONFIG_2);
-}
-void disable_TOF_XSHUT_3(){
-    PORTA |= _BV(TOF_CONFIG_3);
 }
 void enable_TOF_XSHUT_All(){
     PORTA &= ~_BV(TOF_CONFIG_1) & ~_BV(TOF_CONFIG_2) & ~_BV(TOF_CONFIG_3);
