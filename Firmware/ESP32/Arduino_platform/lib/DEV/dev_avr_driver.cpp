@@ -184,8 +184,8 @@ static void avr_driver_update_i2c_message_two_byte(){
             break;
 
             case(ROBOT_MOTION_REV_BREAK):
-                temp_message_left  |= (MOTOR_COMMAND_MODE_BRAKE << 5) | (MOTOR_COMMAND_DIRECTION_CCW << 4) | (temp_left_motor_speed << 0);
-                temp_message_right |= (MOTOR_COMMAND_MODE_BRAKE << 5) | (MOTOR_COMMAND_DIRECTION_CW  << 4) | (temp_right_motor_speed << 0);
+                temp_message_left  |= (MOTOR_COMMAND_MODE_BRAKE << 5) | (MOTOR_COMMAND_DIRECTION_CW  << 4) | (temp_left_motor_speed << 0);
+                temp_message_right |= (MOTOR_COMMAND_MODE_BRAKE << 5) | (MOTOR_COMMAND_DIRECTION_CCW << 4) | (temp_right_motor_speed << 0);
                 break;
 
             case(ROBOT_MOTION_CW_ROTATION):
