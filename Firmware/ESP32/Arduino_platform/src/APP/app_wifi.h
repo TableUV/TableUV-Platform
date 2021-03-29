@@ -1,0 +1,36 @@
+/**
+ * @file app_wifi.h
+ * @author Jerome Villapando
+ * @date 15 Feb 2021
+ * @brief WIFI output
+ * 
+ * 
+ */
+
+
+#ifndef APP_WIFI_H
+#define APP_WIFI_H
+# ifdef __cplusplus
+extern "C"{
+# endif 
+
+/////////////////////////////////
+/////////   INCLUDE     /////////
+/////////////////////////////////
+
+
+/////////////////////////////////
+/////////   ENUM    /////////////
+/////////////////////////////////
+
+///////////////////////////////////////
+///////   PUBLIC PROTOTYPE    /////////
+///////////////////////////////////////
+void app_wifi_init(void);
+void app_wifi_run100ms(void) ;
+
+
+# ifdef __cplusplus  
+}
+# endif 
+#endif //APP_WIFI_H

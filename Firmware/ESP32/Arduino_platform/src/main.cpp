@@ -37,6 +37,7 @@
 #include "io_ping_map.h"
 #include "APP/app_slam.h"
 #include "APP/app_supervisor.h"
+#include "APP/app_wifi.h"
 
 // SDK config 
 #include "sdkconfig.h"
@@ -138,6 +139,7 @@ static void core1_task_runSLAM(void * pvParameters)
         {
             //  add task (High Level)
             app_slam_run100ms();
+            app_wifi_run100ms();
         }
         vTaskDelayUntil(&xLastWakeTime, TASK_SLAM_TASK_TICK);
     }
@@ -229,6 +231,7 @@ void setup() {
     // app level init
     app_slam_init();
     app_supervisor_init();
+    app_wifi_init();
 
     // esp32 task initialization
     esp32_task_init();

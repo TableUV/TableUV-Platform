@@ -96,7 +96,7 @@ extern "C"{
 #   define FEATURE_BATTERY                        ( ENABLE)
 
 /*****   DEBUG PRINT FLAGS  ****/
-#   define DEBUG_FPRINT                           ( ENABLE)
+#   define DEBUG_FPRINT                           ( DISABLE)
 #   ifdef DEBUG_FPRINT
 #       define DEBUG_FPRINT_FEATURE_LIDAR               ( ENABLE) // Live feed of tof sensor readings
 #       define DEBUG_FPRINT_APP_SUPER_STATE             ( ENABLE) // Live feed of supervisor state
