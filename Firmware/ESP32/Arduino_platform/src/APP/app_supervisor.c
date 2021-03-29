@@ -35,7 +35,8 @@ typedef enum {
     APP_STATE_IDLE,
     APP_STATE_AUTONOMY,
     APP_STATE_AUTONOMY_ESTOPPED,
-    APP_STATE_FAULT,
+    APP_STATE_HALT,
+    // APP_STATE_FAULT_TRAP,
     //
     APP_STATE_COUNT,
     APP_STATE_UNKNOWN,
@@ -175,17 +176,17 @@ static app_state_E app_supervisor_private_getNextState(app_state_E state)
         case (APP_STATE_AUTONOMY):
             if (supervisor_data.button_pressed)
             {
-                nextState =  APP_STATE_IDLE; // Highest priority
+                nextState = APP_STATE_HALT; // Highest priority
             }
             else if (supervisor_data.battery_voltage < BATTERY_STATUS)
             {
                 supervisor_data.fault_flag |= APP_FAULTS_CRITICAL_LOW_BATTERY;
-                nextState = APP_STATE_FAULT;
+                nextState = APP_STATE_HALT;
             }
             else if (supervisor_data.avr_sensor_data == DEV_AVR_ALL_IR_SENSORS)
             {
                 supervisor_data.fault_flag |= APP_FAULTS_ROBOT_IN_THE_AIR;
-                nextState = APP_STATE_FAULT;
+                nextState = APP_STATE_HALT;
             }
             else if (supervisor_data.avr_sensor_data & DEV_AVR_ALL_SENSORS)
             {
@@ -205,12 +206,12 @@ static app_state_E app_supervisor_private_getNextState(app_state_E state)
             else if (supervisor_data.battery_voltage < BATTERY_STATUS)
             {
                 supervisor_data.fault_flag |= APP_FAULTS_CRITICAL_LOW_BATTERY;
-                nextState = APP_STATE_FAULT;
+                nextState = APP_STATE_HALT;
             }    
             else if (supervisor_data.avr_sensor_data == DEV_AVR_ALL_IR_SENSORS)
             {
                 supervisor_data.fault_flag |= APP_FAULTS_ROBOT_IN_THE_AIR;
-                nextState = APP_STATE_FAULT;
+                nextState = APP_STATE_HALT;
             }
 #if (FEATURE_SUPER_USE_HARDCODE_CHORE)
             else if (supervisor_data.estop_choreography_wip < APP_CHOREOGRAPHY_STEP_COUNT)
@@ -227,7 +228,7 @@ static app_state_E app_supervisor_private_getNextState(app_state_E state)
             }
             break;
 
-        case (APP_STATE_FAULT):
+        case (APP_STATE_HALT):
             if (supervisor_data.battery_voltage >= BATTERY_STATUS)
             {
                 supervisor_data.fault_flag &= ~APP_FAULTS_CRITICAL_LOW_BATTERY;
@@ -254,12 +255,10 @@ static bool app_supervisor_private_transitToNewState(app_state_E state)
     switch (state)
     {
         case (APP_STATE_IDLE):
+        case (APP_STATE_HALT):
 #if (FEATURE_PERIPHERALS)       
             dev_led_clear_leds();
 #endif
-#if (FEATURE_SUPER_CMD_DEV_DRIVER)    
-            dev_avr_driver_set_req_Robot_motion(ROBOT_MOTION_BREAK, MOTOR_PWM_DUTY_40_PERCENT, MOTOR_PWM_DUTY_40_PERCENT);
-#endif //(FEATURE_SUPER_CMD_DEV_DRIVER)    
             break;
 
         case (APP_STATE_AUTONOMY):
@@ -268,9 +267,6 @@ static bool app_supervisor_private_transitToNewState(app_state_E state)
             dev_led_clear_leds();
             dev_led_green_set(true);
 #endif
-#if (FEATURE_SUPER_CMD_DEV_DRIVER)    
-            dev_avr_driver_set_req_Robot_motion(ROBOT_MOTION_FW_BREAK, MOTOR_PWM_DUTY_40_PERCENT, MOTOR_PWM_DUTY_40_PERCENT);
-#endif // (FEATURE_SUPER_CMD_DEV_DRIVER)    
 #if (FEATURE_UV)
             dev_uv_fw_shutdown_clear();
             dev_uv_set_row(UV_PWM, UV_DAC);
@@ -285,9 +281,6 @@ static bool app_supervisor_private_transitToNewState(app_state_E state)
 #if (FEATURE_PERIPHERALS)               
             dev_led_clear_leds();
             dev_led_red_set(true);
-#endif
-#if (!FEATURE_SUPER_USE_HARDCODE_CHORE)
-            dev_avr_driver_set_req_Robot_motion(ROBOT_MOTION_BREAK, MOTOR_PWM_DUTY_40_PERCENT, MOTOR_PWM_DUTY_40_PERCENT);
 #endif
             break;
 
@@ -311,14 +304,15 @@ static bool app_supervisor_private_exitCurrentState(app_state_E state)
             break;
 
         case (APP_STATE_AUTONOMY_ESTOPPED):
+        case (APP_STATE_HALT):
         case (APP_STATE_AUTONOMY):
-#if (FEATURE_UV)
-            dev_uv_fw_shutdown();
-#endif        
         case (APP_STATE_COUNT):            
         case (APP_STATE_UNKNOWN):
         default:
             // Do nothing
+#if (FEATURE_UV)
+            dev_uv_fw_shutdown();
+#endif
             break;
     }
     return true;
@@ -349,12 +343,22 @@ static bool app_supervisor_private_stateAction(app_state_E state)
             }
             break;
 
-        case (APP_STATE_IDLE):
         case (APP_STATE_AUTONOMY):
+#if (FEATURE_SUPER_CMD_DEV_DRIVER)    
+            dev_avr_driver_set_req_Robot_motion(ROBOT_MOTION_FW_BREAK, MOTOR_PWM_DUTY_40_PERCENT, MOTOR_PWM_DUTY_40_PERCENT);
+#endif // (FEATURE_SUPER_CMD_DEV_DRIVER)    
+            break;
+            break;
+
+        case (APP_STATE_HALT):
+        case (APP_STATE_IDLE):
+#if (FEATURE_SUPER_CMD_DEV_DRIVER)    
+            dev_avr_driver_set_req_Estop();
+#endif //(FEATURE_SUPER_CMD_DEV_DRIVER)
+            break;
         case (APP_STATE_COUNT):            
         case (APP_STATE_UNKNOWN):
         default:
-            // Do nothing
             break;
     }
 #endif // (FEATURE_SUPER_USE_HARDCODE_CHORE)
@@ -407,6 +411,9 @@ void app_supervisor_run50ms(void)
 
     if (next_state != current_state)
     {
+#if (DEBUG_FPRINT_APP_SUPER_STATE)
+        PRINTF("[ SUPER ] STATE TRANSITION: [%d] => [%d]\n", current_state, next_state);
+#endif //(DEBUG_FPRINT_APP_SUPER_STATE)
         app_supervisor_private_exitCurrentState(current_state);
         app_supervisor_private_transitToNewState(next_state);
         supervisor_data.current_state = next_state;
