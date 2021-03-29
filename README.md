@@ -5,6 +5,7 @@
 ### Stable Branches:
 - https://github.com/TableUV/TableUV/tree/stable/demo-1
 - https://github.com/TableUV/TableUV/tree/stable/demo-2-tof-avoidance-20Hz
+- https://github.com/TableUV/TableUV/tree/stable/demo-3-encoder-map
 ---
 
  ![coverage](https://img.shields.io/badge/coverage-60%25-green) ![version](https://img.shields.io/badge/version-1.0.0-blue)  ![uptime](https://img.shields.io/badge/uptime-100%25-brightgreen)
