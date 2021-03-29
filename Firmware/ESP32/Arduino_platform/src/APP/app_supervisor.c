@@ -58,11 +58,7 @@ typedef enum {
 } app_faults_E;
 
 #if (FEATURE_SUPER_USE_HARDCODE_CHORE)
-#   if (FEATURE_FAST_MODE)
-#   define CHOREOGRAPHY_BASE_TICK_20MS    (10U) // base ticK 10*20ms
-#   else
-#   define CHOREOGRAPHY_BASE_TICK_20MS    (4U) // base ticK 4*50ms
-#   endif //(FEATURE_FAST_MODE)
+#define CHOREOGRAPHY_BASE_TICK_50MS    (4U) // base ticK 4*50ms
 
 typedef enum{
     APP_CHOREOGRAPHY_INIT,
@@ -349,7 +345,7 @@ static bool app_supervisor_private_stateAction(app_state_E state)
                 dev_avr_driver_set_req_Robot_motion(mode, model, moder);
 #   endif //(FEATURE_SUPER_CMD_DEV_DRIVER)    
                 supervisor_data.estop_chorography_tick_20ms ++;
-                supervisor_data.estop_choreography_wip = supervisor_data.estop_chorography_tick_20ms/CHOREOGRAPHY_BASE_TICK_20MS;
+                supervisor_data.estop_choreography_wip = supervisor_data.estop_chorography_tick_20ms/CHOREOGRAPHY_BASE_TICK_50MS;
             }
             break;
 

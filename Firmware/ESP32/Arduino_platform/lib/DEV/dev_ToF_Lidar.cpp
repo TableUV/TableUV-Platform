@@ -57,7 +57,7 @@ void dev_ToF_reset_all_sensors(void);
 ///////   DATA     ////////
 ///////////////////////////
 static dev_tof_lidar_data_S lidar_data = {
-    .I2C = TwoWire(1),
+    .I2C = TwoWire(0),
     .tofs = {
         /* DEV_TOF_LIDAR_C */ SFEVL53L1X(lidar_data.I2C, -1, TOF_INT_2),//TOF_SHUT, TOF_INT_1),
         /* DEV_TOF_LIDAR_L */ SFEVL53L1X(lidar_data.I2C, -1, TOF_INT_1),//TOF_SHUT, TOF_INT_2),

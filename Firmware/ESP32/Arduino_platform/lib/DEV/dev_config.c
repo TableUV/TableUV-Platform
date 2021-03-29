@@ -70,25 +70,19 @@ void dev_init(void)
 #endif
 }
 
-void dev_run20ms(void)
+void dev_run50ms(void)
 {
-    // Do  nothing
-#if (FEATURE_LIDAR)
-    dev_ToF_Lidar_update20ms();
-#endif
 #if (FEATURE_SENSOR_AVR)
     dev_avr_sensor_uart_update();
 #endif
-#if (FEATURE_AVR_DRIVER_ALL)
-    dev_driver_avr_update20ms(); 
-#endif   
-
-}
-
-void dev_run50ms(void)
-{
+#if (FEATURE_LIDAR)
+    dev_ToF_Lidar_update20ms();
+#endif
 #if (FEATURE_PERIPHERALS)
     dev_led_update();
+#endif
+#if (FEATURE_AVR_DRIVER_ALL)
+    dev_driver_avr_update20ms(); 
 #endif
 }
 

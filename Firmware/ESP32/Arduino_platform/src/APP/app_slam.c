@@ -18,6 +18,7 @@
 #include "dev_ToF_Lidar.h"
 #include "slam_math.h"
 #include "dev_avr_sensor.h"
+#include "dev_avr_driver.h"
 
 // SDK config 
 #include "sdkconfig.h"
@@ -216,6 +217,7 @@ typedef struct{
     map_pixel_data_t             data[GMAP_WN_PIXEL * GMAP_HN_PIXEL];
     math_cart_coord_int32_S      map_center_pixel;     // \in [0, GMAP_GRID_EDGE_SIZE_PIXEL]
     math_cart_coord_float_S      map_offset_mm;        // \in [-GMAP_UNIT_GRID_STEP_SIZE_MM, GMAP_UNIT_GRID_STEP_SIZE_MM]
+    math_cart_coord_float_S      vehicle_state;
     float                        vehicle_orientation_rad;
     vehicle_edge_node_E          orientation_node;
 } dynamic_map_S;
@@ -253,6 +255,11 @@ typedef struct{
     // sensor configuration
     const edge_sensor_config_S * sensor_config;
 
+    int16_t left_enc_buf[DEV_AVR_DRIVER_ENC_BUFFER_SIZE];
+    int16_t right_enc_buf[DEV_AVR_DRIVER_ENC_BUFFER_SIZE];
+
+    math_cart_coord_float_S     encoder_delta_mm;
+    float                       encoder_delta_theta_rad;
 } app_slam_data_S;
 
 /////////////////////////////////////////
@@ -355,6 +362,15 @@ static const edge_sensor_config_S edge_sensor_config = {
 static void app_slam_private_localization(void)
 {
     // TODO: intake  IMU, Encoder => EKF
+    uint8_t buffer_size = dev_avr_driver_get_encoder_buffers(slam_data.left_enc_buf, slam_data.right_enc_buf);
+    slam_data.encoder_delta_mm = slam_math_get_enc_pose(slam_data.left_enc_buf, slam_data.right_enc_buf, buffer_size);
+    slam_data.encoder_delta_theta_rad = slam_math_get_theta(slam_data.encoder_delta_mm);
+#if (DEBUG_FPRINT_APP_SLAM_PRINT)
+    for (int i = 0; i < buffer_size ; i ++)
+    {
+        PRINTF("[ APP:SLAM ] # encoder fused: [%d/%d] [%5d, %5d]\n", i, buffer_size, slam_data.left_enc_buf[i], slam_data.right_enc_buf[i]);
+    }
+#endif (DEBUG_FPRINT_APP_SLAM_PRINT)
 }
 
 /**
@@ -616,17 +632,23 @@ static void app_slam_private_globalMapUpdate(void)
 {
     //// Fetch Data ====== ====== ======
     // TODO: Assume we get (dx, dy) from localization (@Alex)
-#if (MOCK)
-    float mock_dx_mm = 0.0f; // 1mm / 0.1s => 10mm / s
-    float mock_dy_mm = 1.0f;
-    float mock_dtheta_rad = 0.0f; // Assume: < pi
+#if(FEATURE_SLAM_ENCODER)
+    float dx_mm = slam_data.encoder_delta_mm.x;
+    float dy_mm = slam_data.encoder_delta_mm.y;
+    float theta = slam_data.encoder_delta_theta_rad;
+#elif (MOCK)
+    float dx_mm = 0.0f; // 1mm / 0.1s => 10mm / s
+    float dy_mm = 1.0f;
+    float theta = 0.0f; // Assume: < pi
 #endif // (MOCK)
-
     //// Update Dynamic Map ===== ======
+    // accumulate global coord:
+    slam_data.gMap.vehicle_state.x += dx_mm;
+    slam_data.gMap.vehicle_state.y += dy_mm;
     // accumulate leftover float bits from previous update
-    float dx_mm = mock_dx_mm + slam_data.gMap.map_offset_mm.x;
-    float dy_mm = mock_dy_mm + slam_data.gMap.map_offset_mm.y;
-    float theta = mock_dtheta_rad + slam_data.gMap.vehicle_orientation_rad;
+    dx_mm += slam_data.gMap.map_offset_mm.x;
+    dy_mm += slam_data.gMap.map_offset_mm.y;
+    theta += slam_data.gMap.vehicle_orientation_rad;
     // translate translation to pixel space:
     const int32_t dx_pixel = GMAP_MM_TO_UNIT_PIXEL(dx_mm);
     const int32_t dy_pixel = GMAP_MM_TO_UNIT_PIXEL(dy_mm);
@@ -644,7 +666,11 @@ static void app_slam_private_globalMapUpdate(void)
     slam_data.gMap.map_offset_mm.y = dy_mm;
     slam_data.gMap.vehicle_orientation_rad = theta;
     slam_data.gMap.orientation_node = orientation_node;
-    // printf("mm: [%f, %f] \n", dx_mm, dy_mm);
+
+#if (DEBUG_FPRINT_APP_SLAM_PRINT)
+    PRINTF("[ APP:SLAM ] x,y,theta: (%.3f mm, %.3f mm, %.3f rad)\n", 
+        slam_data.gMap.vehicle_state.x, slam_data.gMap.vehicle_state.y, theta);
+#endif (DEBUG_FPRINT_APP_SLAM_PRINT)
     
     //// Update Map Content ===== ======
     // Clear Vehicle Region
@@ -717,7 +743,7 @@ static void app_slam_private_motionPlanning(void)
     if (obstacle_count > OBSTACLE_TOLERANCE)
     {
 #if DEBUG_FPRINT_FEATURE_OBSTACLES
-        PRINTF("[INFO] Collision Detected (# %d)\n", obstacle_count);
+        PRINTF("[ APP:SLAM ] Collision Detected (# %d)\n", obstacle_count);
 #endif
         // update velocity to rotation
         if (xSemaphoreTake(slam_data.motion_profile_mutex, MP_MUTEX_BLOCK_TIME_MS) == pdTRUE) {            
@@ -768,45 +794,73 @@ static void app_slam_private_motionPlanning(void)
 }
 
 #if (DEBUG_FPRINT_FEATURE_MAP)
-static void app_slam_private_debugPrintMap(bool central, int32_t count)
+static dynamic_map_S temp_gMap;
+#define PUBLISH_PERIOD (10)
+#define PUBLISH_LENGTH_PER_CYCLE (GMAP_WN_PIXEL/5)
+static void app_slam_private_debugPrintMap(bool central)
 {
-    // [0, W | H )
-    const int32_t cx= slam_data.gMap.map_center_pixel.x - GMAP_DEFAULT_CENTRAL_X_INDEX_PIXEL;
-    const int32_t cy= slam_data.gMap.map_center_pixel.y - GMAP_DEFAULT_CENTRAL_Y_INDEX_PIXEL;
-    map_pixel_data_t* mdata = (slam_data.gMap.data);
-    int32_t x,y;
-    if (central)
+    static int count = 0;
+    static int frame_count = -1;
+    if (count == PUBLISH_PERIOD)
     {
-        PRINTF("MAP-Centered: , %d, \n", count);
-        for (int32_t j = 0; j < GMAP_WN_PIXEL; j ++)
+        count = 0;
+    }
+
+    if (count == 0)
+    {
+        // copy latest map
+        memcpy(&temp_gMap, &slam_data.gMap, sizeof(dynamic_map_S));
+        frame_count ++;
+        if (central)
         {
-            y = cy + j;
-            y += MAP_OFFSET[ARG_RANGE_INCLUSIVE((int32_t)(y), 0, GMAP_HN_PIXEL)];
-            y *= GMAP_WN_PIXEL;
-            for (int32_t i = 0; i < GMAP_HN_PIXEL; i ++)
-            {
-                x = cx + i;
-                x += MAP_OFFSET[ARG_RANGE_INCLUSIVE((int32_t)(x), 0, GMAP_HN_PIXEL)];
-                PRINTF("%d,", mdata[y + x]);
-            }
-            PRINTF("%d\n", 0);
+            PRINTF("MAP-Centered:,%d, \n", frame_count);
+        }
+        else
+        {
+            PRINTF("MAP-Memory:,%d, \n", frame_count);
         }
     }
-    else // raw gmap
+    else
     {
-        PRINTF("MAP-Memory: , %d, \n", count);
-        for (int32_t j = 0; j < GMAP_WN_PIXEL; j ++)
+        // [0, W | H )
+        const int32_t cx= temp_gMap.map_center_pixel.x - GMAP_DEFAULT_CENTRAL_X_INDEX_PIXEL;
+        const int32_t cy= temp_gMap.map_center_pixel.y - GMAP_DEFAULT_CENTRAL_Y_INDEX_PIXEL;
+        map_pixel_data_t* mdata = (temp_gMap.data);
+        int32_t x,y;
+        int32_t end = (PUBLISH_LENGTH_PER_CYCLE * count);
+        int32_t start = end - PUBLISH_LENGTH_PER_CYCLE;
+        if (central)
         {
-            y = j;
-            y *= GMAP_WN_PIXEL;
-            for (int32_t i = 0; i < GMAP_HN_PIXEL; i ++)
+            for (int32_t j = start; j < GMAP_WN_PIXEL && j < end ; j ++)
             {
-                x = i;
-                PRINTF("%d,", mdata[y + x]);
+                y = cy + j;
+                y += MAP_OFFSET[ARG_RANGE_INCLUSIVE((int32_t)(y), 0, GMAP_HN_PIXEL)];
+                y *= GMAP_WN_PIXEL;
+                for (int32_t i = 0; i < GMAP_HN_PIXEL; i ++)
+                {
+                    x = cx + i;
+                    x += MAP_OFFSET[ARG_RANGE_INCLUSIVE((int32_t)(x), 0, GMAP_HN_PIXEL)];
+                    PRINTF("%d,", mdata[y + x]);
+                }
+                PRINTF("%d\n", 0);
             }
-            PRINTF("%d\n", 0);
+        }
+        else // raw gmap
+        {
+            for (int32_t j = start; j < GMAP_WN_PIXEL && j < end ; j ++)
+            {
+                y = j;
+                y *= GMAP_WN_PIXEL;
+                for (int32_t i = 0; i < GMAP_HN_PIXEL; i ++)
+                {
+                    x = i;
+                    PRINTF("%d,", mdata[y + x]);
+                }
+                PRINTF("%d\n", 0);
+            }
         }
     }
+    count ++;
 }
 #endif
 
@@ -843,14 +897,9 @@ void app_slam_run100ms(void)
     app_slam_private_pathPlanning();
     app_slam_private_motionPlanning();
     
-# if (DEBUG_FPRINT_FEATURE_MAP)
-    static int count = 0;
-    count ++;
-    if (count % 10 == 0)
-    {
-        app_slam_private_debugPrintMap(DEBUG_FPRINT_FEATURE_MAP_CENTERED, count);
-    }
-# endif
+#   if (DEBUG_FPRINT_FEATURE_MAP)
+        app_slam_private_debugPrintMap(DEBUG_FPRINT_FEATURE_MAP_CENTERED);
+#   endif
 #endif //(FEATURE_SLAM)
 }
 
