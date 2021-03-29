@@ -93,7 +93,7 @@ extern "C"{
 #       define FEATURE_AVR_ENCODER                ( ENABLE) //
 #   endif // (FEATURE_AVR_DRIVER_ALL)
 #   define FEATURE_SLAM_AVR_SENSOR           (FEATURE_SLAM)
-#   define FEATURE_BATTERY                        ( ENABLE)
+#   define FEATURE_BATTERY                        ( DISABLE)
 
 /*****   DEBUG PRINT FLAGS  ****/
 #   define DEBUG_FPRINT                           ( DISABLE)

@@ -28,7 +28,11 @@ static inline void dev_battery_private_gpio_config(void);
 ///////////////////////////
 ///////   DATA     ////////
 ///////////////////////////
-static dev_battery_data_S battery_data;
+static dev_battery_data_S battery_data = {
+    12.0,
+    2929,
+    CHARGER_IC_STATUS_COMPLETE_SLEEP
+};
 static volatile uint8_t edge_count = 0;
 
 ////////////////////////////////////////

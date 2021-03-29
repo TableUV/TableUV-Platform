@@ -181,11 +181,13 @@ static app_state_E app_supervisor_private_getNextState(app_state_E state)
             {
                 nextState =  APP_STATE_IDLE; // Highest priority
             }
+#if (FEATURE_BATTERY)            
             else if (supervisor_data.battery_voltage < BATTERY_STATUS)
             {
                 supervisor_data.fault_flag |= APP_FAULTS_CRITICAL_LOW_BATTERY;
                 nextState = APP_STATE_FAULT;
             }
+#endif            
             else if (supervisor_data.avr_sensor_data == DEV_AVR_ALL_IR_SENSORS)
             {
                 supervisor_data.fault_flag |= APP_FAULTS_ROBOT_IN_THE_AIR;
@@ -206,11 +208,13 @@ static app_state_E app_supervisor_private_getNextState(app_state_E state)
             {
                 nextState =  APP_STATE_IDLE; // Highest priority
             }
+#if (FEATURE_BATTERY)            
             else if (supervisor_data.battery_voltage < BATTERY_STATUS)
             {
                 supervisor_data.fault_flag |= APP_FAULTS_CRITICAL_LOW_BATTERY;
                 nextState = APP_STATE_FAULT;
             }    
+#endif            
             else if (supervisor_data.avr_sensor_data == DEV_AVR_ALL_IR_SENSORS)
             {
                 supervisor_data.fault_flag |= APP_FAULTS_ROBOT_IN_THE_AIR;
@@ -232,11 +236,13 @@ static app_state_E app_supervisor_private_getNextState(app_state_E state)
             break;
 
         case (APP_STATE_FAULT):
+#if (FEATURE_BATTERY)        
             if (supervisor_data.battery_voltage >= BATTERY_STATUS)
             {
                 supervisor_data.fault_flag &= ~APP_FAULTS_CRITICAL_LOW_BATTERY;
                 nextState = APP_STATE_IDLE;
             }
+#endif            
             // TODO: maybe utilize the state when there are more faults??
             break;
         case (APP_STATE_COUNT):
