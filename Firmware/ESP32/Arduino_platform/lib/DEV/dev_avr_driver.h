@@ -31,7 +31,7 @@ extern "C"{
 // #define DEV_AVR_DRIVER_ENCODER_UPDATE_FREQ_HZ          (20U) // UNUSED ???
 #define DEV_AVR_DRIVER_WHEEL_MM_PER_TICK_SCALED             (0.00920163F) // (0.5 * (AVG: 0.01840326))
 #define DEV_AVR_DRIVER_INVERSE_DIST_BW_WHEELS_MM_SCALED     (0.0001192168704F) // (DEV_AVR_DRIVER_WHEEL_MM_PER_TICK_HALF * DEV_AVR_DRIVER_INVERSE_DIST_BW_WHEELS_MM)
-#define DEV_AVR_DRIVER_ENC_BUFFER_SIZE                      (4U)
+#define DEV_AVR_DRIVER_ENC_BUFFER_SIZE                      (3U) // = 20Hz/10Hz + 1
 
 
 /////////////////////////////////

@@ -72,9 +72,6 @@ void dev_init(void)
 
 void dev_run50ms(void)
 {
-#if (FEATURE_AVR_DRIVER_ALL)
-    dev_driver_avr_update20ms(); 
-#endif
 #if (FEATURE_SENSOR_AVR)
     dev_avr_sensor_uart_update();
 #endif
@@ -83,6 +80,9 @@ void dev_run50ms(void)
 #endif
 #if (FEATURE_PERIPHERALS)
     dev_led_update();
+#endif
+#if (FEATURE_AVR_DRIVER_ALL)
+    dev_driver_avr_update20ms(); 
 #endif
 }
 

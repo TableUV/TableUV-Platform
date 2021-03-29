@@ -52,7 +52,6 @@
 #define ESP32_CORE_HIGH_LEVEL       (1U)
 
 #define TASK_SLAM_TASK_TICK             (TASK_HZ_TO_TASK_TICK(  10/*[Hz]*/))
-#define TASK_SUPERVISOR_TASK_TICK       (TASK_HZ_TO_TASK_TICK(  20/*[Hz]*/))
 #define TASK_20HZ_TASK_TICK             (TASK_HZ_TO_TASK_TICK(  20/*[Hz]*/))
 #define TASK_1HZ_TASK_TICK              (TASK_HZ_TO_TASK_TICK(   1/*[Hz]*/))
 
@@ -123,20 +122,6 @@ static void core1_task_runSLAM(void * pvParameters)
     }
 }
 
-static void core1_task_runSupervisor(void * pvParameters)
-{
-    TickType_t xLastWakeTime;
-    xLastWakeTime = xTaskGetTickCount ();
-    for( ;; )
-    {
-        /* Do sth at */
-        {
-            //  add task (High Level)
-        }
-        vTaskDelayUntil(&xLastWakeTime, TASK_SUPERVISOR_TASK_TICK);
-    }
-}
-
 static void esp32_task_init()
 {
     // Low Level Core Init.
@@ -173,16 +158,6 @@ static void esp32_task_init()
         ESP32_CORE_HIGH_LEVEL   /* Core where the task should run */
     );  
     vTaskDelay(T_50MS_TASK_TICK);
-    
-    xTaskCreatePinnedToCore(
-        core1_task_runSupervisor,    /* Function to implement the task */
-        "core1_task_runSupervisor",  /* Name of the task */
-        10000,                  /* Stack size in words */
-        NULL,                   /* Task input parameter */
-        2,                      /* Priority of the task */
-        NULL,                   /* Task handle. */
-        ESP32_CORE_LOW_LEVEL    /* Core where the task should run */
-    );  
 }
 
 ///////////////////////////////////////

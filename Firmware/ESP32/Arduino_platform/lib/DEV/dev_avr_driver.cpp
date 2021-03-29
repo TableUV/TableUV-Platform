@@ -48,7 +48,7 @@ typedef struct{
 ///////   DATA     ////////
 ///////////////////////////
 static dev_avr_driver_data_S dev_avr_driver_data = {
-    .I2C     = TwoWire(0),
+    .I2C     = TwoWire(1),
     .address = {
         LEFT_AVR_DRIVER_I2C_ADDRESS,
         RIGHT_AVR_DRIVER_I2C_ADDRESS
@@ -93,7 +93,7 @@ static uint8_t dev_avr_driver_transmit_two_byte(uint8_t address, uint16_t messag
     dev_avr_driver_data.I2C.beginTransmission(address);
     dev_avr_driver_data.I2C.write((message & DATA_MASK_16BIT_FIRST_8BIT) >> 8);
     dev_avr_driver_data.I2C.write( message & DATA_MASK_16BIT_SECOND_8BIT);
-    status = dev_avr_driver_data.I2C.endTransmission(true);
+    status = dev_avr_driver_data.I2C.endTransmission(false);
     return status;
 }
 
@@ -265,8 +265,9 @@ void dev_driver_avr_update20ms()
         //release the mutex 
         xSemaphoreGive(dev_avr_driver_data.mp_mutex); 
     }
-
+#if (DEBUG_FPRINT_FEATURE_AVR_DRIVER)
     PRINTF("[ AVR:DRIVER ] left: %d, right: %d \n", dev_avr_driver_data.i2c_message[LEFT_AVR_DRIVER], dev_avr_driver_data.i2c_message[RIGHT_AVR_DRIVER]);
+#endif // (DEBUG_FPRINT_FEATURE_AVR_DRIVER)
 }
 
 void dev_avr_driver_set_timeout(uint8_t milliSec){

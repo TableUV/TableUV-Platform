@@ -8,7 +8,7 @@
  */
 
 #include "slam_math.h"
-
+#include "../../include/common.h"
 // TableUV Lib
 
 // External Lib
@@ -38,7 +38,7 @@
 math_cart_coord_float_S slam_math_get_enc_pose(int16_t* l_enc_buf, int16_t* r_enc_buf, const uint8_t buffer_size) 
 {
     float r_wheel_disp, l_wheel_disp, robot_disp, robot_theta;
-    math_cart_coord_float_S total_sum = {0};
+    math_cart_coord_float_S total_sum = {0, 0};
 
     for (uint8_t i = 0; i < buffer_size; i ++)
     {
@@ -47,7 +47,6 @@ math_cart_coord_float_S slam_math_get_enc_pose(int16_t* l_enc_buf, int16_t* r_en
 
         robot_disp = (r_wheel_disp + l_wheel_disp) * 0.5;
         robot_theta = (r_wheel_disp - l_wheel_disp) * 0.5 * DEV_AVR_DRIVER_INVERSE_DIST_BW_WHEELS_MM;
-
         total_sum.x = total_sum.x + robot_disp * cos(robot_theta);
         total_sum.y = total_sum.y + robot_disp * sin(robot_theta);
     }
