@@ -15,6 +15,7 @@
 #include "io_ping_map.h"
 #include "APP/app_slam.h"
 #include "APP/app_supervisor.h"
+#include "APP/app_wifi.h"
 
 // SDK config 
 #include "sdkconfig.h"
@@ -189,6 +190,7 @@ void app_main()
     esp32_task_init();
 
     // app level init
+    app_wifi_init();
     app_slam_init();
     app_supervisor_init();
 
