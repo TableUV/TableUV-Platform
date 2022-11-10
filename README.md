@@ -2,6 +2,12 @@
 
 <a href="https://tableuv.github.io" target="_blank"><img alt="https://tableuv.github.io" src="https://img.shields.io/website?style=for-the-badge&url=https%3A%2F%2Ftableuv.github.io" /></a> [![](https://img.shields.io/badge/Supported%20by-Table%20Robotics%20%E2%86%92-gray.svg?colorA=655BE1&colorB=4F44D6&style=for-the-badge)](https://github.com/orgs/TableUV/teams/table-robotics)
 
+### Our Reports:
+- Final Completion Report: https://github.com/TableUV/TableUV-Platform/blob/master/Final_report.pdf
+- Final Design Proposal: https://github.com/TableUV/TableUV-Platform/blob/master/Final_design_proposal.pdf
+- Website: https://github.com/TableUV/TableUV.github.io
+- Demo Videos: https://www.youtube.com/channel/UCsrsY8ngdr8yEBWj88ymzQw
+
 ### Stable Branches:
 - https://github.com/TableUV/TableUV/tree/stable/demo-1
 - https://github.com/TableUV/TableUV/tree/stable/demo-2-tof-avoidance-20Hz
